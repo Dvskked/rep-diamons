@@ -421,7 +421,16 @@ $('#foroForm').addEventListener('submit', async (ev) => {
 
 /* ---------------------------------------------------------- UTILIDADES UI */
 function vacio(txt) {
-  return `<p style="grid-column:1/-1;padding:40px;text-align:center;color:var(--texto-suave)">${esc(txt)}</p>`;
+  return `<p style="grid-column:1/-1;padding:44px;text-align:center;color:var(--texto-suave)">${esc(txt)}</p>`;
+}
+
+function configBotonSubir() {
+  const boton = $('#btnTop');
+  if (!boton) return;
+  const alCambiar = () => boton.classList.toggle('ver', window.scrollY > 500);
+  window.addEventListener('scroll', alCambiar, { passive: true });
+  alCambiar();
+  boton.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
 }
 
 function revelar() {
@@ -512,6 +521,10 @@ $('#mobileMenu').addEventListener('click', (e) => {
 
 /* --------------------------------------------------------------- INICIO */
 async function iniciar() {
+  // Muestra las secciones de inmediato para que se vea el esqueleto de carga
+  revelar();
+  configBotonSubir();
+
   try {
     const r = await pedir('/api/sitio');
     Object.assign(DATOS, {
@@ -536,6 +549,7 @@ async function iniciar() {
     pintarForo();
     revelar();
     scrollSpy();
+    configBotonSubir();
 
     // Si el admin ya tiene sesion, el boton abre el panel
     const s = await pedir('/api/sesion');
