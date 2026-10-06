@@ -9,7 +9,8 @@
 import json
 import os
 import uuid
-from datetime import datetime
+from datetime import date, datetime, time, timedelta
+from decimal import Decimal
 
 from flask import (
     Flask, jsonify, render_template, request,
@@ -21,12 +22,52 @@ from werkzeug.utils import secure_filename
 import db
 from config import BASE_DIR, SECRET_KEY, PUERTO
 
+
+class JsonLigero:
+    """Traduce los tipos de MySQL a JSON (fechas, horas, decimales)."""
+
+    @staticmethod
+    def normalizar(obj):
+        if isinstance(obj, datetime):
+            return obj.strftime("%Y-%m-%d %H:%M:%S")
+        if isinstance(obj, date):
+            return obj.strftime("%Y-%m-%d")
+        if isinstance(obj, time):
+            return obj.strftime("%H:%M:%S")
+        if isinstance(obj, timedelta):
+            total = int(obj.total_seconds())
+            signo = "-" if total < 0 else ""
+            total = abs(total)
+            return "%s%02d:%02d:%02d" % (
+                signo, total // 3600, (total % 3600) // 60, total % 60
+            )
+        if isinstance(obj, Decimal):
+            return float(obj)
+        if isinstance(obj, (bytes, bytearray)):
+            return obj.decode("utf-8", "replace")
+        raise TypeError(
+            "Object of type %s is not JSON serializable" % type(obj).__name__
+        )
+
+
 app = Flask(
     __name__,
     static_folder=os.path.join(BASE_DIR, "static"),
     template_folder=os.path.join(BASE_DIR, "templates"),
 )
 app.secret_key = SECRET_KEY
+app.config["JSON_SORT_KEYS"] = False
+
+
+class ProveedorJson(app.json.__class__):
+    """Proveedor de JSON de Flask con los tipos de MySQL soportados."""
+
+    @staticmethod
+    def default(obj):
+        return JsonLigero.normalizar(obj)
+
+
+app.json = ProveedorJson(app)
 
 UPLOAD_DIR = os.path.join(BASE_DIR, "static", "uploads")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
