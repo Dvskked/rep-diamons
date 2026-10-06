@@ -73,7 +73,7 @@ def _separar(sql):
 
 def _vaciar():
     """Limpia las tablas de contenido para que el script sea re-ejecutable."""
-    tablas = ["resultados", "fechas", "jugadores", "equipos",
+    tablas = ["resultados", "ideales", "fechas", "jugadores", "equipos",
               "contenidos", "modulos", "foro", "usuarios"]
     conexion = db.conexion()
     try:

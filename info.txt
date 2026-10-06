@@ -1,0 +1,27 @@
+usuario: nyx
+discord:  nx0972
+cargo: Master
+
+
+usuario: rapatumadre
+discord: kairuhz.singa_tuvida
+cargo: Master
+
+
+usuario: sami
+discord: samantha_89._.
+cargo: Fundadora
+
+
+
+usuario: santiago
+discord: sdstutaksvyksc
+cargo: Fundador
+
+
+
+
+
+usuario: neptunzinho
+discord: andresneptunzinho
+cargo: Desarrollador
