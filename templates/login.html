@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Acceso · The Diamonds League</title>
+<link rel="icon" href="/static/assets/favicon.png">
+<link rel="stylesheet" href="/static/styles.css">
+<link rel="stylesheet" href="/static/admin.css">
+</head>
+<body class="login-pagina">
+
+<div class="login-wrap">
+  <a class="volver" href="/">&larr; Volver a la pagina</a>
+
+  <div class="login-card">
+    <img class="login-logo" src="/static/assets/logo-mark.png" alt="">
+    <h3>ADMINISTRAR</h3>
+    <p>Acceso exclusivo para el staff de la liga.</p>
+
+    <form id="loginForm">
+      <label>Usuario
+        <input type="text" name="usuario" autocomplete="username" required autofocus>
+      </label>
+      <label>Contrasena
+        <input type="password" name="clave" autocomplete="current-password" required>
+      </label>
+      <p class="login-error" id="loginError"></p>
+      <button type="submit" class="btn btn-primary btn-block">ENTRAR</button>
+    </form>
+
+    <div class="login-pie">The Diamonds League · (c) Neptunzinho</div>
+  </div>
+</div>
+
+<script>
+const $ = (s) => document.querySelector(s);
+
+$('#loginForm').addEventListener('submit', async (ev) => {
+  ev.preventDefault();
+  const f = ev.target, err = $('#loginError');
+  err.textContent = '';
+  try {
+    const r = await fetch('/api/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ usuario: f.usuario.value.trim(), clave: f.clave.value })
+    });
+    const j = await r.json();
+    if (!r.ok) throw new Error(j.error || 'Error al iniciar sesion');
+    window.location.href = '/admin';
+  } catch (e) {
+    err.textContent = e.message;
+  }
+});
+</script>
+</body>
+</html>

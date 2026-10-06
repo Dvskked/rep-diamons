@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Sitio oficial de The Diamonds League, liga competitiva de HaxBall X5.">
+<meta name="author" content="Neptunzinho">
+<title>The Diamonds League</title>
+<link rel="icon" href="/static/assets/favicon.png">
+<link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+
+<!-- ============ LOGIN ADMIN (modal) ============ -->
+<div class="login-modal" id="loginModal" aria-hidden="true">
+  <div class="login-card">
+    <button class="login-close" type="button" data-close-login aria-label="Cerrar">&times;</button>
+    <img class="login-logo" src="/static/assets/logo-mark.png" alt="">
+    <h3>ADMINISTRAR</h3>
+    <p>Acceso exclusivo para el staff de la liga.</p>
+    <form id="loginForm">
+      <label>Usuario
+        <input type="text" name="usuario" autocomplete="username" required>
+      </label>
+      <label>Contraseña
+        <input type="password" name="clave" autocomplete="current-password" required>
+      </label>
+      <p class="login-error" id="loginError"></p>
+      <button type="submit" class="btn btn-primary btn-block">ENTRAR</button>
+    </form>
+  </div>
+</div>
+
+<!-- ============ HEADER ============ -->
+<header class="topbar">
+  <a class="brand" href="#inicio">
+    <img src="/static/assets/logo-mark.png" alt="The Diamonds League">
+    <span>
+      <strong>THE DIAMONDS LEAGUE</strong>
+      <small>HAXBALL X5</small>
+    </span>
+  </a>
+
+  <nav class="nav" id="navPrincipal" aria-label="Navegacion principal"></nav>
+
+  <div class="topbar-right">
+    <button class="btn-admin" type="button" id="btnAdmin">ADMINISTRAR</button>
+    <button class="menu-toggle" type="button" id="menuToggle" aria-label="Abrir menu" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</header>
+
+<div class="mobile-menu" id="mobileMenu"></div>
+
+<main>
+
+  <!-- ============ HERO ============ -->
+  <section class="hero" id="inicio">
+    <div class="hero-inner reveal">
+      <div class="hero-tag"><i></i> LIGA COMPETITIVA DE HAXBALL <i></i></div>
+      <div class="hero-logo"><img src="/static/assets/logo-mark.png" alt="The Diamonds League"></div>
+      <h1>THE DIAMONDS <span>LEAGUE</span></h1>
+      <p>La liga de HaxBall X5 de la comunidad. Consulta las fechas, los resultados, las salas
+         publicas, los premios y todos los anuncios de la temporada.</p>
+      <div class="hero-actions">
+        <a class="btn btn-primary" href="#liga">VER LIGA</a>
+        <a class="btn btn-soft" href="#pubs">IR A PUBS</a>
+      </div>
+    </div>
+
+    <div class="hero-stats" id="heroStats">
+      <div><small>MODALIDAD</small><strong>5 VS 5</strong></div>
+      <div><small>EQUIPOS</small><strong id="statEquipos">—</strong></div>
+      <div><small>SALAS</small><strong id="statSalas">—</strong></div>
+      <div><small>ESTADO</small><strong class="estado-activo">ACTIVA</strong></div>
+    </div>
+  </section>
+
+  <!-- ============ MARQUESA ============ -->
+  <div class="marquesina" aria-hidden="true">
+    <div class="marquesina-track">
+      <span>FECHAS</span><i></i><span>RESULTADOS</span><i></i><span>GOLEADORES</span><i></i>
+      <span>ASISTENCIAS</span><i></i><span>CLEAN SHEETS</span><i></i><span>X5 IDEAL</span><i></i>
+      <span>FECHAS</span><i></i><span>RESULTADOS</span><i></i><span>GOLEADORES</span><i></i>
+      <span>ASISTENCIAS</span><i></i><span>CLEAN SHEETS</span><i></i><span>X5 IDEAL</span><i></i>
+    </div>
+  </div>
+
+  <!-- ============ LIGA ============ -->
+  <section class="modulo" id="liga">
+    <div class="seccion-cabecera reveal">
+      <div class="numero">01</div>
+      <div>
+        <span class="etiqueta">LIGA</span>
+        <h2 data-titulo="liga">La liga</h2>
+      </div>
+      <p data-subtitulo="liga">Cargando informacion de la liga...</p>
+    </div>
+
+    <div class="liga-toggles reveal" id="ligaTabs">
+      <button class="pestana activa" type="button" data-division="D1">DIVISION 1</button>
+      <button class="pestana" type="button" data-division="D2">DIVISION 2</button>
+      <button class="pestana" type="button" data-vista="fechas">FECHAS</button>
+      <button class="pestana" type="button" data-vista="tabla">TABLA</button>
+      <button class="pestana" type="button" data-vista="stats">GOLEADORES</button>
+    </div>
+
+    <!-- Equipos -->
+    <div class="panel-panel activo" data-panel="D1">
+      <div class="equipos-grid" id="equiposGrid"></div>
+    </div>
+    <div class="panel-panel" data-panel="D2">
+      <div class="equipos-grid" id="equiposGrid2"></div>
+    </div>
+
+    <!-- Fechas -->
+    <div class="panel-panel" data-panel="fechas">
+      <div class="calendario" id="calendario"></div>
+    </div>
+
+    <!-- Tabla -->
+    <div class="panel-panel" data-panel="tabla">
+      <div class="tabla-wrap">
+        <table class="tabla" id="tablaPosiciones">
+          <thead>
+            <tr><th>#</th><th>EQUIPO</th><th>PJ</th><th>GF</th><th>GC</th><th>DG</th><th>PTS</th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Estadisticas -->
+    <div class="panel-panel" data-panel="stats">
+      <div class="stats-grid">
+        <article class="stat-card">
+          <h3>GOLEADORES</h3>
+          <div id="listaGoles"></div>
+        </article>
+        <article class="stat-card">
+          <h3>ASISTENCIAS</h3>
+          <div id="listaAsistencias"></div>
+        </article>
+        <article class="stat-card">
+          <h3>CLEAN SHEETS</h3>
+          <div id="listaCs"></div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ PUBS ============ -->
+  <section class="modulo alt" id="pubs">
+    <div class="seccion-cabecera reveal">
+      <div class="numero">02</div>
+      <div>
+        <span class="etiqueta">PUBS</span>
+        <h2 data-titulo="pubs">Salas de HaxBall</h2>
+      </div>
+      <p data-subtitulo="pubs">Elige una sala y entra a jugar.</p>
+    </div>
+    <div class="salas-grid reveal" id="salasGrid"></div>
+  </section>
+
+  <!-- ============ MUSEO ============ -->
+  <section class="modulo" id="museo">
+    <div class="seccion-cabecera reveal">
+      <div class="numero">03</div>
+      <div>
+        <span class="etiqueta">MUSEO</span>
+        <h2 data-titulo="museo">Museo de la liga</h2>
+      </div>
+      <p data-subtitulo="museo">Premios entregados en temporadas anteriores.</p>
+    </div>
+    <div class="filtros reveal" id="museoFiltros"></div>
+    <div class="museo-grid reveal" id="museoGrid"></div>
+  </section>
+
+  <!-- ============ NOTICIAS ============ -->
+  <section class="modulo alt" id="noticias">
+    <div class="seccion-cabecera reveal">
+      <div class="numero">04</div>
+      <div>
+        <span class="etiqueta">NOTICIAS</span>
+        <h2 data-titulo="noticias">Noticias</h2>
+      </div>
+      <p data-subtitulo="noticias">Reportajes y Advances de la jornada.</p>
+    </div>
+    <div class="noticias-grid reveal" id="noticiasGrid"></div>
+  </section>
+
+  <!-- ============ ANUNCIOS ============ -->
+  <section class="modulo" id="anuncios">
+    <div class="seccion-cabecera reveal">
+      <div class="numero">05</div>
+      <div>
+        <span class="etiqueta">ANUNCIOS - NOVEDADES</span>
+        <h2 data-titulo="anuncios">Anuncios y novedades</h2>
+      </div>
+      <p data-subtitulo="anuncios">Comunicados oficiales de la liga.</p>
+    </div>
+    <div class="anuncios-grid reveal" id="anunciosGrid"></div>
+  </section>
+
+  <!-- ============ ALIANZAS ============ -->
+  <section class="modulo alt" id="alianzas">
+    <div class="seccion-cabecera reveal">
+      <div class="numero">06</div>
+      <div>
+        <span class="etiqueta">ALIANZAS</span>
+        <h2 data-titulo="alianzas">Alianzas y afiliados</h2>
+      </div>
+      <p data-subtitulo="alianzas">Servers aliados y la proxima afiliacion.</p>
+    </div>
+    <div class="alianzas-grid reveal" id="alianzasGrid"></div>
+  </section>
+
+  <!-- ============ EQUIPO ============ -->
+  <section class="modulo" id="equipo">
+    <div class="seccion-cabecera reveal">
+      <div class="numero">07</div>
+      <div>
+        <span class="etiqueta">EQUIPO ADMINISTRACION</span>
+        <h2 data-titulo="equipo">Equipo de administracion</h2>
+      </div>
+      <p data-subtitulo="equipo">Las personas que hacen posible la liga.</p>
+    </div>
+    <div class="equipo-staff-grid reveal" id="equipoGrid"></div>
+  </section>
+
+  <!-- ============ REDES ============ -->
+  <section class="modulo alt" id="redes">
+    <div class="seccion-cabecera reveal">
+      <div class="numero">08</div>
+      <div>
+        <span class="etiqueta">REDES SOCIALES</span>
+        <h2 data-titulo="redes">Redes sociales</h2>
+      </div>
+      <p data-subtitulo="redes">Donde encontrarnos y los streams de la comunidad.</p>
+    </div>
+    <div class="redes-grid reveal" id="redesGrid"></div>
+  </section>
+
+  <!-- ============ DONACION ============ -->
+  <section class="modulo" id="donacion">
+    <div class="seccion-cabecera reveal">
+      <div class="numero">09</div>
+      <div>
+        <span class="etiqueta">DONACION</span>
+        <h2 data-titulo="donacion">Donaciones</h2>
+      </div>
+      <p data-subtitulo="donacion">Metodos para apoyar a la liga.</p>
+    </div>
+    <div class="donacion-grid reveal" id="donacionGrid"></div>
+  </section>
+
+  <!-- ============ FORO ============ -->
+  <section class="modulo alt" id="foro">
+    <div class="seccion-cabecera reveal">
+      <div class="numero">10</div>
+      <div>
+        <span class="etiqueta">FORO</span>
+        <h2>Sugerencias de la comunidad</h2>
+      </div>
+      <p>Escribe tu nombre de pila y deja tu comentario. Todos lo pueden ver.</p>
+    </div>
+
+    <div class="foro-layout">
+      <form class="foro-form reveal" id="foroForm">
+        <h3>PUBLICAR MENSAJE</h3>
+        <label>Tu nombre
+          <input type="text" id="foroNombre" maxlength="60" placeholder="Ej: Neptunzinho" required>
+        </label>
+        <label>Mensaje
+          <textarea id="foroMensaje" rows="5" maxlength="1000"
+                    placeholder="Escribe tu sugerencia o mensaje..." required></textarea>
+        </label>
+        <button class="btn btn-primary" type="submit">PUBLICAR</button>
+        <p class="form-msg" id="foroMsg"></p>
+      </form>
+
+      <div class="foro-lista reveal" id="foroLista"></div>
+    </div>
+  </section>
+
+</main>
+
+<!-- ============ FOOTER ============ -->
+<footer class="footer">
+  <div class="footer-brand">
+    <img src="/static/assets/logo-mark.png" alt="">
+    <div>
+      <strong>THE DIAMONDS LEAGUE</strong>
+      <span>LIGA DE HAXBALL X5</span>
+    </div>
+  </div>
+  <div class="footer-center">COMPITE · REPRESENTA · CONQUISTA</div>
+  <div class="footer-credit">
+    <small>SITIO DESARROLLADO POR</small>
+    <strong>NEPTUNZINHO</strong>
+    <span>© 2026 · Todos los derechos reservados</span>
+  </div>
+</footer>
+
+<div class="toast" id="toast"><span></span><p></p></div>
+
+<script src="/static/app.js"></script>
+</body>
+</html>

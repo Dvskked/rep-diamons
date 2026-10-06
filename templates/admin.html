@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Panel · The Diamonds League</title>
+<link rel="icon" href="/static/assets/favicon.png">
+<link rel="stylesheet" href="/static/styles.css">
+<link rel="stylesheet" href="/static/admin.css">
+</head>
+<body class="admin-body">
+
+<!-- ================= SIDEBAR ================= -->
+<aside class="sidebar">
+  <div class="side-logo">
+    <img src="/static/assets/logo-mark.png" alt="">
+    <div><strong>PANEL</strong><small>DIAMONDS LEAGUE</small></div>
+  </div>
+
+  <nav class="side-nav">
+    <button class="side-item activo" type="button" data-tab="resumen"><span>01</span> Resumen</button>
+    <button class="side-item" type="button" data-tab="equipos"><span>02</span> Equipos</button>
+    <button class="side-item" type="button" data-tab="fechas"><span>03</span> Fechas</button>
+    <button class="side-item" type="button" data-tab="resultados"><span>04</span> Resultados</button>
+    <button class="side-item" type="button" data-tab="anuncios"><span>05</span> Anuncios</button>
+    <button class="side-item" type="button" data-tab="contenido"><span>06</span> Contenido</button>
+    <button class="side-item" type="button" data-tab="modulos"><span>07</span> Modulos</button>
+    <button class="side-item" type="button" data-tab="foro"><span>08</span> Foro</button>
+  </nav>
+
+  <div class="side-foot">
+    <a href="/" target="_blank">Ver la pagina &nearr;</a>
+    <button type="button" id="btnSalir">Cerrar sesion</button>
+    <small>(c) Neptunzinho</small>
+  </div>
+</aside>
+
+<main class="admin-main">
+
+  <header class="admin-top">
+    <div>
+      <h1 id="tabTitulo">Resumen</h1>
+      <p id="tabTexto">Vista general del contenido de la liga.</p>
+    </div>
+    <div class="admin-user">
+      <span class="punto-verde"></span>
+      <div><strong id="adminNombre">Admin</strong><small id="adminRol">ADMINISTRADOR</small></div>
+    </div>
+  </header>
+
+  <!-- ============ RESUMEN ============ -->
+  <section class="tab-panel activo" data-panel="resumen">
+    <div class="kpis" id="kpis"></div>
+    <div class="dos-col">
+      <div class="card">
+        <h3>Ultimos mensajes del foro</h3>
+        <div id="resumenForo" class="mini-lista"></div>
+      </div>
+      <div class="card">
+        <h3>Proximos partidos</h3>
+        <div id="resumenPartidos" class="mini-lista"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ EQUIPOS ============ -->
+  <section class="tab-panel" data-panel="equipos">
+    <div class="card">
+      <h3>Nuevo equipo</h3>
+      <form class="form-grid" id="formEquipo">
+        <label>Nombre <input name="nombre" required></label>
+        <label>Sigla <input name="sigla" maxlength="10" required></label>
+        <label>Division
+          <select name="division"><option value="D1">D1</option><option value="D2">D2</option></select>
+        </label>
+        <label>Entrenador <input name="entrenador"></label>
+        <label>Ciudad <input name="ciudad"></label>
+        <label>Fundado <input name="fundado" type="number" min="1900" max="2100" placeholder="2024"></label>
+        <label class="ancho">Escudo
+          <input name="escudo" type="file" accept="image/*">
+        </label>
+        <div class="form-acciones"><button class="btn btn-primary" type="submit">GUARDAR EQUIPO</button></div>
+      </form>
+    </div>
+
+    <div class="card">
+      <h3>Equipos y jugadores</h3>
+      <div id="listaEquipos" class="admin-lista"></div>
+    </div>
+  </section>
+
+  <!-- ============ FECHAS ============ -->
+  <section class="tab-panel" data-panel="fechas">
+    <div class="card">
+      <h3>Programar partido</h3>
+      <form class="form-grid" id="formFecha">
+        <label>Equipo A <select name="equipo_a_id" required></select></label>
+        <label>Equipo B <select name="equipo_b_id" required></select></label>
+        <label>Fecha <input name="fecha" type="date" required></label>
+        <label>Hora <input name="hora" type="time"></label>
+        <label>Jornada <input name="jornada" value="JORNADA 1"></label>
+        <label>Fase <input name="fase" value="LIGA REGULAR"></label>
+        <label class="ancho">Link de la sala <input name="sala" placeholder="https://www.haxball.com/play?c=..."></label>
+        <div class="form-acciones"><button class="btn btn-primary" type="submit">AGREGAR FECHA</button></div>
+      </form>
+    </div>
+
+    <div class="card">
+      <h3>Calendario</h3>
+      <div id="listaFechas" class="admin-lista"></div>
+    </div>
+  </section>
+
+  <!-- ============ RESULTADOS ============ -->
+  <section class="tab-panel" data-panel="resultados">
+    <div class="card">
+      <h3>Registrar resultado</h3>
+      <form class="form-grid" id="formResultado">
+        <label class="ancho">Partido
+          <select name="fecha_id" id="selFecha" required></select>
+        </label>
+        <div id="infoPartido" class="info-partido"></div>
+        <label>Goles equipo A <input name="goles_a" type="number" min="0" value="0"></label>
+        <label>Goles equipo B <input name="goles_b" type="number" min="0" value="0"></label>
+        <label>Portero A <input name="portero_a"></label>
+        <label>Portero B <input name="portero_b"></label>
+        <label>CS equipo A
+          <select name="cs_a"><option value="0">No</option><option value="1">Si</option></select>
+        </label>
+        <label>CS equipo B
+          <select name="cs_b"><option value="0">No</option><option value="1">Si</option></select>
+        </label>
+        <label>Minutos sin goles <input name="minutos_cs" type="number" min="0" value="0"></label>
+
+        <div class="ancho">
+          <h4 class="sub">Goleadores</h4>
+          <div id="listaGoleadores" class="chips"></div>
+          <button class="btn-mini" type="button" id="addGoleador">+ Anadir goleador</button>
+        </div>
+
+        <div class="ancho">
+          <h4 class="sub">Asistencias</h4>
+          <div id="listaAsistencias" class="chips"></div>
+          <button class="btn-mini" type="button" id="addAsistencia">+ Anadir asistencia</button>
+        </div>
+
+        <div class="form-acciones">
+          <button class="btn btn-primary" type="submit">GUARDAR RESULTADO</button>
+          <button class="btn btn-peligro" type="button" id="btnBorrarResultado">BORRAR RESULTADO</button>
+        </div>
+      </form>
+    </div>
+  </section>
+
+  <!-- ============ ANUNCIOS ============ -->
+  <section class="tab-panel" data-panel="anuncios">
+    <div class="card">
+      <h3 id="tituloFormAnuncio">Nuevo anuncio</h3>
+      <form class="form-grid" id="formAnuncio">
+        <input type="hidden" name="id">
+        <label>Modulo
+          <select name="modulo">
+            <option value="anuncios">ANUNCIOS</option>
+            <option value="noticias">NOTICIAS</option>
+            <option value="pubs">PUBS</option>
+            <option value="museo">MUSEO</option>
+            <option value="alianzas">ALIANZAS</option>
+            <option value="redes">REDES</option>
+            <option value="equipo">EQUIPO</option>
+            <option value="donacion">DONACION</option>
+          </select>
+        </label>
+        <label>Etiqueta <input name="dato_extra" placeholder="Temporada 2"></label>
+        <label class="ancho">Titulo <input name="titulo" required></label>
+        <label class="ancho">Subtitulo <input name="subtitulo"></label>
+        <label class="ancho">Texto <textarea name="texto" rows="3"></textarea></label>
+        <label>Enlace <input name="enlace"></label>
+        <label>Categoria <input name="categoria" placeholder="PREMIOS"></label>
+        <label>Fecha <input name="fecha" type="date"></label>
+        <label>Visible
+          <select name="visible"><option value="1">Si</option><option value="0">No</option></select>
+        </label>
+        <div class="form-acciones">
+          <button class="btn btn-primary" type="submit">GUARDAR</button>
+          <button class="btn btn-soft" type="button" id="btnCancelarAnuncio">LIMPIAR</button>
+        </div>
+      </form>
+    </div>
+
+    <div class="card">
+      <h3>Publicaciones</h3>
+      <div class="filtro-admin" id="filtroContModulo"></div>
+      <div id="listaContenidos" class="admin-lista"></div>
+    </div>
+  </section>
+
+  <!-- ============ MODULOS ============ -->
+  <section class="tab-panel" data-panel="modulos">
+    <div class="card">
+      <h3>Modulos del header</h3>
+      <p class="nota">Estos son los botones del menu. Al guardar, la pagina principal se actualiza.</p>
+      <div id="listaModulos" class="admin-lista"></div>
+    </div>
+  </section>
+
+  <!-- ============ FORO ============ -->
+  <section class="tab-panel" data-panel="foro">
+    <div class="card">
+      <h3>Mensajes del foro</h3>
+      <p class="nota">Puedes borrar los mensajes que no correspondan.</p>
+      <div id="listaForo" class="admin-lista"></div>
+    </div>
+  </section>
+
+</main>
+
+<div class="toast" id="toast"><span></span><p></p></div>
+<div class="confirm-modal" id="confirmModal">
+  <div class="confirm-card">
+    <h3 id="confirmTitulo">Confirmar</h3>
+    <p id="confirmTexto">Esta accion no se puede deshacer.</p>
+    <div class="confirm-acciones">
+      <button class="btn btn-soft" type="button" id="confirmNo">CANCELAR</button>
+      <button class="btn btn-peligro" type="button" id="confirmSi">ELIMINAR</button>
+    </div>
+  </div>
+</div>
+
+<script src="/static/admin.js"></script>
+</body>
+</html>
