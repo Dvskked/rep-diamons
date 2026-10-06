@@ -9,6 +9,16 @@ const $$ = (s, c = document) => Array.from(c.querySelectorAll(s));
 
 const ESTADO = { equipos: [], fechas: [], contenidos: [], modulos: [], foro: [] };
 
+/* ------------------------------------------------ PANTALLA DE CARGA */
+function ocultarPreloader() {
+  const p = document.getElementById('preloader');
+  document.body.classList.remove('carga-activa');
+  if (!p) return;
+  p.classList.add('fuera');
+  setTimeout(() => { if (p.parentNode) p.parentNode.removeChild(p); }, 500);
+}
+setTimeout(ocultarPreloader, 8000);
+
 const esc = (t) => String(t ?? '').replace(/[&<>"']/g,
   (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
@@ -57,25 +67,50 @@ const TABS = {
   resumen:    ['Resumen', 'Vista general del contenido de la liga.'],
   equipos:    ['Equipos', 'Agrega equipos, escudos, entrenadores y jugadores.'],
   fechas:     ['Fechas', 'Programa los partidos y el calendario.'],
-  resultados: ['Resultados', 'Goles, asistencias, clean sheets y minutos.'],
+  resultados: ['Resultados', 'Goles, asistencias y clean sheets por equipo.'],
   anuncios:   ['Anuncios', 'Gestiona anuncios, noticias, premios y enlaces.'],
   contenido:  ['Contenido', 'Todos los modulos de la pagina en un solo lugar.'],
   modulos:    ['Modulos', 'Los botones del header y sus titulos.'],
   foro:       ['Foro', 'Mensajes y sugerencias de la comunidad.']
 };
 
+/* ------------------------------------------------- MENU LATERAL MOVIL */
+const sidebar = $('#sidebar');
+const overlay = $('#sideOverlay');
+const btnMenu = $('#btnMenu');
+
+function abrirMenu() {
+  sidebar.classList.add('abierta');
+  overlay.classList.add('visible');
+  btnMenu.setAttribute('aria-expanded', 'true');
+}
+function cerrarMenu() {
+  sidebar.classList.remove('abierta');
+  overlay.classList.remove('visible');
+  btnMenu.setAttribute('aria-expanded', 'false');
+}
+if (btnMenu) btnMenu.addEventListener('click', () =>
+  sidebar.classList.contains('abierta') ? cerrarMenu() : abrirMenu());
+if (overlay) overlay.addEventListener('click', cerrarMenu);
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') cerrarMenu(); });
+
+function irATab(tab) {
+  $$('.side-item').forEach((b) => b.classList.toggle('activo', b.dataset.tab === tab));
+  $$('.tab-panel').forEach((p) => p.classList.toggle('activo', p.dataset.panel === tab));
+  $('#tabTitulo').textContent = TABS[tab][0];
+  $('#tabTexto').textContent = TABS[tab][1];
+  if (tab === 'resumen') cargarResumen();
+  if (tab === 'fechas' || tab === 'resultados') cargarFechas();
+  if (tab === 'anuncios') cargarContenidos();
+  if (tab === 'contenido') cargarContenidoTodo();
+  if (tab === 'modulos') cargarModulos();
+  if (tab === 'foro') cargarForo();
+  cerrarMenu();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
 $$('.side-item').forEach((btn) => {
-  btn.addEventListener('click', () => {
-    $$('.side-item').forEach((b) => b.classList.remove('activo'));
-    btn.classList.add('activo');
-    const tab = btn.dataset.tab;
-    $$('.tab-panel').forEach((p) => p.classList.toggle('activo', p.dataset.panel === tab));
-    $('#tabTitulo').textContent = TABS[tab][0];
-    $('#tabTexto').textContent = TABS[tab][1];
-    if (tab === 'resumen') cargarResumen();
-    if (tab === 'fechas' || tab === 'resultados') cargarFechas();
-    if (tab === 'contenido' || tab === 'anuncios') cargarContenidos();
-  });
+  btn.addEventListener('click', () => irATab(btn.dataset.tab));
 });
 
 /* ---------------------------------------------------------- RESUMEN */
@@ -128,7 +163,7 @@ async function cargarEquipos() {
         <button class="btn-ico" data-edit-equipo="${e.id}">EDITAR</button>
         <button class="btn-ico peligro" data-del-equipo="${e.id}">ELIMINAR</button>
       </div>
-      <div class="fila-jugadores" style="grid-column:1/-1;width:100%">
+      <div class="fila-jugadores">
         ${(e.jugadores || []).map((j) => `
           <div class="jug-chip">
             <b>${j.numero ?? '-'}</b>
@@ -137,8 +172,8 @@ async function cargarEquipos() {
             <button class="btn-ico peligro" data-del-jugador="${j.id}">QUITAR</button>
           </div>`).join('')
           || '<div class="vacio-mini">Sin jugadores. Usa "+ JUGADOR" para agregar.</div>'}
-        <form class="form-grid" data-form-jugador="${e.id}" style="grid-template-columns:1fr 90px 150px auto;align-items:end">
-          <label>Nombre <input name="nombre" required></label>
+        <form class="form-grid form-jugador" data-form-jugador="${e.id}">
+          <label>Nombre <input name="nombre" required maxlength="80" placeholder="Nombre del jugador"></label>
           <label>Numero <input name="numero" type="number" min="1" max="99"></label>
           <label>Posicion
             <select name="posicion">
@@ -250,7 +285,7 @@ async function cargarFechas() {
       </div>
       ${f.goles_a === null
         ? '<span class="fila-dato">PENDIENTE</span>'
-        : `<span class="fila-dato">${f.goles_a} - ${f.goles_b}${f.cs_a || f.cs_b ? ' · CS' : ''}</span>`}
+        : `<span class="fila-dato">${f.goles_a} - ${f.goles_b}${(+f.cs_a || +f.cs_b) ? ' · CS' : ''}</span>`}
       <div class="fila-acciones">
         <button class="btn-ico ok" data-ir-resultado="${f.id}">RESULTADO</button>
         <button class="btn-ico" data-del-fecha="${f.id}">ELIMINAR</button>
@@ -294,17 +329,39 @@ $('#listaFechas').addEventListener('click', async (ev) => {
   if (irR) {
     $('#selFecha').value = irR.dataset.irResultado;
     mostrarInfoPartido();
-    $$('.side-item').find((b) => b.dataset.tab === 'resultados').click();
+    irATab('resultados');
   }
 });
 
 /* -------------------------------------------------------- RESULTADOS */
+function jsonLista(v) {
+  if (Array.isArray(v)) return v;
+  try {
+    const x = JSON.parse(v || '[]');
+    return Array.isArray(x) ? x : [];
+  } catch (e) { return []; }
+}
+
 function mostrarInfoPartido() {
   const id = $('#selFecha').value;
   const f = ESTADO.fechas.find((x) => String(x.id) === String(id));
   $('#infoPartido').innerHTML = f
     ? `⚽ <b>${esc(f.sigla_a)} vs ${esc(f.sigla_b)}</b> · ${fechaCorta(f.fecha)} ${String(f.hora || '').slice(0, 5)}`
     : 'Selecciona un partido para registrar su resultado.';
+
+  const form = $('#formResultado');
+  if (!form || !f) return;
+
+  const jugado = f.goles_a !== null && f.goles_a !== undefined;
+  form.goles_a.value = jugado ? (+f.goles_a || 0) : 0;
+  form.goles_b.value = jugado ? (+f.goles_b || 0) : 0;
+  form.cs_a.value = jugado ? (+f.cs_a || 0) : 0;
+  form.cs_b.value = jugado ? (+f.cs_b || 0) : 0;
+
+  $('#listaGoleadores').innerHTML = jugado
+    ? jsonLista(f.goleadores).map((g) => chipHTML('gol', 0, g)).join('') : '';
+  $('#listaAsistencias').innerHTML = jugado
+    ? jsonLista(f.asistencias).map((a) => chipHTML('asistencia', 0, a)).join('') : '';
 }
 
 $('#selFecha').addEventListener('change', mostrarInfoPartido);
@@ -377,8 +434,7 @@ $('#btnBorrarResultado').addEventListener('click', () => {
 
 function f_reiniciarResultado() {
   const f = $('#formResultado');
-  ['goles_a', 'goles_b', 'minutos_cs', 'portero_a', 'portero_b'].forEach((n) => f[n].value = '');
-  f.cs_a.value = '0'; f.cs_b.value = '0';
+  ['goles_a', 'goles_b', 'cs_a', 'cs_b'].forEach((n) => { if (f[n]) f[n].value = '0'; });
   $('#listaGoleadores').innerHTML = '';
   $('#listaAsistencias').innerHTML = '';
 }
@@ -477,41 +533,175 @@ async function editarContenido(id) {
 }
 
 /* ------------------------------------------------------------ MODULOS */
+let moduloEditando = null;
+
 async function cargarModulos() {
   const r = await get('/api/admin/modulos');
   ESTADO.modulos = r.modulos || [];
-  $('#listaModulos').innerHTML = ESTADO.modulos.map((m) => `
-    <div class="fila ${m.activo ? 'principal' : ''}">
-      <div class="fila-info">
-        <strong>${esc(m.nombre)}</strong>
-        <small>Titulo en la pagina: ${esc(m.titulo)} · Orden ${m.orden}</small>
-        <small>${esc(m.subtitulo || '')}</small>
-      </div>
-      <span class="fila-dato">${m.activo ? 'ACTIVO' : 'OCULTO'}</span>
-      <div class="fila-acciones">
-        <button class="btn-ico" data-edit-mod="${m.id}">EDITAR</button>
-      </div>
-    </div>`).join('');
+  pintarModulos();
+}
+
+function pintarModulos() {
+  $('#listaModulos').innerHTML = ESTADO.modulos.map((m) => {
+    const editando = String(moduloEditando) === String(m.id);
+    const fila = `
+      <div class="fila ${m.activo ? 'principal' : ''}">
+        <div class="fila-info">
+          <strong>${esc(m.nombre)}</strong>
+          <small>Titulo en la pagina: ${esc(m.titulo)} · Orden ${m.orden}</small>
+          ${m.subtitulo ? `<small>${esc(m.subtitulo)}</small>` : ''}
+        </div>
+        <span class="fila-dato">${m.activo ? 'ACTIVO' : 'OCULTO'}</span>
+        <div class="fila-acciones">
+          <button class="btn-ico" data-edit-mod="${m.id}">${editando ? 'CERRAR' : 'EDITAR'}</button>
+        </div>
+      </div>`;
+
+    if (!editando) return fila;
+
+    return fila + `
+      <form class="form-grid form-edicion" data-form-mod="${m.id}">
+        <label>Boton en el header <input name="nombre" value="${esc(m.nombre)}" maxlength="60" required></label>
+        <label>Titulo de la seccion <input name="titulo" value="${esc(m.titulo)}" maxlength="160" required></label>
+        <label>Texto introductorio <input name="subtitulo" value="${esc(m.subtitulo || '')}" maxlength="300"></label>
+        <label>Orden en el menu <input name="orden" type="number" min="1" max="50" value="${m.orden}"></label>
+        <label>Visible en el header
+          <select name="activo">
+            <option value="1" ${m.activo ? 'selected' : ''}>Si</option>
+            <option value="0" ${m.activo ? '' : 'selected'}>No</option>
+          </select>
+        </label>
+        <div class="form-acciones">
+          <button class="btn btn-primary" type="submit">GUARDAR CAMBIOS</button>
+          <button class="btn btn-soft" type="button" data-cancel-mod>CANCELAR</button>
+        </div>
+      </form>`;
+  }).join('');
 }
 
 $('#listaModulos').addEventListener('click', async (ev) => {
   const b = ev.target.closest('[data-edit-mod]');
-  if (!b) return;
-  const m = ESTADO.modulos.find((x) => x.id == b.dataset.editMod);
+  if (b) {
+    moduloEditando = String(moduloEditando) === String(b.dataset.editMod) ? null : b.dataset.editMod;
+    pintarModulos();
+    return;
+  }
+  if (ev.target.closest('[data-cancel-mod]')) {
+    moduloEditando = null;
+    pintarModulos();
+  }
+});
 
-  const nombre = prompt('Nombre del boton en el header:', m.nombre);
-  if (nombre === null) return;
-  const titulo = prompt('Titulo grande de la seccion:', m.titulo);
-  if (titulo === null) return;
-  const subtitulo = prompt('Texto introductorio:', m.subtitulo || '');
-  if (subtitulo === null) return;
-  const orden = prompt('Orden en el menu (1 al 9):', m.orden);
-  if (orden === null) return;
-  const activo = confirm('¿El modulo debe mostrarse en el header?') ? 1 : 0;
+$('#listaModulos').addEventListener('submit', async (ev) => {
+  const form = ev.target.closest('[data-form-mod]');
+  if (!form) return;
+  ev.preventDefault();
+  try {
+    await put(`/api/admin/modulos/${form.dataset.formMod}`, Object.fromEntries(new FormData(form)));
+    moduloEditando = null;
+    await cargarModulos();
+    toast('Modulo actualizado. La pagina ya lo muestra.');
+  } catch (e) { toast(e.message); }
+});
 
-  await put(`/api/admin/modulos/${m.id}`, { nombre, titulo, subtitulo, orden, activo });
-  await cargarModulos();
-  toast('Modulo actualizado. La pagina ya lo muestra.');
+/* ----------------------------------------------------------- CONTENIDO */
+let filtroTodo = 'todo';
+
+async function cargarContenidoTodo() {
+  await cargarContenidos();
+  pintarContenidoTodo();
+}
+
+function pintarContenidoTodo() {
+  const porModulo = {};
+  MODULOS_TODOS.forEach((m) => { porModulo[m] = { total: 0, ocultos: 0 }; });
+  ESTADO.contenidos.forEach((c) => {
+    const d = porModulo[c.modulo] || (porModulo[c.modulo] = { total: 0, ocultos: 0 });
+    d.total++;
+    if (!c.visible) d.ocultos++;
+  });
+  const totalTodo = ESTADO.contenidos.length;
+
+  $('#modTiles').innerHTML =
+    `<button class="mod-tile ${filtroTodo === 'todo' ? 'activo' : ''}" data-todo type="button">
+       <small>TODO</small><strong>${totalTodo}</strong><span>publicaciones</span>
+     </button>` +
+    MODULOS_TODOS.map((m) => `
+      <button class="mod-tile ${filtroTodo === m ? 'activo' : ''}" data-tile="${m}" type="button">
+        <small>${m.toUpperCase()}</small>
+        <strong>${porModulo[m] ? porModulo[m].total : 0}</strong>
+        <span>${porModulo[m] && porModulo[m].ocultos ? porModulo[m].ocultos + ' ocultas' : 'publicadas'}</span>
+      </button>`).join('');
+
+  $('#filtroTodoModulo').innerHTML = ['todo', ...MODULOS_TODOS].map((m) =>
+    `<button class="filtro ${m === filtroTodo ? 'activo' : ''}" data-filtro-todo="${m}" type="button">${m.toUpperCase()}</button>`
+  ).join('');
+
+  pintarListaContenidoTodo();
+}
+
+function pintarListaContenidoTodo() {
+  const items = ESTADO.contenidos.filter((c) => filtroTodo === 'todo' || c.modulo === filtroTodo);
+  $('#listaContenidoTodo').innerHTML = items.length ? items.map((c) => `
+    <div class="fila">
+      <div class="fila-info">
+        <strong>${esc(c.titulo)}</strong>
+        <small>${c.modulo.toUpperCase()} · ${esc(c.subtitulo || '')} · ${fechaCorta(c.fecha)}
+          ${c.enlace ? ` · <a href="${esc(c.enlace)}" target="_blank" rel="noopener">enlace</a>` : ''}</small>
+      </div>
+      <span class="fila-dato">${c.visible ? 'VISIBLE' : 'OCULTO'}</span>
+      <div class="fila-acciones">
+        <button class="btn-ico" data-edit-todo="${c.id}">EDITAR</button>
+        <button class="btn-ico" data-vis-todo="${c.id}">${c.visible ? 'OCULTAR' : 'MOSTRAR'}</button>
+        <button class="btn-ico peligro" data-del-todo="${c.id}">ELIMINAR</button>
+      </div>
+    </div>`).join('')
+    : '<div class="vacio-mini">Sin publicaciones en este modulo.</div>';
+}
+
+function filtrarContenidoTodo(m) {
+  filtroTodo = m;
+  pintarContenidoTodo();
+}
+
+$('#modTiles').addEventListener('click', (ev) => {
+  const todo = ev.target.closest('[data-todo]');
+  if (todo) return filtrarContenidoTodo('todo');
+  const t = ev.target.closest('[data-tile]');
+  if (t) filtrarContenidoTodo(t.dataset.tile);
+});
+
+$('#filtroTodoModulo').addEventListener('click', (ev) => {
+  const b = ev.target.closest('[data-filtro-todo]');
+  if (b) filtrarContenidoTodo(b.dataset.filtroTodo);
+});
+
+$('#listaContenidoTodo').addEventListener('click', async (ev) => {
+  const e = ev.target.closest('[data-edit-todo]');
+  if (e) {
+    await editarContenido(e.dataset.editTodo);
+    irATab('anuncios');
+    return;
+  }
+  const v = ev.target.closest('[data-vis-todo]');
+  if (v) {
+    const c = ESTADO.contenidos.find((x) => String(x.id) === String(v.dataset.visTodo));
+    if (!c) return;
+    try {
+      await put(`/api/admin/contenidos/${c.id}`, { ...c, visible: c.visible ? 0 : 1 });
+      await cargarContenidoTodo();
+      toast(c.visible ? 'Publicacion oculta' : 'Publicacion visible en la pagina');
+    } catch (err) { toast(err.message); }
+    return;
+  }
+  const d = ev.target.closest('[data-del-todo]');
+  if (d) {
+    confirmar('Se eliminara esta publicacion de la pagina.', async () => {
+      await del(`/api/admin/contenidos/${d.dataset.delTodo}`);
+      await cargarContenidoTodo();
+      toast('Publicacion eliminada');
+    });
+  }
 });
 
 /* --------------------------------------------------------------- FORO */
@@ -528,7 +718,7 @@ async function cargarForo() {
       <div class="fila-acciones">
         <button class="btn-ico peligro" data-del-foro="${m.id}">ELIMINAR</button>
       </div>
-    </div>`).join('') : '<div class="vacio-mini">No hay mensajes.</div>';
+    </div>`).join('') : '<div class="vacio-mini">Todavia no hay mensajes en el foro.</div>';
 }
 
 $('#listaForo').addEventListener('click', (ev) => {
@@ -555,8 +745,14 @@ $('#btnSalir').addEventListener('click', async () => {
     $('#adminNombre').textContent = s.nombre || 'Admin';
     $('#adminRol').textContent = s.rol || 'ADMINISTRADOR';
 
-    await Promise.all([cargarEquipos(), cargarFechas(), cargarResumen()]);
+    const cargas = await Promise.allSettled([
+      cargarEquipos(), cargarFechas(), cargarResumen(),
+      cargarContenidos(), cargarModulos(), cargarForo()
+    ]);
+    cargas.forEach((c) => { if (c.status === 'rejected') console.error(c.reason); });
   } catch (e) {
     console.error(e);
+  } finally {
+    ocultarPreloader();
   }
 })();

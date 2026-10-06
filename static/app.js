@@ -10,6 +10,16 @@ const $$ = (sel, ctx = document) => Array.from(ctx.querySelectorAll(sel));
 const DATOS = { modulos: [], contenidos: {}, equipos: [], fechas: [], foro: [] };
 
 /* ------------------------------------------------------------ UTILIDADES */
+function ocultarPreloader() {
+  const p = document.getElementById('preloader');
+  document.body.classList.remove('carga-activa');
+  if (!p) return;
+  p.classList.add('fuera');
+  setTimeout(() => { if (p.parentNode) p.parentNode.removeChild(p); }, 500);
+}
+/* Red de seguridad: nunca dejamos la pantalla de carga pegada */
+setTimeout(ocultarPreloader, 8000);
+
 const esc = (txt) => String(txt ?? '').replace(/[&<>"']/g,
   (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
@@ -129,9 +139,10 @@ function tarjetaPartido(f) {
       `${esc(g.jugador)} (${g.equipo === 'a' ? f.sigla_a : f.sigla_b}) x${g.goles || 1}`).join(' · ');
     const asist = (f.asistencias || []).map((a) => esc(a.jugador)).join(' · ');
     const tags = [];
-    if (f.cs_a) tags.push(`CS ${esc(f.portero_a || f.sigla_a)}`);
-    if (f.cs_b) tags.push(`CS ${esc(f.portero_b || f.sigla_b)}`);
-    if (f.minutos_cs) tags.push(`${f.minutos_cs} min sin goles`);
+    const csA = Number(f.cs_a) || 0;
+    const csB = Number(f.cs_b) || 0;
+    if (csA > 0) tags.push(`CS ${esc(f.sigla_a)}${csA > 1 ? ` x${csA}` : ''}`);
+    if (csB > 0) tags.push(`CS ${esc(f.sigla_b)}${csB > 1 ? ` x${csB}` : ''}`);
     detalle = `<div class="partido-detalle">
         ${goals ? `Goles: <b>${goals}</b><br>` : ''}
         ${asist ? `Asistencias: ${asist}` : ''}
@@ -521,8 +532,6 @@ $('#mobileMenu').addEventListener('click', (e) => {
 
 /* --------------------------------------------------------------- INICIO */
 async function iniciar() {
-  // Muestra las secciones de inmediato para que se vea el esqueleto de carga
-  revelar();
   configBotonSubir();
 
   try {
@@ -549,7 +558,6 @@ async function iniciar() {
     pintarForo();
     revelar();
     scrollSpy();
-    configBotonSubir();
 
     // Si el admin ya tiene sesion, el boton abre el panel
     const s = await pedir('/api/sesion');
@@ -560,6 +568,9 @@ async function iniciar() {
   } catch (err) {
     console.error(err);
     toast('No se pudo conectar con la base de datos');
+  } finally {
+    revelar();
+    requestAnimationFrame(ocultarPreloader);
   }
 }
 
