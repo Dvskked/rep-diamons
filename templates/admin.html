@@ -6,6 +6,9 @@
 <meta name="theme-color" content="#050d18">
 <title>Panel · The Diamonds League</title>
 <link rel="icon" href="/static/assets/favicon-64.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Barlow:wght@400;500;600;700&display=swap">
 <link rel="stylesheet" href="/static/styles.css">
 <link rel="stylesheet" href="/static/admin.css">
 <noscript><style>.preloader{display:none}body.carga-activa{overflow:auto}</style></noscript>
@@ -37,10 +40,11 @@
     <button class="side-item" type="button" data-tab="equipos"><span>02</span> Equipos</button>
     <button class="side-item" type="button" data-tab="fechas"><span>03</span> Fechas</button>
     <button class="side-item" type="button" data-tab="resultados"><span>04</span> Resultados</button>
-    <button class="side-item" type="button" data-tab="anuncios"><span>05</span> Anuncios</button>
-    <button class="side-item" type="button" data-tab="contenido"><span>06</span> Contenido</button>
-    <button class="side-item" type="button" data-tab="modulos"><span>07</span> Modulos</button>
-    <button class="side-item" type="button" data-tab="foro"><span>08</span> Foro</button>
+    <button class="side-item" type="button" data-tab="ideal"><span>05</span> X5 Ideal</button>
+    <button class="side-item" type="button" data-tab="anuncios"><span>06</span> Anuncios</button>
+    <button class="side-item" type="button" data-tab="contenido"><span>07</span> Contenido</button>
+    <button class="side-item" type="button" data-tab="modulos"><span>08</span> Modulos</button>
+    <button class="side-item" type="button" data-tab="foro"><span>09</span> Foro</button>
   </nav>
 
   <div class="side-foot">
@@ -85,25 +89,32 @@
   <!-- ============ EQUIPOS ============ -->
   <section class="tab-panel" data-panel="equipos">
     <div class="card">
-      <h3>Nuevo equipo</h3>
+      <h3 id="tituloFormEquipo">Nuevo equipo</h3>
       <form class="form-grid" id="formEquipo">
+        <input type="hidden" name="id">
         <label>Nombre <input name="nombre" required maxlength="100"></label>
         <label>Sigla <input name="sigla" maxlength="10" required></label>
         <label>Division
           <select name="division"><option value="D1">D1</option><option value="D2">D2</option></select>
         </label>
+        <label>Color del equipo <input name="color" type="color" value="#7CF5FF"></label>
         <label>Entrenador <input name="entrenador" maxlength="100"></label>
         <label>Ciudad <input name="ciudad" maxlength="80"></label>
-        <label>Fundado <input name="fundado" type="number" min="1900" max="2100" placeholder="2024"></label>
         <label class="ancho">Escudo
           <input name="escudo" type="file" accept="image/*">
         </label>
-        <div class="form-acciones"><button class="btn btn-primary" type="submit">GUARDAR EQUIPO</button></div>
+        <p class="nota ancho">Usa colores claros: blanco, celeste, verde, amarillo, rosa o lila.
+          Los colores oscuros casi no se ven sobre el fondo de la pagina.</p>
+        <div class="form-acciones">
+          <button class="btn btn-primary" type="submit">GUARDAR EQUIPO</button>
+          <button class="btn btn-soft" type="button" id="btnCancelarEquipo">LIMPIAR</button>
+        </div>
       </form>
     </div>
 
     <div class="card">
       <h3>Equipos y jugadores</h3>
+      <div class="filtro-admin" id="filtroDivEquipo"></div>
       <div id="listaEquipos" class="admin-lista"></div>
     </div>
   </section>
@@ -162,6 +173,36 @@
           <button class="btn btn-peligro" type="button" id="btnBorrarResultado">BORRAR RESULTADO</button>
         </div>
       </form>
+    </div>
+  </section>
+
+  <!-- ============ X5 IDEAL ============ -->
+  <section class="tab-panel" data-panel="ideal">
+    <div class="card">
+      <h3>Armar el cinco ideal de la jornada</h3>
+      <p class="nota">Son 5 jugadores de cualquier equipo. Elige la jornada, la division,
+        la posicion de cada uno y guarda.</p>
+      <form class="form-grid" id="formIdeal">
+        <label>Jornada
+          <input name="jornada" id="idealJornada" list="listaJornadas" value="JORNADA 1" maxlength="40" required>
+          <datalist id="listaJornadas"></datalist>
+        </label>
+        <label>Division
+          <select name="division" id="idealDivision">
+            <option value="D1">D1</option><option value="D2">D2</option>
+          </select>
+        </label>
+        <div class="ideal-slots ancho" id="idealSlots"></div>
+        <div class="form-acciones">
+          <button class="btn btn-primary" type="submit">GUARDAR X5 IDEAL</button>
+          <button class="btn btn-peligro" type="button" id="btnBorrarIdeal">BORRAR JORNADA</button>
+        </div>
+      </form>
+    </div>
+
+    <div class="card">
+      <h3>Cinco ideal guardado</h3>
+      <div id="listaIdeales" class="admin-lista"></div>
     </div>
   </section>
 

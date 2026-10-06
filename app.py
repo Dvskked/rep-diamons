@@ -124,6 +124,44 @@ def _cuerpo():
     return request.form.to_dict(flat=True)
 
 
+POSICIONES = ("GK", "Mid", "Dfwd", "Fwd")
+POSICIONES_VIEJAS = {
+    "portero": "GK", "arquero": "GK", "gk": "GK",
+    "titular": "Mid", "mediocampo": "Mid", "centrocampista": "Mid", "mid": "Mid",
+    "defensa": "Dfwd", "defensor": "Dfwd", "dfwd": "Dfwd",
+    "delantero": "Fwd", "fwd": "Fwd", "suplente": "Mid",
+}
+COLOR_DEFECTO = "#0AFFD6"
+
+
+def _color(valor):
+    """Valida un color hex corto. Devuelve uno de defecto si no lo es."""
+    texto = (valor or "").strip().upper()
+    if len(texto) in (4, 7) and texto.startswith("#") \
+            and all(c in "0123456789ABCDEF" for c in texto[1:]):
+        return texto
+    return COLOR_DEFECTO
+
+
+def _posicion(valor):
+    """Valida la posicion del jugador (GK, Mid, Dfwd, Fwd)."""
+    texto = (valor or "").strip().lower()
+    return POSICIONES_VIEJAS.get(texto, _a_posicion(texto))
+
+
+def _a_posicion(texto):
+    for p in POSICIONES:
+        if texto == p.lower():
+            return p
+    return "Mid"
+
+
+def _dorsal(valor):
+    """Dorsal de maximo 2 caracteres (numeros o letra)."""
+    texto = (valor or "").strip()
+    return texto[:2] if texto else None
+
+
 def _subir_escudo():
     """Guarda el escudo subido y devuelve la ruta publica (o '')."""
     archivo = request.files.get("escudo")
@@ -186,9 +224,10 @@ def api_sitio():
     equipos = db.consultar("SELECT * FROM equipos ORDER BY nombre ASC")
 
     jugadores = db.consultar(
-        "SELECT j.*, e.sigla AS equipo_sigla, e.nombre AS equipo_nombre"
+        "SELECT j.*, e.sigla AS equipo_sigla, e.nombre AS equipo_nombre,"
+        " e.color AS equipo_color"
         " FROM jugadores j JOIN equipos e ON e.id = j.equipo_id"
-        " ORDER BY e.nombre ASC, j.numero IS NULL, j.numero ASC"
+        " ORDER BY e.nombre ASC, j.dorsal IS NULL, j.dorsal ASC"
     )
     por_equipo = {}
     for j in jugadores:
@@ -198,7 +237,9 @@ def api_sitio():
 
     fechas = db.consultar(
         "SELECT f.*, a.nombre AS equipo_a, a.sigla AS sigla_a, a.escudo AS escudo_a,"
+        "       a.color AS color_a, a.division AS division_a,"
         "       b.nombre AS equipo_b, b.sigla AS sigla_b, b.escudo AS escudo_b,"
+        "       b.color AS color_b, b.division AS division_b,"
         "       r.goles_a, r.goles_b, r.goleadores, r.asistencias,"
         "       r.portero_a, r.portero_b, r.cs_a, r.cs_b, r.minutos_cs,"
         "       (r.id IS NOT NULL) AS jugado"
@@ -214,12 +255,24 @@ def api_sitio():
         if f["jugado"]:
             f["jugado"] = bool(f["jugado"])
 
+    ideales = db.consultar(
+        "SELECT i.id, i.jornada, i.division, i.posicion, i.orden,"
+        " j.id AS jugador_id, j.nombre AS jugador, j.dorsal,"
+        " e.id AS equipo_id, e.nombre AS equipo, e.sigla AS equipo_sigla,"
+        " e.color AS equipo_color, e.escudo AS equipo_escudo"
+        " FROM ideales i"
+        " JOIN jugadores j ON j.id = i.jugador_id"
+        " JOIN equipos e ON e.id = j.equipo_id"
+        " ORDER BY i.jornada ASC, i.division ASC, i.orden ASC"
+    )
+
     return jsonify({
         "ok": True,
         "modulos": modulos,
         "contenidos": por_modulo,
         "equipos": equipos,
         "fechas": fechas,
+        "ideales": ideales,
         "foro": db.consultar(
             "SELECT id, nombre, mensaje, fecha FROM foro ORDER BY id DESC LIMIT 60"
         ),
@@ -298,7 +351,9 @@ def admin_equipos():
     if bloqueo:
         return bloqueo
     equipos = db.consultar("SELECT * FROM equipos ORDER BY nombre ASC")
-    jugadores = db.consultar("SELECT * FROM jugadores ORDER BY numero IS NULL, numero ASC")
+    jugadores = db.consultar(
+        "SELECT * FROM jugadores ORDER BY dorsal IS NULL, dorsal ASC"
+    )
     por_equipo = {}
     for j in jugadores:
         por_equipo.setdefault(j["equipo_id"], []).append(j)
@@ -319,12 +374,14 @@ def admin_crear_equipo():
     if not nombre or not sigla:
         return jsonify({"ok": False, "error": "Nombre y sigla son obligatorios"}), 400
 
-    nuevo_id = db.ejecutar(
-        "INSERT INTO equipos (nombre, sigla, division, escudo, entrenador, fundado, ciudad)"
-        " VALUES (%s, %s, %s, %s, %s, %s, %s)",
+    nuevo_id = db.insertar(
+        "INSERT INTO equipos (nombre, sigla, division, color, escudo, entrenador,"
+        " fundado, ciudad)"
+        " VALUES (%s, %s, %s, %s, %s, %s, %s, %s)",
         (
             nombre, sigla,
             (datos.get("division") or "D1").strip(),
+            _color(datos.get("color")),
             _subir_escudo(),
             (datos.get("entrenador") or "").strip(),
             datos.get("fundado") or None,
@@ -342,14 +399,17 @@ def admin_editar_equipo(equipo_id):
         return bloqueo
 
     datos = _cuerpo()
-    escudo = _subir_escudo() or datos.get("escudo") or ""
+    actual = db.consultar_uno("SELECT escudo FROM equipos WHERE id = %s",
+                              (equipo_id,))
+    escudo = _subir_escudo() or (actual["escudo"] if actual else "")
     db.ejecutar(
-        "UPDATE equipos SET nombre=%s, sigla=%s, division=%s, escudo=%s,"
+        "UPDATE equipos SET nombre=%s, sigla=%s, division=%s, color=%s, escudo=%s,"
         " entrenador=%s, fundado=%s, ciudad=%s WHERE id=%s",
         (
             (datos.get("nombre") or "").strip(),
             (datos.get("sigla") or "").strip().upper(),
             (datos.get("division") or "D1").strip(),
+            _color(datos.get("color")),
             escudo,
             (datos.get("entrenador") or "").strip(),
             datos.get("fundado") or None,
@@ -382,14 +442,42 @@ def admin_crear_jugador():
     if not equipo_id or not nombre:
         return jsonify({"ok": False, "error": "Equipo y nombre son obligatorios"}), 400
 
-    nuevo_id = db.ejecutar(
-        "INSERT INTO jugadores (equipo_id, nombre, numero, posicion)"
+    nuevo_id = db.insertar(
+        "INSERT INTO jugadores (equipo_id, nombre, dorsal, posicion)"
         " VALUES (%s, %s, %s, %s)",
-        (equipo_id, nombre, datos.get("numero") or None,
-         (datos.get("posicion") or "Titular").strip()),
+        (equipo_id, nombre, _dorsal(datos.get("dorsal")),
+         _posicion(datos.get("posicion"))),
     )
     return jsonify({"ok": True, "jugador": db.consultar_uno(
         "SELECT * FROM jugadores WHERE id=%s", (nuevo_id,))}), 201
+
+
+@app.put("/api/admin/jugadores/<int:jugador_id>")
+def admin_editar_jugador(jugador_id):
+    bloqueo = _bloqueado()
+    if bloqueo:
+        return bloqueo
+
+    datos = _cuerpo()
+    actual = db.consultar_uno(
+        "SELECT * FROM jugadores WHERE id = %s", (jugador_id,)
+    )
+    if not actual:
+        return jsonify({"ok": False, "error": "No existe"}), 404
+
+    db.ejecutar(
+        "UPDATE jugadores SET equipo_id=%s, nombre=%s, dorsal=%s, posicion=%s"
+        " WHERE id=%s",
+        (
+            datos.get("equipo_id") or actual["equipo_id"],
+            (datos.get("nombre") or actual["nombre"]).strip(),
+            _dorsal(datos.get("dorsal")),
+            _posicion(datos.get("posicion")),
+            jugador_id,
+        ),
+    )
+    return jsonify({"ok": True, "jugador": db.consultar_uno(
+        "SELECT * FROM jugadores WHERE id=%s", (jugador_id,))})
 
 
 @app.delete("/api/admin/jugadores/<int:jugador_id>")
@@ -398,6 +486,105 @@ def admin_borrar_jugador(jugador_id):
     if bloqueo:
         return bloqueo
     db.ejecutar("DELETE FROM jugadores WHERE id = %s", (jugador_id,))
+    return jsonify({"ok": True})
+
+
+# --------------------------------------------------------------------------
+# Admin - X5 ideal de cada jornada
+# --------------------------------------------------------------------------
+
+
+@app.get("/api/admin/ideales")
+def admin_ideales():
+    bloqueo = _bloqueado()
+    if bloqueo:
+        return bloqueo
+    return jsonify({
+        "ok": True,
+        "ideales": db.consultar(
+            "SELECT i.id, i.jornada, i.division, i.posicion, i.orden,"
+            " j.id AS jugador_id, j.nombre AS jugador, j.dorsal,"
+            " e.nombre AS equipo, e.sigla AS equipo_sigla, e.color AS equipo_color"
+            " FROM ideales i"
+            " JOIN jugadores j ON j.id = i.jugador_id"
+            " JOIN equipos e ON e.id = j.equipo_id"
+            " ORDER BY i.jornada DESC, i.division ASC, i.orden ASC"
+        ),
+        "jornadas": db.consultar(
+            "SELECT DISTINCT jornada FROM fechas ORDER BY jornada DESC"
+        ),
+    })
+
+
+@app.post("/api/admin/ideales")
+def admin_guardar_ideal():
+    """Guarda el cinco ideal de una jornada (5 jugadores de cualquier equipo)."""
+    bloqueo = _bloqueado()
+    if bloqueo:
+        return bloqueo
+
+    datos = _cuerpo()
+    jornada = (datos.get("jornada") or "").strip().upper()[:40]
+    division = (datos.get("division") or "D1").strip().upper()
+    slots = datos.get("slots") or []
+
+    if not jornada:
+        return jsonify({"ok": False, "error": "Escribe la jornada"}), 400
+    if division not in ("D1", "D2"):
+        return jsonify({"ok": False, "error": "Division invalida"}), 400
+
+    limpios, ordenes, vistos = [], set(), set()
+    for slot in slots[:5]:
+        jugador_id = slot.get("jugador_id")
+        try:
+            jugador_id = int(jugador_id)
+        except (TypeError, ValueError):
+            continue
+        if jugador_id in vistos:
+            return jsonify({"ok": False,
+                            "error": "Un jugador no puede repetirse en el cinco ideal"}), 400
+        if not db.consultar_uno("SELECT id FROM jugadores WHERE id = %s",
+                                (jugador_id,)):
+            return jsonify({"ok": False,
+                            "error": "El jugador %s no existe" % jugador_id}), 400
+        orden = entero_orden(slot.get("orden"), len(limpios) + 1)
+        orden = min(max(orden, 1), 5)
+        if orden in ordenes:
+            orden = len(limpios) + 1
+        ordenes.add(orden)
+        vistos.add(jugador_id)
+        limpios.append((jornada, division, jugador_id,
+                        _posicion(slot.get("posicion")), orden))
+
+    if len(limpios) > 5:
+        return jsonify({"ok": False, "error": "El cinco ideal son 5 jugadores"}), 400
+
+    db.ejecutar(
+        "DELETE FROM ideales WHERE jornada = %s AND division = %s",
+        (jornada, division),
+    )
+    if limpios:
+        db.ejecutar_varios(
+            "INSERT INTO ideales (jornada, division, jugador_id, posicion, orden)"
+            " VALUES (%s, %s, %s, %s, %s)",
+            limpios,
+        )
+    return jsonify({"ok": True, "guardados": len(limpios)})
+
+
+@app.delete("/api/admin/ideales")
+def admin_borrar_ideal():
+    bloqueo = _bloqueado()
+    if bloqueo:
+        return bloqueo
+    jornada = (request.args.get("jornada") or "").strip()
+    division = (request.args.get("division") or "").strip()
+    if not jornada or not division:
+        return jsonify({"ok": False, "error": "Faltan jornada o division"}), 400
+    db.ejecutar(
+        "DELETE FROM ideales WHERE jornada = %s AND division = %s",
+        (jornada, division),
+    )
     return jsonify({"ok": True})
 
 
@@ -435,7 +622,7 @@ def admin_crear_fecha():
     if str(equipo_a) == str(equipo_b):
         return jsonify({"ok": False, "error": "Un equipo no juega consigo mismo"}), 400
 
-    nuevo_id = db.ejecutar(
+    nuevo_id = db.insertar(
         "INSERT INTO fechas (equipo_a_id, equipo_b_id, fecha, hora, jornada, fase, sala)"
         " VALUES (%s, %s, %s, %s, %s, %s, %s)",
         (
@@ -566,7 +753,7 @@ def admin_crear_contenido():
         (modulo,),
     )["n"]
 
-    nuevo_id = db.ejecutar(
+    nuevo_id = db.insertar(
         "INSERT INTO contenidos (modulo, titulo, subtitulo, texto, enlace, imagen,"
         " dato_extra, categoria, fecha, orden, visible)"
         " VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",

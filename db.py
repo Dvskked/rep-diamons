@@ -52,6 +52,14 @@ def ejecutar(sql, args=None):
             return cur.rowcount
 
 
+def insertar(sql, args=None):
+    """INSERT -> id autogenerado (lastrowid)."""
+    with conexion() as cx:
+        with cx.cursor() as cur:
+            cur.execute(sql, args or ())
+            return cur.lastrowid
+
+
 def ejecutar_varios(sql, args):
     """Ejecuta varios INSERT de una sola vez."""
     if not args:

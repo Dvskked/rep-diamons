@@ -31,6 +31,9 @@
 <link rel="icon" type="image/png" href="/static/assets/favicon-64.png">
 <link rel="apple-touch-icon" href="/static/assets/logo-mark.png">
 <link rel="preload" as="image" href="/static/assets/logo-320.webp" type="image/webp">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Barlow:wght@400;500;600;700&display=swap">
 <link rel="stylesheet" href="/static/styles.css">
 <noscript><style>.preloader{display:none}body.carga-activa{overflow:auto}</style></noscript>
 
@@ -113,7 +116,6 @@
   <nav class="nav" id="navPrincipal" aria-label="Navegacion principal"></nav>
 
   <div class="topbar-right">
-    <a class="btn-donar" href="#donacion" data-donar>DONACION</a>
     <button class="btn-admin" type="button" id="btnAdmin">ADMINISTRAR</button>
     <button class="menu-toggle" type="button" id="menuToggle" aria-label="Abrir menu" aria-expanded="false">
       <span></span><span></span><span></span>
@@ -171,19 +173,26 @@
       <p data-subtitulo="liga">Cargando informacion de la liga...</p>
     </div>
 
-    <div class="liga-toggles reveal" id="ligaTabs">
-      <button class="pestana activa" type="button" data-division="D1">DIVISION 1</button>
-      <button class="pestana" type="button" data-division="D2">DIVISION 2</button>
-      <button class="pestana" type="button" data-vista="fechas">FECHAS</button>
-      <button class="pestana" type="button" data-vista="tabla">TABLA</button>
-      <button class="pestana" type="button" data-vista="stats">GOLEADORES</button>
+    <div class="liga-controles reveal" id="ligaTabs">
+      <div class="liga-grupo" id="ligaDivision">
+        <span class="liga-etiqueta">DIVISION</span>
+        <button class="pestana activa" type="button" data-division="D1">D1</button>
+        <button class="pestana" type="button" data-division="D2">D2</button>
+      </div>
+      <div class="liga-grupo" id="ligaVista">
+        <span class="liga-etiqueta">VISTA</span>
+        <button class="pestana activa" type="button" data-vista="equipos">EQUIPOS</button>
+        <button class="pestana" type="button" data-vista="tabla">TABLA</button>
+        <button class="pestana" type="button" data-vista="fechas">FECHAS</button>
+        <button class="pestana" type="button" data-vista="goleadores">GOLEADORES</button>
+        <button class="pestana" type="button" data-vista="asistencias">ASISTENCIAS</button>
+        <button class="pestana" type="button" data-vista="cs">CLEAN SHEETS</button>
+        <button class="pestana" type="button" data-vista="x5">X5 IDEAL</button>
+      </div>
     </div>
 
-    <div class="panel-panel activo" data-panel="D1">
+    <div class="panel-panel activo" data-panel="equipos">
       <div class="equipos-grid" id="equiposGrid"></div>
-    </div>
-    <div class="panel-panel" data-panel="D2">
-      <div class="equipos-grid" id="equiposGrid2"></div>
     </div>
 
     <div class="panel-panel" data-panel="fechas">
@@ -202,12 +211,27 @@
       </div>
     </div>
 
-    <div class="panel-panel" data-panel="stats">
-      <div class="stats-grid">
-        <article class="stat-card"><h3>GOLEADORES</h3><div id="listaGoles"></div></article>
-        <article class="stat-card"><h3>ASISTENCIAS</h3><div id="listaAsistencias"></div></article>
-        <article class="stat-card"><h3>CLEAN SHEETS</h3><div id="listaCs"></div></article>
+    <div class="panel-panel" data-panel="goleadores">
+      <article class="stat-card reveal"><h3>GOLEADORES</h3><div id="listaGoles"></div></article>
+    </div>
+
+    <div class="panel-panel" data-panel="asistencias">
+      <article class="stat-card reveal"><h3>ASISTENCIAS</h3><div id="listaAsistencias"></div></article>
+    </div>
+
+    <div class="panel-panel" data-panel="cs">
+      <article class="stat-card reveal"><h3>CLEAN SHEETS</h3><div id="listaCs"></div></article>
+    </div>
+
+    <div class="panel-panel" data-panel="x5">
+      <div class="x5-cab reveal">
+        <label class="x5-campo">
+          <span>JORNADA</span>
+          <select id="x5Jornada" aria-label="Jornada del cinco ideal"></select>
+        </label>
+        <p class="x5-nota">Los cinco elegidos por el staff para cada jornada de la division seleccionada.</p>
       </div>
+      <div class="x5-cancha" id="x5Cancha"></div>
     </div>
   </section>
 
