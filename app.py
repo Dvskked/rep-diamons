@@ -413,7 +413,7 @@ def admin_fechas():
         return bloqueo
     return jsonify({"ok": True, "fechas": db.consultar(
         "SELECT f.*, a.sigla AS sigla_a, b.sigla AS sigla_b,"
-        " r.goles_a, r.goles_b, r.cs_a, r.cs_b, r.minutos_cs"
+        " r.goles_a, r.goles_b, r.goleadores, r.asistencias, r.cs_a, r.cs_b"
         " FROM fechas f"
         " JOIN equipos a ON a.id=f.equipo_a_id"
         " JOIN equipos b ON b.id=f.equipo_b_id"
@@ -498,6 +498,11 @@ def admin_guardar_resultado(fecha_id):
         except (TypeError, ValueError):
             return defecto
 
+    def clean_sheet(valor):
+        if valor in (True, 1, "1", "on", "true", "True", "si", "SI"):
+            return 1
+        return min(max(entero(valor), 0), 99)
+
     db.ejecutar(
         "INSERT INTO resultados (fecha_id, goles_a, goles_b, goleadores, asistencias,"
         " portero_a, portero_b, cs_a, cs_b, minutos_cs)"
@@ -513,8 +518,8 @@ def admin_guardar_resultado(fecha_id):
             json.dumps(_a_lista(datos.get("asistencias")), ensure_ascii=False),
             (datos.get("portero_a") or "").strip(),
             (datos.get("portero_b") or "").strip(),
-            1 if datos.get("cs_a") in ("1", "on", "true", True) else 0,
-            1 if datos.get("cs_b") in ("1", "on", "true", True) else 0,
+            clean_sheet(datos.get("cs_a")),
+            clean_sheet(datos.get("cs_b")),
             entero(datos.get("minutos_cs")),
         ),
     )

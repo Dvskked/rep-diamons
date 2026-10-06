@@ -3,21 +3,36 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#050d18">
 <title>Panel · The Diamonds League</title>
-<link rel="icon" href="/static/assets/favicon.png">
+<link rel="icon" href="/static/assets/favicon-64.png">
 <link rel="stylesheet" href="/static/styles.css">
 <link rel="stylesheet" href="/static/admin.css">
+<noscript><style>.preloader{display:none}body.carga-activa{overflow:auto}</style></noscript>
 </head>
-<body class="admin-body">
+<body class="admin-body carga-activa">
+
+<!-- ================= PANTALLA DE CARGA ================= -->
+<div class="preloader" id="preloader" role="status" aria-live="polite">
+  <div class="preloader-caja">
+    <div class="preloader-logo">
+      <img src="/static/assets/logo-128.webp" width="116" height="116" alt="">
+      <span class="preloader-anillo"></span>
+    </div>
+    <strong>THE DIAMONDS LEAGUE</strong>
+    <small>CARGANDO EL PANEL</small>
+    <div class="preloader-barra"><i></i></div>
+  </div>
+</div>
 
 <!-- ================= SIDEBAR ================= -->
-<aside class="sidebar">
+<aside class="sidebar" id="sidebar">
   <div class="side-logo">
-    <img src="/static/assets/logo-mark.png" alt="">
+    <img src="/static/assets/logo-128.webp" width="44" height="44" alt="">
     <div><strong>PANEL</strong><small>DIAMONDS LEAGUE</small></div>
   </div>
 
-  <nav class="side-nav">
+  <nav class="side-nav" aria-label="Secciones del panel">
     <button class="side-item activo" type="button" data-tab="resumen"><span>01</span> Resumen</button>
     <button class="side-item" type="button" data-tab="equipos"><span>02</span> Equipos</button>
     <button class="side-item" type="button" data-tab="fechas"><span>03</span> Fechas</button>
@@ -34,10 +49,14 @@
     <small>(c) Neptunzinho</small>
   </div>
 </aside>
+<div class="side-overlay" id="sideOverlay"></div>
 
 <main class="admin-main">
 
   <header class="admin-top">
+    <button class="btn-menu" type="button" id="btnMenu" aria-label="Abrir menu" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
     <div>
       <h1 id="tabTitulo">Resumen</h1>
       <p id="tabTexto">Vista general del contenido de la liga.</p>
@@ -68,13 +87,13 @@
     <div class="card">
       <h3>Nuevo equipo</h3>
       <form class="form-grid" id="formEquipo">
-        <label>Nombre <input name="nombre" required></label>
+        <label>Nombre <input name="nombre" required maxlength="100"></label>
         <label>Sigla <input name="sigla" maxlength="10" required></label>
         <label>Division
           <select name="division"><option value="D1">D1</option><option value="D2">D2</option></select>
         </label>
-        <label>Entrenador <input name="entrenador"></label>
-        <label>Ciudad <input name="ciudad"></label>
+        <label>Entrenador <input name="entrenador" maxlength="100"></label>
+        <label>Ciudad <input name="ciudad" maxlength="80"></label>
         <label>Fundado <input name="fundado" type="number" min="1900" max="2100" placeholder="2024"></label>
         <label class="ancho">Escudo
           <input name="escudo" type="file" accept="image/*">
@@ -98,8 +117,8 @@
         <label>Equipo B <select name="equipo_b_id" required></select></label>
         <label>Fecha <input name="fecha" type="date" required></label>
         <label>Hora <input name="hora" type="time"></label>
-        <label>Jornada <input name="jornada" value="JORNADA 1"></label>
-        <label>Fase <input name="fase" value="LIGA REGULAR"></label>
+        <label>Jornada <input name="jornada" value="JORNADA 1" maxlength="40"></label>
+        <label>Fase <input name="fase" value="LIGA REGULAR" maxlength="40"></label>
         <label class="ancho">Link de la sala <input name="sala" placeholder="https://www.haxball.com/play?c=..."></label>
         <div class="form-acciones"><button class="btn btn-primary" type="submit">AGREGAR FECHA</button></div>
       </form>
@@ -120,17 +139,11 @@
           <select name="fecha_id" id="selFecha" required></select>
         </label>
         <div id="infoPartido" class="info-partido"></div>
-        <label>Goles equipo A <input name="goles_a" type="number" min="0" value="0"></label>
-        <label>Goles equipo B <input name="goles_b" type="number" min="0" value="0"></label>
-        <label>Portero A <input name="portero_a"></label>
-        <label>Portero B <input name="portero_b"></label>
-        <label>CS equipo A
-          <select name="cs_a"><option value="0">No</option><option value="1">Si</option></select>
-        </label>
-        <label>CS equipo B
-          <select name="cs_b"><option value="0">No</option><option value="1">Si</option></select>
-        </label>
-        <label>Minutos sin goles <input name="minutos_cs" type="number" min="0" value="0"></label>
+
+        <label>Goles equipo A <input name="goles_a" type="number" min="0" max="99" value="0"></label>
+        <label>Goles equipo B <input name="goles_b" type="number" min="0" max="99" value="0"></label>
+        <label>Clean sheets equipo A <input name="cs_a" type="number" min="0" max="99" value="0"></label>
+        <label>Clean sheets equipo B <input name="cs_b" type="number" min="0" max="99" value="0"></label>
 
         <div class="ancho">
           <h4 class="sub">Goleadores</h4>
@@ -170,12 +183,12 @@
             <option value="donacion">DONACION</option>
           </select>
         </label>
-        <label>Etiqueta <input name="dato_extra" placeholder="Temporada 2"></label>
-        <label class="ancho">Titulo <input name="titulo" required></label>
-        <label class="ancho">Subtitulo <input name="subtitulo"></label>
+        <label>Etiqueta <input name="dato_extra" maxlength="160" placeholder="Temporada 2"></label>
+        <label class="ancho">Titulo <input name="titulo" maxlength="160" required></label>
+        <label class="ancho">Subtitulo <input name="subtitulo" maxlength="300"></label>
         <label class="ancho">Texto <textarea name="texto" rows="3"></textarea></label>
-        <label>Enlace <input name="enlace"></label>
-        <label>Categoria <input name="categoria" placeholder="PREMIOS"></label>
+        <label>Enlace <input name="enlace" maxlength="500"></label>
+        <label>Categoria <input name="categoria" maxlength="60" placeholder="PREMIOS"></label>
         <label>Fecha <input name="fecha" type="date"></label>
         <label>Visible
           <select name="visible"><option value="1">Si</option><option value="0">No</option></select>
@@ -191,6 +204,22 @@
       <h3>Publicaciones</h3>
       <div class="filtro-admin" id="filtroContModulo"></div>
       <div id="listaContenidos" class="admin-lista"></div>
+    </div>
+  </section>
+
+  <!-- ============ CONTENIDO ============ -->
+  <section class="tab-panel" data-panel="contenido">
+    <div class="card">
+      <h3>Contenido por modulo</h3>
+      <p class="nota">Toca un modulo para filtrar la lista. Aqui ves todo lo publicado en la pagina.</p>
+      <div class="mod-tiles" id="modTiles"></div>
+    </div>
+
+    <div class="card">
+      <h3>Todas las publicaciones</h3>
+      <div class="filtro-admin" id="filtroTodoModulo"></div>
+      <div id="listaContenidoTodo" class="admin-lista"></div>
+      <p class="nota" style="margin-top:18px">Para crear o editar usa la pesta&#241;a <b>ANUNCIOS</b>.</p>
     </div>
   </section>
 
@@ -226,6 +255,6 @@
   </div>
 </div>
 
-<script src="/static/admin.js"></script>
+<script src="/static/admin.js" defer></script>
 </body>
 </html>

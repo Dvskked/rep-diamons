@@ -28,9 +28,11 @@
 <meta name="twitter:description" content="Fechas, resultados, clasificacion, goleadores y salas publicas de HaxBall.">
 <meta name="twitter:image" content="/static/assets/logo-mark.png">
 
-<link rel="icon" type="image/png" href="/static/assets/favicon.png">
+<link rel="icon" type="image/png" href="/static/assets/favicon-64.png">
 <link rel="apple-touch-icon" href="/static/assets/logo-mark.png">
+<link rel="preload" as="image" href="/static/assets/logo-320.webp" type="image/webp">
 <link rel="stylesheet" href="/static/styles.css">
+<noscript><style>.preloader{display:none}body.carga-activa{overflow:auto}</style></noscript>
 
 <!-- ======================================================= JSON-LD -->
 <script type="application/ld+json">
@@ -63,13 +65,26 @@
 }
 </script>
 </head>
-<body>
+<body class="carga-activa">
+
+<!-- ============ PANTALLA DE CARGA ============ -->
+<div class="preloader" id="preloader" role="status" aria-live="polite">
+  <div class="preloader-caja">
+    <div class="preloader-logo">
+      <img src="/static/assets/logo-128.webp" width="116" height="116" alt="">
+      <span class="preloader-anillo"></span>
+    </div>
+    <strong>THE DIAMONDS LEAGUE</strong>
+    <small>CARGANDO LA PAGINA</small>
+    <div class="preloader-barra"><i></i></div>
+  </div>
+</div>
 
 <!-- ============ LOGIN ADMIN (modal) ============ -->
 <div class="login-modal" id="loginModal" aria-hidden="true" role="dialog" aria-label="Acceso de administracion">
   <div class="login-card">
     <button class="login-close" type="button" data-close-login aria-label="Cerrar">&times;</button>
-    <img class="login-logo" src="/static/assets/logo-mark.png" alt="Logo The Diamonds League">
+    <img class="login-logo" src="/static/assets/logo-128.webp" width="78" height="78" alt="Logo The Diamonds League">
     <h3>ADMINISTRAR</h3>
     <p>Acceso exclusivo para el staff de la liga.</p>
     <form id="loginForm">
@@ -88,7 +103,7 @@
 <!-- ============ HEADER ============ -->
 <header class="topbar">
   <a class="brand" href="#inicio" aria-label="The Diamonds League - Inicio">
-    <img src="/static/assets/logo-mark.png" alt="Escudo The Diamonds League">
+    <img src="/static/assets/logo-128.webp" width="46" height="46" alt="Escudo The Diamonds League">
     <span>
       <strong>THE DIAMONDS LEAGUE</strong>
       <small>HAXBALL X5</small>
@@ -115,7 +130,7 @@
     <div class="hero-inner reveal">
       <div class="hero-tag"><i></i> LIGA COMPETITIVA DE HAXBALL <i></i></div>
       <div class="hero-logo">
-        <img src="/static/assets/logo-mark.png" alt="The Diamonds League - liga de HaxBall X5" width="148" height="148">
+        <img src="/static/assets/logo-320.webp" alt="The Diamonds League - liga de HaxBall X5" width="148" height="148" fetchpriority="high" decoding="async">
       </div>
       <h1>THE DIAMONDS <span>LEAGUE</span></h1>
       <p>La liga de HaxBall X5 de la comunidad. Consulta las fechas, los resultados, las salas
@@ -335,7 +350,7 @@
 <!-- ============ FOOTER ============ -->
 <footer class="footer">
   <div class="footer-brand">
-    <img src="/static/assets/logo-mark.png" alt="Logo The Diamonds League" loading="lazy">
+    <img src="/static/assets/logo-128.webp" width="52" height="52" alt="Logo The Diamonds League" loading="lazy" decoding="async">
     <div>
       <strong>THE DIAMONDS LEAGUE</strong>
       <span>LIGA DE HAXBALL X5</span>
