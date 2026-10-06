@@ -43,6 +43,7 @@ CREATE TABLE IF NOT EXISTS `equipos` (
   `nombre`      VARCHAR(100) NOT NULL,
   `sigla`       VARCHAR(10)  NOT NULL,
   `division`    VARCHAR(30)  NOT NULL DEFAULT 'D1',
+  `color`       VARCHAR(20)  NOT NULL DEFAULT '#0AFFD6', -- color del equipo (claro)
   `escudo`      VARCHAR(255) DEFAULT '',    -- ruta en /static/uploads
   `entrenador`  VARCHAR(100) DEFAULT '',
   `fundado`     YEAR DEFAULT NULL,
@@ -51,14 +52,14 @@ CREATE TABLE IF NOT EXISTS `equipos` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- ---------------------------------------------------------------------
--- 4. JUGADORES
+-- 4. JUGADORES   (dorsal: 2 caracteres, posicion: GK / Mid / Dfwd / Fwd)
 -- ---------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS `jugadores` (
   `id`        INT AUTO_INCREMENT PRIMARY KEY,
   `equipo_id` INT NOT NULL,
   `nombre`    VARCHAR(80) NOT NULL,
-  `numero`    TINYINT DEFAULT NULL,
-  `posicion`  VARCHAR(40) DEFAULT 'Titular',
+  `dorsal`    VARCHAR(2)  DEFAULT NULL,
+  `posicion`  VARCHAR(20) DEFAULT 'Mid',
   `goles`     INT NOT NULL DEFAULT 0,
   `asistencias` INT NOT NULL DEFAULT 0,
   `cs`        INT NOT NULL DEFAULT 0,      -- clean sheets
@@ -137,4 +138,21 @@ CREATE TABLE IF NOT EXISTS `foro` (
   `nombre`     VARCHAR(60) NOT NULL,
   `mensaje`    TEXT NOT NULL,
   `fecha`      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- ---------------------------------------------------------------------
+-- 9. X5 IDEAL  (los admins arman el cinco ideal de cada jornada)
+--    5 jugadores por jornada, de cualquier equipo, con su posicion.
+-- ---------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS `ideales` (
+  `id`         INT AUTO_INCREMENT PRIMARY KEY,
+  `jornada`    VARCHAR(40) NOT NULL DEFAULT 'JORNADA 1',
+  `division`   VARCHAR(10) NOT NULL DEFAULT 'D1',
+  `jugador_id` INT NOT NULL,
+  `posicion`   VARCHAR(10) NOT NULL DEFAULT 'Mid',  -- GK / Mid / Dfwd / Fwd
+  `orden`      TINYINT NOT NULL DEFAULT 1,          -- 1 al 5
+  `creado`     TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY uq_ideal (`jornada`, `division`, `jugador_id`),
+  CONSTRAINT fk_ideal_jug FOREIGN KEY (`jugador_id`)
+    REFERENCES `jugadores`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

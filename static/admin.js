@@ -7,7 +7,10 @@
 const $  = (s, c = document) => c.querySelector(s);
 const $$ = (s, c = document) => Array.from(c.querySelectorAll(s));
 
-const ESTADO = { equipos: [], fechas: [], contenidos: [], modulos: [], foro: [] };
+const ESTADO = {
+  equipos: [], fechas: [], contenidos: [], modulos: [], foro: [],
+  ideales: [], jornadas: []
+};
 
 /* ------------------------------------------------ PANTALLA DE CARGA */
 function ocultarPreloader() {
@@ -65,9 +68,10 @@ function confirmar(texto, alConfirmar) {
 /* ------------------------------------------------------------- TABS */
 const TABS = {
   resumen:    ['Resumen', 'Vista general del contenido de la liga.'],
-  equipos:    ['Equipos', 'Agrega equipos, escudos, entrenadores y jugadores.'],
+  equipos:    ['Equipos', 'Agrega equipos, colores, escudos, entrenadores y jugadores.'],
   fechas:     ['Fechas', 'Programa los partidos y el calendario.'],
   resultados: ['Resultados', 'Goles, asistencias y clean sheets por equipo.'],
+  ideal:      ['X5 Ideal', 'El cinco ideal de cada jornada, por division.'],
   anuncios:   ['Anuncios', 'Gestiona anuncios, noticias, premios y enlaces.'],
   contenido:  ['Contenido', 'Todos los modulos de la pagina en un solo lugar.'],
   modulos:    ['Modulos', 'Los botones del header y sus titulos.'],
@@ -101,6 +105,7 @@ function irATab(tab) {
   $('#tabTexto').textContent = TABS[tab][1];
   if (tab === 'resumen') cargarResumen();
   if (tab === 'fechas' || tab === 'resultados') cargarFechas();
+  if (tab === 'ideal') cargarIdeales();
   if (tab === 'anuncios') cargarContenidos();
   if (tab === 'contenido') cargarContenidoTodo();
   if (tab === 'modulos') cargarModulos();
@@ -144,46 +149,101 @@ async function cargarResumen() {
 }
 
 /* ---------------------------------------------------------- EQUIPOS */
+const POSICIONES = ['GK', 'Mid', 'Dfwd', 'Fwd'];
+const EQUIPOS_DIVISION = ['D1', 'D2'];
+let filtroDivEquipo = 'D1';
+let jugadorEditando = null;
+
+function opcionesPosicion(sel) {
+  return POSICIONES.map((p) =>
+    `<option value="${p}" ${sel === p ? 'selected' : ''}>${p}</option>`).join('');
+}
+
+function opcionesEquipo(sel) {
+  return ESTADO.equipos.map((e) =>
+    `<option value="${e.id}" ${String(sel) === String(e.id) ? 'selected' : ''}>` +
+    `${esc(e.nombre)} (${esc(e.sigla)})</option>`).join('');
+}
+
 async function cargarEquipos() {
   const r = await get('/api/admin/equipos');
   ESTADO.equipos = r.equipos || [];
   llenarSelectEquipos();
+  pintarFiltroDivision();
+  pintarEquipos();
+}
 
-  $('#listaEquipos').innerHTML = ESTADO.equipos.map((e) => `
+function pintarFiltroDivision() {
+  const caja = $('#filtroDivEquipo');
+  if (!caja) return;
+  caja.innerHTML = EQUIPOS_DIVISION.map((d) => `
+    <button class="filtro ${d === filtroDivEquipo ? 'activo' : ''}" data-div="${d}" type="button">
+      ${d === 'D1' ? 'DIVISION 1' : 'DIVISION 2'}
+    </button>`).join('');
+}
+
+function pintarEquipos() {
+  const lista = ESTADO.equipos.filter((e) => (e.division || 'D1') === filtroDivEquipo);
+
+  $('#listaEquipos').innerHTML = lista.map((e) => {
+    const jugadores = (e.jugadores || []).map((j) => {
+      if (String(jugadorEditando) === String(j.id)) {
+        return `
+          <div class="jug-chip form-editar">
+            <form class="form-grid" data-form-jugador-edit="${j.id}">
+              <label>Nombre <input name="nombre" required maxlength="80" value="${esc(j.nombre)}"></label>
+              <label>Dorsal <input name="dorsal" maxlength="2" placeholder="10" value="${esc(j.dorsal || '')}"></label>
+              <label>Posicion
+                <select name="posicion">${opcionesPosicion(j.posicion)}</select>
+              </label>
+              <label>Equipo <select name="equipo_id">${opcionesEquipo(j.equipo_id)}</select></label>
+              <div class="form-acciones">
+                <button class="btn btn-primary" type="submit">GUARDAR</button>
+                <button class="btn btn-soft" type="button" data-cancel-jugador>CANCELAR</button>
+              </div>
+            </form>
+          </div>`;
+      }
+      return `
+        <div class="jug-chip">
+          <b>${esc(j.dorsal || '-')}</b>
+          <span>${esc(j.nombre)}</span>
+          <small>${esc(j.posicion || '')}</small>
+          <button class="btn-ico" data-edit-jugador="${j.id}">EDITAR</button>
+          <button class="btn-ico peligro" data-del-jugador="${j.id}">QUITAR</button>
+        </div>`;
+    }).join('') || '<div class="vacio-mini">Sin jugadores. Usa "+ JUGADOR" para agregar.</div>';
+
+    return `
     <div class="fila principal">
-      <div class="escudo" style="width:46px;height:46px;font-size:.9rem">
+      <div class="escudo" style="width:46px;height:46px;font-size:.9rem;
+           background:${esc(e.color || '#0AFFD6')};color:#04121f">
         ${e.escudo ? `<img src="/static/${esc(e.escudo)}" alt="">` : esc(e.sigla.charAt(0))}
       </div>
       <div class="fila-info">
         <strong>${esc(e.nombre)} <span class="fila-dato">${esc(e.division)}</span></strong>
         <small>Sigla ${esc(e.sigla)} · DT. ${esc(e.entrenador || 'sin entrenador')} · ${esc(e.ciudad || 'sin ciudad')}</small>
       </div>
+      <span class="equipo-color" style="background:${esc(e.color || '#0AFFD6')}" title="Color del equipo"></span>
       <div class="fila-acciones">
         <button class="btn-ico" data-add-jugador="${e.id}">+ JUGADOR</button>
         <button class="btn-ico" data-edit-equipo="${e.id}">EDITAR</button>
         <button class="btn-ico peligro" data-del-equipo="${e.id}">ELIMINAR</button>
       </div>
       <div class="fila-jugadores">
-        ${(e.jugadores || []).map((j) => `
-          <div class="jug-chip">
-            <b>${j.numero ?? '-'}</b>
-            <span>${esc(j.nombre)}</span>
-            <small>${esc(j.posicion || '')}</small>
-            <button class="btn-ico peligro" data-del-jugador="${j.id}">QUITAR</button>
-          </div>`).join('')
-          || '<div class="vacio-mini">Sin jugadores. Usa "+ JUGADOR" para agregar.</div>'}
+        ${jugadores}
         <form class="form-grid form-jugador" data-form-jugador="${e.id}">
           <label>Nombre <input name="nombre" required maxlength="80" placeholder="Nombre del jugador"></label>
-          <label>Numero <input name="numero" type="number" min="1" max="99"></label>
+          <label>Dorsal <input name="dorsal" maxlength="2" placeholder="10" pattern="[0-9A-Za-z]{1,2}"></label>
           <label>Posicion
-            <select name="posicion">
-              <option>Titular</option><option>Portero</option><option>Suplente</option>
-            </select>
+            <select name="posicion">${opcionesPosicion('Mid')}</select>
           </label>
           <button class="btn btn-primary" type="submit">AGREGAR</button>
         </form>
       </div>
-    </div>`).join('') || '<div class="vacio-mini">No hay equipos. Crea el primero.</div>';
+    </div>`;
+  }).join('') ||
+  `<div class="vacio-mini">No hay equipos en ${filtroDivEquipo}. Cambia de division o crea uno nuevo.</div>`;
 }
 
 function llenarSelectEquipos() {
@@ -196,17 +256,41 @@ function llenarSelectEquipos() {
   if (!$('#selFecha').options.length) actualizarSelectFechas();
 }
 
+$('#filtroDivEquipo').addEventListener('click', (ev) => {
+  const b = ev.target.closest('[data-div]');
+  if (!b) return;
+  filtroDivEquipo = b.dataset.div;
+  pintarFiltroDivision();
+  pintarEquipos();
+});
+
+function limpiarFormEquipo() {
+  const f = $('#formEquipo');
+  f.reset();
+  f.elements.id.value = '';
+  f.elements.color.value = '#7CF5FF';
+  $('#tituloFormEquipo').textContent = 'Nuevo equipo';
+}
+
 $('#formEquipo').addEventListener('submit', async (ev) => {
   ev.preventDefault();
   const f = ev.target;
   const fd = new FormData(f);
+  const id = f.elements.id.value;
   try {
-    await api('/api/admin/equipos', { method: 'POST', body: fd });
-    f.reset();
+    if (id) {
+      await api(`/api/admin/equipos/${id}`, { method: 'PUT', body: fd });
+      toast('Equipo actualizado');
+    } else {
+      await api('/api/admin/equipos', { method: 'POST', body: fd });
+      toast('Equipo guardado');
+    }
+    limpiarFormEquipo();
     await cargarEquipos();
-    toast('Equipo guardado');
   } catch (e) { toast(e.message); }
 });
+
+$('#btnCancelarEquipo').addEventListener('click', limpiarFormEquipo);
 
 $('#listaEquipos').addEventListener('click', async (ev) => {
   const addJ = ev.target.closest('[data-add-jugador]');
@@ -214,6 +298,18 @@ $('#listaEquipos').addEventListener('click', async (ev) => {
     const fila = addJ.closest('.fila').querySelector('[data-form-jugador] input[name=nombre]');
     fila.focus();
     fila.closest('form').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    return;
+  }
+
+  const edJ = ev.target.closest('[data-edit-jugador]');
+  if (edJ) {
+    jugadorEditando = edJ.dataset.editJugador;
+    pintarEquipos();
+    return;
+  }
+  if (ev.target.closest('[data-cancel-jugador]')) {
+    jugadorEditando = null;
+    pintarEquipos();
     return;
   }
 
@@ -239,35 +335,42 @@ $('#listaEquipos').addEventListener('click', async (ev) => {
 
   const edE = ev.target.closest('[data-edit-equipo]');
   if (edE) {
-    const eq = ESTADO.equipos.find((x) => x.id == edE.dataset.editEquipo);
-    const nombre = prompt('Nombre del equipo:', eq.nombre);
-    if (nombre === null) return;
-    const siglas = prompt('Sigla:', eq.sigla);
-    if (siglas === null) return;
-    const dt = prompt('Entrenador:', eq.entrenador || '');
-    if (dt === null) return;
-    const div = prompt('Division (D1 o D2):', eq.division);
-    if (div === null) return;
-    await put(`/api/admin/equipos/${eq.id}`, {
-      nombre, sigla: siglas, division: div, entrenador: dt,
-      ciudad: eq.ciudad, fundado: eq.fundado, escudo: eq.escudo
-    });
-    await cargarEquipos();
-    toast('Equipo actualizado');
+    const eq = ESTADO.equipos.find((x) => String(x.id) === String(edE.dataset.editEquipo));
+    if (!eq) return;
+    const f = $('#formEquipo');
+    f.elements.id.value = eq.id;
+    f.elements.nombre.value = eq.nombre || '';
+    f.elements.sigla.value = eq.sigla || '';
+    f.elements.division.value = eq.division || 'D1';
+    f.elements.color.value = eq.color || '#7CF5FF';
+    f.elements.entrenador.value = eq.entrenador || '';
+    f.elements.ciudad.value = eq.ciudad || '';
+    $('#tituloFormEquipo').textContent = 'Editando: ' + eq.nombre;
+    f.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    f.nombre.focus();
   }
 });
 
 $('#listaEquipos').addEventListener('submit', async (ev) => {
-  const form = ev.target.closest('[data-form-jugador]');
+  const crear = ev.target.closest('[data-form-jugador]');
+  const editar = ev.target.closest('[data-form-jugador-edit]');
+  const form = crear || editar;
   if (!form) return;
   ev.preventDefault();
   const fd = new FormData(form);
-  fd.append('equipo_id', form.dataset.formJugador);
+  if (crear) fd.append('equipo_id', crear.dataset.formJugador);
   try {
-    await api('/api/admin/jugadores', { method: 'POST', body: fd });
+    if (crear) {
+      await api('/api/admin/jugadores', { method: 'POST', body: fd });
+      toast('Jugador agregado');
+    } else {
+      await api(`/api/admin/jugadores/${editar.dataset.formJugadorEdit}`,
+        { method: 'PUT', body: fd });
+      toast('Jugador actualizado');
+    }
+    jugadorEditando = null;
     form.reset();
     await cargarEquipos();
-    toast('Jugador agregado');
   } catch (e) { toast(e.message); }
 });
 
@@ -439,6 +542,112 @@ function f_reiniciarResultado() {
   $('#listaAsistencias').innerHTML = '';
 }
 
+/* --------------------------------------------------------- X5 IDEAL */
+const FORMACION = ['GK', 'Dfwd', 'Mid', 'Mid', 'Fwd'];
+
+function todosJugadores() {
+  return ESTADO.equipos.flatMap((e) =>
+    (e.jugadores || []).map((j) => ({
+      ...j, equipo: e.nombre, sigla: e.sigla, color: e.color
+    })));
+}
+
+function opcionesJugadores(sel) {
+  return '<option value="">-- Sin jugador --</option>' + todosJugadores().map((j) => `
+    <option value="${j.id}" ${String(sel) === String(j.id) ? 'selected' : ''}>${esc(j.equipo)} · ${esc(j.nombre)}${j.dorsal ? ' (#' + esc(j.dorsal) + ')' : ''}</option>`
+  ).join('');
+}
+
+function pintarSlots(items = []) {
+  const actuales = [...items].sort((a, b) => a.orden - b.orden);
+  $('#idealSlots').innerHTML = FORMACION.map((base, i) => {
+    const slot = actuales[i];
+    return `
+      <div class="ideal-slot">
+        <span>POSICION ${i + 1}</span>
+        <select data-slot-pos aria-label="Posicion ${i + 1}">${opcionesPosicion(slot ? slot.posicion : base)}</select>
+        <select data-slot-jug aria-label="Jugador ${i + 1}">${opcionesJugadores(slot && slot.jugador_id)}</select>
+      </div>`;
+  }).join('');
+}
+
+function prefillIdeal() {
+  const f = $('#formIdeal');
+  const jornada = (f.elements.jornada.value || '').trim().toUpperCase();
+  const division = f.elements.division.value;
+  pintarSlots(ESTADO.ideales.filter((i) =>
+    i.jornada === jornada && i.division === division));
+}
+
+async function cargarIdeales() {
+  if (!ESTADO.equipos.length) {
+    try { await cargarEquipos(); } catch (e) { console.error(e); }
+  }
+  const r = await get('/api/admin/ideales');
+  ESTADO.ideales = r.ideales || [];
+  ESTADO.jornadas = (r.jornadas || []).map((j) => j.jornada);
+  $('#listaJornadas').innerHTML = ESTADO.jornadas
+    .map((j) => `<option value="${esc(j)}">`).join('');
+  prefillIdeal();
+  pintarIdeales();
+}
+
+function pintarIdeales() {
+  const caja = $('#listaIdeales');
+  if (!ESTADO.ideales.length) {
+    caja.innerHTML = '<div class="vacio-mini">Todavia no hay cinco ideal guardado.</div>';
+    return;
+  }
+  const jornadas = [...new Set(ESTADO.ideales.map((i) => i.jornada))];
+  caja.innerHTML = jornadas.map((j) => `
+    <div class="grupo-ideal">
+      <h4 class="sub">${esc(j)}</h4>
+      ${ESTADO.ideales.filter((i) => i.jornada === j).map((i) => `
+        <div class="ideal-fila">
+          <span class="pos">${esc(i.posicion)}</span>
+          <div class="quien">
+            <strong>${esc(i.jugador)}${i.dorsal ? ' <small>#' + esc(i.dorsal) + '</small>' : ''}</strong>
+            <small>${esc(i.equipo)} · ${esc(i.equipo_sigla || '')}</small>
+          </div>
+          <span class="fila-dato">${esc(i.division)}</span>
+        </div>`).join('')}
+    </div>`).join('');
+}
+
+$('#idealJornada').addEventListener('change', prefillIdeal);
+$('#idealDivision').addEventListener('change', prefillIdeal);
+
+$('#formIdeal').addEventListener('submit', async (ev) => {
+  ev.preventDefault();
+  const f = ev.target;
+  const slots = $$('#idealSlots .ideal-slot').map((s, i) => ({
+    orden: i + 1,
+    posicion: s.querySelector('[data-slot-pos]').value,
+    jugador_id: s.querySelector('[data-slot-jug]').value
+  })).filter((s) => s.jugador_id);
+
+  try {
+    const r = await post('/api/admin/ideales', {
+      jornada: f.elements.jornada.value,
+      division: f.elements.division.value,
+      slots
+    });
+    await cargarIdeales();
+    toast(r.guardados ? `Cinco ideal guardado con ${r.guardados} jugador(es)` : 'Jornada guardada vacia');
+  } catch (e) { toast(e.message); }
+});
+
+$('#btnBorrarIdeal').addEventListener('click', () => {
+  const f = $('#formIdeal');
+  const jornada = (f.elements.jornada.value || '').trim();
+  if (!jornada) return toast('Escribe la jornada');
+  confirmar('Se borrara el cinco ideal de esta jornada y division.', async () => {
+    await del(`/api/admin/ideales?jornada=${encodeURIComponent(jornada)}&division=${f.elements.division.value}`);
+    await cargarIdeales();
+    toast('Cinco ideal borrado');
+  });
+});
+
 /* --------------------------------------------------------- CONTENIDOS */
 const MODULOS_TODOS = ['anuncios', 'noticias', 'pubs', 'museo', 'alianzas', 'redes', 'equipo', 'donacion'];
 let filtroModulo = 'anuncios';
@@ -486,10 +695,10 @@ $('#formAnuncio').addEventListener('submit', async (ev) => {
   const f = ev.target;
   const d = Object.fromEntries(new FormData(f));
   try {
-    if (d.id) { delete d.id; await put(`/api/admin/contenidos/${f.id.value}`, d); }
+    if (d.id) { delete d.id; await put(`/api/admin/contenidos/${f.elements.id.value}`, d); }
     else await post('/api/admin/contenidos', d);
     f.reset();
-    f.id.value = '';
+    f.elements.id.value = '';
     await cargarContenidos();
     toast('Publicacion guardada. Ya aparece en la pagina.');
   } catch (e) { toast(e.message); }
@@ -498,7 +707,7 @@ $('#formAnuncio').addEventListener('submit', async (ev) => {
 $('#btnCancelarAnuncio').addEventListener('click', () => {
   const f = $('#formAnuncio');
   f.reset();
-  f.id.value = '';
+  f.elements.id.value = '';
 });
 
 $('#listaContenidos').addEventListener('click', async (ev) => {
@@ -518,7 +727,7 @@ $('#listaContenidos').addEventListener('click', async (ev) => {
 async function editarContenido(id) {
   const c = ESTADO.contenidos.find((x) => x.id == id);
   const f = $('#formAnuncio');
-  f.id.value = c.id;
+  f.elements.id.value = c.id;
   f.modulo.value = c.modulo;
   f.titulo.value = c.titulo || '';
   f.subtitulo.value = c.subtitulo || '';

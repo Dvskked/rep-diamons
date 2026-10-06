@@ -23,30 +23,30 @@ INSERT IGNORE INTO `modulos` (`clave`, `nombre`, `titulo`, `subtitulo`, `orden`,
 ('donacion',  'DONACION',              'Donaciones',                'Metodos para apoyar a la liga y al servidor.', 9, 1);
 
 -- ----------------------------------------------------------------- EQUIPOS
-INSERT IGNORE INTO `equipos` (`id`, `nombre`, `sigla`, `division`, `entrenador`, `fundado`, `ciudad`) VALUES
-(1, 'Lexington',        'LEX', 'D1', 'Santiago',  2023, 'Colombia'),
-(2, 'Deportivo Lima',  'DEP', 'D1', 'Ribero',    2023, 'Peru'),
-(3, 'Kiosko FC',       'KIO', 'D1', 'Vallejo',   2024, 'Chile'),
-(4, 'Titanes FC',      'TIT', 'D1', 'Ortiz',     2024, 'Argentina'),
-(5, 'Aurora Sporting', 'AUR', 'D1', 'Molina',    2025, 'Mexico'),
-(6, 'Rayo Norte',      'RYN', 'D1', 'Salas',     2025, 'Ecuador'),
-(7, 'Deportivo Pereira','PER','D2', 'Inuv',      2024, 'Colombia'),
-(8, 'Halcones FC',     'HAL', 'D2', 'Bustos',    2025, 'Bolivia');
+INSERT IGNORE INTO `equipos` (`id`, `nombre`, `sigla`, `division`, `color`, `entrenador`, `fundado`, `ciudad`) VALUES
+(1, 'Lexington',        'LEX', 'D1', '#7CF5FF', 'Santiago',  2023, 'Colombia'),
+(2, 'Deportivo Lima',  'DEP', 'D1', '#9CFF9C', 'Ribero',    2023, 'Peru'),
+(3, 'Kiosko FC',       'KIO', 'D1', '#FFD98E', 'Vallejo',   2024, 'Chile'),
+(4, 'Titanes FC',      'TIT', 'D1', '#FFA8E0', 'Ortiz',     2024, 'Argentina'),
+(5, 'Aurora Sporting', 'AUR', 'D1', '#C6B4FF', 'Molina',    2025, 'Mexico'),
+(6, 'Rayo Norte',      'RYN', 'D1', '#FFB38A', 'Salas',     2025, 'Ecuador'),
+(7, 'Deportivo Pereira','PER','D2', '#9EE7FF', 'Inuv',      2024, 'Colombia'),
+(8, 'Halcones FC',     'HAL', 'D2', '#E0FFB0', 'Bustos',    2025, 'Bolivia');
 
 -- --------------------------------------------------------------- JUGADORES
-INSERT IGNORE INTO `jugadores` (`equipo_id`, `nombre`, `numero`, `posicion`, `goles`, `asistencias`, `cs`, `minutos_cs`) VALUES
-(1,'Munoz',      9,'Titular',      38, 11, 0,  0),
-(1,'Oblea Gatona',1,'Portero',      0,  2, 6, 810),
-(1,'Cardona',    7,'Titular',      12, 15, 0,  0),
-(2,'Rios',      10,'Titular',      21,  8, 0,  0),
-(2,'Vega',       1,'Portero',      0,  1, 3, 540),
-(3,'Gabinho',    11,'Titular',      24, 12, 0,  0),
-(3,'Sxra',       1,'Portero',      0,  0, 5, 726),
-(4,'Ferreyra',   8,'Titular',      17,  6, 0,  0),
-(5,'Duarte',     6,'Titular',      14,  9, 0,  0),
-(6,'Cedeño',    10,'Titular',      11,  5, 0,  0),
-(7,'Quintero',   9,'Titular',      16,  7, 0,  0),
-(8,'Aguilar',    4,'Titular',       9, 10, 0,  0);
+INSERT IGNORE INTO `jugadores` (`equipo_id`, `nombre`, `dorsal`, `posicion`, `goles`, `asistencias`, `cs`, `minutos_cs`) VALUES
+(1,'Munoz',      '9', 'Fwd',  38, 11, 0,  0),
+(1,'Oblea Gatona','1', 'GK',    0,  2, 6, 810),
+(1,'Cardona',    '7', 'Mid',  12, 15, 0,  0),
+(2,'Rios',      '10', 'Mid',  21,  8, 0,  0),
+(2,'Vega',       '1', 'GK',    0,  1, 3, 540),
+(3,'Gabinho',   '11', 'Fwd',  24, 12, 0,  0),
+(3,'Sxra',       '1', 'GK',    0,  0, 5, 726),
+(4,'Ferreyra',   '8', 'Fwd',  17,  6, 0,  0),
+(5,'Duarte',     '6', 'Mid',  14,  9, 0,  0),
+(6,'Cedeño',    '10', 'Mid',  11,  5, 0,  0),
+(7,'Quintero',   '9', 'Fwd',  16,  7, 0,  0),
+(8,'Aguilar',    '4', 'Dfwd',  9, 10, 0,  0);
 
 -- ------------------------------------------------------------------ FECHAS
 INSERT IGNORE INTO `fechas` (`id`, `equipo_a_id`, `equipo_b_id`, `fecha`, `hora`, `jornada`, `fase`, `sala`) VALUES
@@ -123,13 +123,21 @@ INSERT IGNORE INTO `contenidos` (`modulo`, `titulo`, `subtitulo`, `texto`, `enla
 ('redes', 'STREAM STEFY',     '@stream_stefy',      'Transmisiones de la Division 1.',               '', 3),
 ('redes', 'STREAM GABINHO',   '@stream_gabinho',    'Streams y contenido de la Division 2.',         '', 4);
 
--- EQUIPO ADMINISTRACION
+-- EQUIPO ADMINISTRACION (nombres de discord y cargo en info.txt)
 INSERT IGNORE INTO `contenidos` (`modulo`, `titulo`, `subtitulo`, `texto`, `dato_extra`, `imagen`, `orden`) VALUES
-('equipo', 'STEFY',  'st_fxx',   'Owner y fundadora de The Diamonds League.',        'OWNER',  '', 1),
-('equipo', 'NEPTUNZINHO', 'neptunzinho', 'Desarrollador de esta pagina y administrador del panel.', 'DESARROLLADOR', '', 2),
-('equipo', 'INUV',   'inuv',     'Master de la liga y encargado de sanciones.',    'MASTER',  '', 3),
-('equipo', 'SANTIAGO','santiago', 'Entrenador y delegado de la Division 1.',        'COACH',   '', 4),
-('equipo', 'AYALA',  'ayala',    'Preparador de calendario y communicate.',        'STAFF',   '', 5);
+('equipo', 'SAMI',    'samantha_89._.',       'Fundadora de The Diamonds League.',                     'FUNDADORA',       'assets/sami.png',    1),
+('equipo', 'SANTIAGO','sdstutaksvyksc',       'Fundador de The Diamonds League.',                      'FUNDADOR',        'assets/santiago.png', 2),
+('equipo', 'NYX',     'nx0972',               'Master de la liga y encargado de las jornadas.',        'MASTER',          'assets/nyx.png',     3),
+('equipo', 'RAPATUMADRE', 'kairuhz.singa_tuvida', 'Master de la liga y encargado de los resultados.',   'MASTER',          'assets/rapatumadre.png', 4),
+('equipo', 'NEPTUNZINHO', 'andresneptunzinho', 'Desarrollador de esta pagina y administrador del panel.', 'DESARROLLADOR', 'assets/neptun.png',  5);
+
+-- X5 IDEAL (ejemplo del cinco ideal de la jornada 1)
+INSERT IGNORE INTO `ideales` (`jornada`, `division`, `jugador_id`, `posicion`, `orden`) VALUES
+('JORNADA 1', 'D1', 2,  'GK',   1),
+('JORNADA 1', 'D1', 4,  'Dfwd', 2),
+('JORNADA 1', 'D1', 1,  'Mid',  3),
+('JORNADA 1', 'D1', 5,  'Mid',  4),
+('JORNADA 1', 'D1', 7,  'Fwd',  5);
 
 -- DONACION
 INSERT IGNORE INTO `contenidos` (`modulo`, `titulo`, `subtitulo`, `texto`, `enlace`, `orden`) VALUES

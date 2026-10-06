@@ -7,7 +7,10 @@
 const $  = (sel, ctx = document) => ctx.querySelector(sel);
 const $$ = (sel, ctx = document) => Array.from(ctx.querySelectorAll(sel));
 
-const DATOS = { modulos: [], contenidos: {}, equipos: [], fechas: [], foro: [] };
+const DATOS = { modulos: [], contenidos: {}, equipos: [], fechas: [], ideales: [], foro: [] };
+
+/* Estado de la seccion LIGA (division seleccionada + vista activa) */
+const LIGA = { division: 'D1', vista: 'equipos' };
 
 /* ------------------------------------------------------------ UTILIDADES */
 function ocultarPreloader() {
@@ -79,7 +82,19 @@ function pintarHero() {
 }
 
 /* ------------------------------------------------------------- EQUIPOS */
+function equiposDivision(div = LIGA.division) {
+  return DATOS.equipos.filter((e) => e.division === div);
+}
+
+function fechasDivision(div = LIGA.division) {
+  return DATOS.fechas.filter((f) => {
+    if (!f.division_a && !f.division_b) return true;
+    return f.division_a === div || f.division_b === div;
+  });
+}
+
 function tarjetaEquipo(eq) {
+  const color = eq.color || 'var(--cian)';
   const escudo = eq.escudo
     ? `<img src="/static/${esc(eq.escudo)}" alt="Escudo de ${esc(eq.nombre)}">`
     : iniciales(eq.sigla);
@@ -92,7 +107,7 @@ function tarjetaEquipo(eq) {
 
   const jugadores = (eq.jugadores || []).map((j) => `
     <div class="jugador-fila">
-      <span class="jugador-num">${j.numero ?? '-'}</span>
+      <span class="jugador-num">${j.dorsal ?? '-'}</span>
       <span class="jugador-nom">${esc(j.nombre)}</span>
       <span class="jugador-pos">${esc(j.posicion || '')}</span>
       <span class="jugador-stats">
@@ -103,7 +118,7 @@ function tarjetaEquipo(eq) {
     </div>`).join('') || '<p class="partido-detalle">Sin jugadores registrados.</p>';
 
   return `
-    <article class="equipo-card reveal">
+    <article class="equipo-card reveal" style="--eq:${esc(color)}">
       <div class="equipo-topo">
         <div class="escudo">${escudo}</div>
         <div class="equipo-nombre">
@@ -120,10 +135,11 @@ function tarjetaEquipo(eq) {
 }
 
 function pintarEquipos() {
-  const d1 = DATOS.equipos.filter((e) => e.division === 'D1');
-  const d2 = DATOS.equipos.filter((e) => e.division !== 'D1');
-  $('#equiposGrid').innerHTML  = d1.map(tarjetaEquipo).join('') || vacio('Sin equipos en D1.');
-  $('#equiposGrid2').innerHTML = d2.map(tarjetaEquipo).join('') || vacio('Sin equipos en D2.');
+  const grid = $('#equiposGrid');
+  if (!grid) return;
+  const lista = equiposDivision();
+  grid.innerHTML = lista.map(tarjetaEquipo).join('')
+    || vacio(`Sin equipos en la division ${LIGA.division}.`);
 }
 
 /* ----------------------------------------------------------- CALENDARIO */
@@ -161,33 +177,37 @@ function tarjetaPartido(f) {
       <div class="partido-info">
         <span class="partido-fecha">${fechaLarga(f.fecha)}</span>
         <span class="partido-meta">${horaCorta(f.hora)} · ${esc(f.jornada || '')} · ${esc(f.fase || '')}</span>
+        ${f.division_a ? `<span class="partido-division">${esc(f.division_a)}</span>` : ''}
       </div>
       <div>
-        <div class="partido-lado">${esc(f.equipo_a)}</div>
+        <div class="partido-lado"><i class="equipo-punto" style="background:${esc(f.color_a || 'var(--cian)')}"></i>${esc(f.equipo_a)}</div>
         ${detalle}
       </div>
       <div>
         ${marcador}
-        <div class="partido-lado b" style="justify-content:flex-end;margin-top:8px">${esc(f.equipo_b)}</div>
+        <div class="partido-lado b" style="justify-content:flex-end;margin-top:8px"><i class="equipo-punto" style="background:${esc(f.color_b || 'var(--cian)')}"></i>${esc(f.equipo_b)}</div>
         ${boton ? `<div style="margin-top:12px;text-align:center">${boton}</div>` : ''}
       </div>
     </article>`;
 }
 
 function pintarCalendario() {
-  $('#calendario').innerHTML = DATOS.fechas.length
-    ? DATOS.fechas.map(tarjetaPartido).join('')
-    : vacio('Todavia no hay fechas programadas.');
+  const caja = $('#calendario');
+  if (!caja) return;
+  const fechas = fechasDivision();
+  caja.innerHTML = fechas.length
+    ? fechas.map(tarjetaPartido).join('')
+    : vacio(`Todavia no hay fechas programadas en la division ${LIGA.division}.`);
 }
 
 /* --------------------------------------------------------------- TABLA */
 function standings() {
   const tabla = new Map();
-  DATOS.equipos.forEach((e) => tabla.set(e.id, {
+  equiposDivision().forEach((e) => tabla.set(e.id, {
     eq: e, pj: 0, gf: 0, gc: 0, pts: 0
   }));
 
-  DATOS.fechas.filter((f) => f.jugado).forEach((f) => {
+  fechasDivision().filter((f) => f.jugado).forEach((f) => {
     const a = tabla.get(f.equipo_a_id), b = tabla.get(f.equipo_b_id);
     if (!a || !b) return;
     a.pj++; b.pj++;
@@ -209,7 +229,7 @@ function pintarTabla() {
   cuerpo.innerHTML = filas.map((f, i) => `
     <tr>
       <td class="pos">${i + 1}</td>
-      <td>${esc(f.eq.nombre)}</td>
+      <td><i class="equipo-punto" style="background:${esc(f.eq.color || 'var(--cian)')}"></i>${esc(f.eq.nombre)}</td>
       <td>${f.pj}</td><td>${f.gf}</td><td>${f.gc}</td>
       <td>${f.gf - f.gc}</td>
       <td class="pos">${f.pts}</td>
@@ -220,23 +240,66 @@ function pintarTabla() {
 function listaRanking(destino, campo, titulo) {
   const box = $(destino);
   if (!box) return;
-  const datos = DATOS.equipos.flatMap((e) => (e.jugadores || []).map((j) => ({
-    nombre: j.nombre, equipo: e.nombre, valor: j[campo] || 0
+  const datos = equiposDivision().flatMap((e) => (e.jugadores || []).map((j) => ({
+    nombre: j.nombre, equipo: e.nombre, color: e.color, valor: j[campo] || 0
   }))).filter((j) => j.valor > 0)
     .sort((a, b) => b.valor - a.valor).slice(0, 8);
 
   box.innerHTML = datos.length ? datos.map((j, i) => `
     <div class="rank-fila">
       <span class="rank-pos">${i + 1}</span>
-      <span class="rank-nom">${esc(j.nombre)}<small>${esc(j.equipo)}</small></span>
+      <span class="rank-nom"><i class="equipo-punto" style="background:${esc(j.color || 'var(--cian)')}"></i>${esc(j.nombre)}<small>${esc(j.equipo)}</small></span>
       <span class="rank-val">${j.valor}</span>
     </div>`).join('') : vacio(titulo);
 }
 
 function pintarEstadisticas() {
-  listaRanking('#listaGoles', 'goles', 'Aun no hay goles.');
-  listaRanking('#listaAsistencias', 'asistencias', 'Aun no hay asistencias.');
-  listaRanking('#listaCs', 'cs', 'Aun no hay clean sheets.');
+  listaRanking('#listaGoles', 'goles', 'Aun no hay goles en esta division.');
+  listaRanking('#listaAsistencias', 'asistencias', 'Aun no hay asistencias en esta division.');
+  listaRanking('#listaCs', 'cs', 'Aun no hay clean sheets en esta division.');
+}
+
+/* ---------------------------------------------------------- X5 IDEAL */
+function jornadasIdeal() {
+  const lista = DATOS.ideales.filter((i) => i.division === LIGA.division);
+  return Array.from(new Set(lista.map((i) => i.jornada)));
+}
+
+function pintarX5() {
+  const sel = $('#x5Jornada');
+  if (!sel) return;
+  const jornadas = jornadasIdeal();
+  const actual = jornadas.includes(sel.value) ? sel.value : (jornadas[0] || '');
+  sel.innerHTML = jornadas.length
+    ? jornadas.map((j) => `<option value="${esc(j)}"${j === actual ? ' selected' : ''}>${esc(j)}</option>`).join('')
+    : '<option value="">SIN JORNADAS</option>';
+  sel.disabled = !jornadas.length;
+  pintarX5Cancha();
+}
+
+function pintarX5Cancha() {
+  const caja = $('#x5Cancha');
+  if (!caja) return;
+  const jornada = $('#x5Jornada').value;
+  const slots = DATOS.ideales
+    .filter((i) => i.division === LIGA.division && i.jornada === jornada)
+    .sort((a, b) => a.orden - b.orden);
+
+  if (!slots.length) {
+    caja.innerHTML = vacio(`El staff todavia no eligio el cinco ideal de ${LIGA.division}.`);
+    return;
+  }
+
+  caja.innerHTML = slots.map((s) => `
+    <div class="x5-slot reveal" style="--eq:${esc(s.equipo_color || 'var(--cian)')}">
+      <span class="x5-pos">${esc(s.posicion || '')}</span>
+      <span class="x5-avatar">${iniciales(s.jugador)}</span>
+      <span class="x5-datos">
+        <strong>${esc(s.jugador)}</strong>
+        <small><i class="equipo-punto" style="background:${esc(s.equipo_color || 'var(--cian)')}"></i>${esc(s.equipo || '')} · ${esc(s.dorsal || '--')}</small>
+      </span>
+      <span class="x5-orden">${s.orden}</span>
+    </div>`).join('');
 }
 
 /* ------------------------------------------------------------ PUBS */
@@ -336,18 +399,21 @@ function pintarAlianzas() {
 
 /* ----------------------------------------------------------- EQUIPO */
 function pintarEquipo() {
-  const iconos = { OWNER: '👑', DESARROLLADOR: '💻', MASTER: '🛡️', COACH: '📋', STAFF: '🎬' };
+  const iconos = {
+    OWNER: '👑', FUNDADOR: '👑', FUNDADORA: '👑', DESARROLLADOR: '💻',
+    MASTER: '🛡️', COACH: '📋', STAFF: '🎬'
+  };
   $('#equipoGrid').innerHTML = cont('equipo').map((p) => {
     const rol = (p.dato_extra || 'STAFF').toUpperCase();
     const foto = p.imagen
-      ? `<img src="/static/${esc(p.imagen)}" alt="${esc(p.titulo)}">`
+      ? `<img src="/static/${esc(p.imagen)}" alt="${esc(p.titulo)}" loading="lazy" decoding="async">`
       : iniciales(p.titulo);
     return `
       <article class="staff-card reveal ${rol === 'DESARROLLADOR' ? 'dev' : ''}">
         <div class="staff-avatar">${foto}</div>
-        <span class="staff-rol">${esc(rol)}</span>
+        <span class="staff-rol">${iconos[rol] || '🛡️'} ${esc(rol)}</span>
         <h4>${esc(p.titulo)}</h4>
-        <p class="staff-user">@${esc(p.subtitulo || '')}</p>
+        ${p.subtitulo ? `<p class="staff-user">Discord · @${esc(p.subtitulo)}</p>` : ''}
         <p>${esc(p.texto || '')}</p>
       </article>`;
   }).join('') || vacio('Equipo no publicado.');
@@ -507,15 +573,38 @@ $('#loginForm').addEventListener('submit', async (ev) => {
 });
 
 /* ------------------------------------------------------------- PESTANAS */
-$('#ligaTabs').addEventListener('click', (ev) => {
-  const btn = ev.target.closest('.pestana');
-  if (!btn) return;
-  $$('#ligaTabs .pestana').forEach((b) => b.classList.remove('activa'));
-  btn.classList.add('activa');
-  const destino = btn.dataset.division || btn.dataset.vista;
-  $$('.panel-panel').forEach((p) => p.classList.toggle('activo', p.dataset.panel === destino));
+function mostrarVista(vista) {
+  LIGA.vista = vista;
+  $$('.panel-panel').forEach((p) => p.classList.toggle('activo', p.dataset.panel === vista));
   revelar();
+}
+
+function pintarLiga() {
+  pintarEquipos();
+  pintarCalendario();
+  pintarTabla();
+  pintarEstadisticas();
+  pintarX5();
+  revelar();
+}
+
+$('#ligaDivision').addEventListener('click', (ev) => {
+  const btn = ev.target.closest('[data-division]');
+  if (!btn) return;
+  LIGA.division = btn.dataset.division;
+  $$('#ligaDivision .pestana').forEach((b) => b.classList.toggle('activa', b === btn));
+  pintarLiga();
 });
+
+$('#ligaVista').addEventListener('click', (ev) => {
+  const btn = ev.target.closest('[data-vista]');
+  if (!btn) return;
+  $$('#ligaVista .pestana').forEach((b) => b.classList.toggle('activa', b === btn));
+  mostrarVista(btn.dataset.vista);
+});
+
+const selJornada = $('#x5Jornada');
+if (selJornada) selJornada.addEventListener('change', pintarX5Cancha);
 
 /* ----------------------------------------------------------- MENU MOVIL */
 $('#menuToggle').addEventListener('click', () => {
@@ -538,15 +627,13 @@ async function iniciar() {
     const r = await pedir('/api/sitio');
     Object.assign(DATOS, {
       modulos: r.modulos || [], contenidos: r.contenidos || {},
-      equipos: r.equipos || [], fechas: r.fechas || [], foro: r.foro || []
+      equipos: r.equipos || [], fechas: r.fechas || [],
+      ideales: r.ideales || [], foro: r.foro || []
     });
 
     pintarHeader();
     pintarHero();
-    pintarEquipos();
-    pintarCalendario();
-    pintarTabla();
-    pintarEstadisticas();
+    pintarLiga();
     pintarPubs();
     pintarMuseo();
     pintarNoticias();
