@@ -469,12 +469,25 @@
 }
 .info-partido b { color: var(--cian); }
 
-.filtro-admin { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; }
-.filtro-admin .filtro { background: rgba(255,255,255,.07); border-color: rgba(255,255,255,.16); color: rgba(255,255,255,.8); }
-.filtro-admin .filtro:hover { color: var(--blanco); border-color: rgba(10,255,214,.34); }
-.filtro-admin .filtro.activo {
+.filtro-admin { display: flex; gap: 9px; flex-wrap: wrap; margin-bottom: 22px; }
+.filtro {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 10px 20px; border-radius: 999px;
+  font-size: .74rem; font-weight: 700; letter-spacing: .08em;
+  background: rgba(255,255,255,.06);
+  border: 1.5px solid rgba(255,255,255,.16);
+  color: rgba(255,255,255,.78);
+  transition: transform .25s, border-color .25s, background .25s, color .25s, box-shadow .25s;
+}
+.filtro:hover {
+  color: var(--blanco); border-color: rgba(10,255,214,.4);
+  transform: translateY(-3px);
+}
+.filtro.activo {
   background: linear-gradient(135deg, var(--cian), #4ee9d1);
-  border-color: var(--cian); color: var(--azul-fondo);
+  border-color: transparent; color: var(--azul-fondo);
+  box-shadow: 0 10px 26px rgba(10,255,214,.42);
+  transform: translateY(-2px);
 }
 
 /* ------------------------------------------------------ CONFIRMAR */
