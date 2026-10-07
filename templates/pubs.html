@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block pagina %}pubs{% endblock %}
+{% block titulo %}Pubs - Salas de HaxBall | The Diamonds League{% endblock %}
+{% block descripcion %}Salas publicas de HaxBall de The Diamonds League: entra directo a los pubs de la Division 1 y Division 2.{% endblock %}
+{% block og_titulo %}Pubs de HaxBall | The Diamonds League{% endblock %}
+
+{% block contenido %}
+<section class="page-hero pubs-hero">
+  <span class="pubs-bola" aria-hidden="true"></span>
+  <span class="pubs-bola pasa" aria-hidden="true"></span>
+  <div class="wrap">
+    <span class="etiqueta" data-etiqueta="pubs">PUBS</span>
+    <h1 class="display" data-titulo="pubs">Salas de HaxBall</h1>
+    <p data-subtitulo="pubs" class="pubs-lead">Entra directo a las salas publicas de la liga, conocenos y unite a la comunidad.</p>
+  </div>
+</section>
+
+<div class="wrap page">
+
+  <div class="pubs-feat">
+    <article class="pubs-step reveal">
+      <span class="pubs-num">01</span>
+      <h3>Elegi tu sala</h3>
+      <p>Abi abajo encontras las salas de HaxBall abiertas del dia. Cada una tiene su nombre y su metodo.</p>
+    </article>
+    <article class="pubs-step reveal">
+      <span class="pubs-num">02</span>
+      <h3>Entra y juga</h3>
+      <p>Hace click en "Abrir sala" y entra con tu nombre de jugador. Los partidos randoms arrancan en los minutos.</p>
+    </article>
+    <article class="pubs-step reveal">
+      <span class="pubs-num">03</span>
+      <h3>Sumate a la liga</h3>
+      <p>Si queres competir en divisiones, pasa por el Discord, presenta tu escuadra y espera la confirmacion del staff.</p>
+    </article>
+  </div>
+
+  <section class="block" aria-labelledby="h-salitas">
+    <div class="sec-head">
+      <div>
+        <span class="etiqueta">SALAS EN VIVO</span>
+        <h2 id="h-salitas">Salas publicas ahora</h2>
+        <p class="sec-sub">Tocamos una sala y jugamos. Las salas se renuevan con los partidos de la jornada.</p>
+      </div>
+    </div>
+    <div class="salas-grid" id="salasGrid"></div>
+  </section>
+
+  <div class="pubs-tips">
+    <div class="pubs-tip reveal">
+      <h3>Reglas basicas de los pubs</h3>
+      <ul>
+        <li>Respeto siempre adentro y afuera de la cancha.</li>
+        <li>Sin trolling, sin retrasar el partido y sin equipos random que abusen.</li>
+        <li>Los capitanes rotan las divisiones para que parta todo el mundo.</li>
+        <li>El staff puede cerrar una sala si no se cumplen las reglas.</li>
+      </ul>
+    </div>
+    <div class="pubs-tip reveal">
+      <h3>Queres jugar en la liga?</h3>
+      <p>La liga se juega en la Division 1 y la Division 2. Forma tu equipo, inscribite por el Discord y espera la
+        confirmacion del staff. Las vacantes se comunican por los canales oficiales.</p>
+      <a class="btn btn-primary big" href="/redes">IR A REDES Y COMUNIDAD</a>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

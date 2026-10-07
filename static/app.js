@@ -284,17 +284,20 @@ function jugadoresTodos(div = 'all') {
     (e.jugadores || []).forEach((j) => lista.push({
       id: j.id, nombre: j.nombre, dorsal: j.dorsal, posicion: j.posicion,
       goles: num(j.goles), asistencias: num(j.asistencias), cs: num(j.cs),
-      equipo: e.nombre, color: e.color, division: e.division
+      equipo: e.nombre, color: e.color, escudo: e.escudo, division: e.division
     }));
   });
   return lista;
 }
 
 function filaRanking(j, i, campo) {
+  const insignia = j.escudo
+    ? `<span class="equipo-punto escudo-logo"><img src="/static/${esc(j.escudo)}" alt="" loading="lazy"></span>`
+    : `<i class="equipo-punto" style="background:${esc(j.color || 'var(--cian)')}"></i>`;
   return `
     <div class="rank-fila">
       <span class="rank-pos">${i + 1}</span>
-      <span class="rank-nom"><i class="equipo-punto" style="background:${esc(j.color || 'var(--cian)')}"></i>${esc(j.nombre)}<small>${esc(j.equipo)}</small></span>
+      <span class="rank-nom">${insignia}${esc(j.nombre)}<small>${esc(j.equipo)}</small></span>
       <span class="rank-val">${num(j[campo])}</span>
     </div>`;
 }
@@ -318,13 +321,24 @@ function pintarLideres() {
 }
 
 /* ------------------------------------------------ INICIO: RESULTADOS */
+function divisionDePartido(f, lado) {
+  const clave = lado === 'b' ? 'division_b' : 'division_a';
+  if (f[clave]) return f[clave];
+  const eq = porId(lado === 'b' ? f.equipo_b_id : f.equipo_a_id);
+  return eq ? eq.division : '';
+}
+
+function filtrarPorDivision(f, div) {
+  return div === 'all' || !div || divisionDePartido(f, 'a') === div || divisionDePartido(f, 'b') === div;
+}
+
 function jugadosOrdenados(div) {
-  return DATOS.fechas.filter((f) => f.jugado && (div === 'all' || !div || f.division_a === div || f.division_b === div))
+  return DATOS.fechas.filter((f) => f.jugado && filtrarPorDivision(f, div))
     .sort((a, b) => fechaHora(b) - fechaHora(a));
 }
 
 function pendientesOrdenados(div) {
-  return DATOS.fechas.filter((f) => !f.jugado && (div === 'all' || !div || f.division_a === div || f.division_b === div))
+  return DATOS.fechas.filter((f) => !f.jugado && filtrarPorDivision(f, div))
     .sort((a, b) => fechaHora(a) - fechaHora(b));
 }
 
@@ -335,10 +349,18 @@ function pintarResultadosInicio() {
   const lista = todos.slice(0, 6);
   caja.innerHTML = lista.length
     ? lista.map((f) => filaPartido(f)).join('')
-    : vacio('Todavia no hay resultados en esta division.');
+    : vacio(INICIO.filtro === 'D1' || INICIO.filtro === 'D2'
+        ? `Todavia no hay resultados en la Division ${INICIO.filtro.slice(1)}.`
+        : 'Todavia no hay resultados.');
 
   const nota = $('#resNota');
-  if (nota) nota.textContent = lista.length ? `Mostrando ${lista.length} de ${todos.length} partidos jugados.` : '';
+  if (nota) {
+    nota.textContent = lista.length
+      ? `Mostrando ${lista.length} de ${todos.length} partidos jugados.`
+      : (INICIO.filtro === 'D1' || INICIO.filtro === 'D2'
+          ? `Ningun partido jugado en la Division ${INICIO.filtro.slice(1)} por ahora.`
+          : '');
+  }
 }
 
 function pintarFiltroResultados() {
@@ -484,14 +506,19 @@ function pintarStats() {
   const campo = STATS.orden, dir = STATS.dir === 'asc' ? 1 : -1;
   filas = filas.slice().sort((a, b) => dir * (a[campo] - b[campo]) || a.nombre.localeCompare(b.nombre));
 
-  cuerpo.innerHTML = filas.map((j, i) => `
+  cuerpo.innerHTML = filas.map((j, i) => {
+    const insignia = j.escudo
+      ? `<span class="escudo-mini cond-logo"><img src="/static/${esc(j.escudo)}" alt="" loading="lazy"></span>`
+      : `<i class="equipo-punto" style="background:${esc(j.color || 'var(--cian)')}"></i>`;
+    return `
     <tr>
       <td class="pos">${i + 1}</td>
       <td>${esc(j.nombre)}${j.dorsal ? ` <span style="color:var(--texto-tenue)">#${esc(j.dorsal)}</span>` : ''}</td>
-      <td>${esc(j.equipo)}</td>
+      <td><span class="eq">${insignia}<span>${esc(j.equipo)}</span></span></td>
       <td>${esc(j.division)}</td>
       <td>${j.goles}</td><td>${j.asistencias}</td><td>${j.cs}</td>
-    </tr>`).join('') || `<tr><td colspan="7">${vacio('Sin jugadores que coincidan.')}</td></tr>`;
+    </tr>`;
+  }).join('') || `<tr><td colspan="7">${vacio('Sin jugadores que coincidan.')}</td></tr>`;
 
   const nota = $('#statNota');
   if (nota) nota.textContent = `${filas.length} jugadores`;
@@ -748,134 +775,12 @@ function pintarEquipoDetalle() {
   if (nota) nota.textContent = `${(eq.jugadores || []).length} jugadores`;
 }
 
-/* --------------------------------------------------------------- SHOP */
-const INVITE_DISCORD = 'https://discord.gg/6K7nezXhx6';
-const PRODUCTOS = [
-  {
-    id: 'netflix', nombre: 'Netflix', sigla: 'N', tag: 'STREAMING',
-    grad: 'linear-gradient(135deg, #E50914 0%, #6d0306 100%)',
-    precio: 'COMPARTIDA · MENSUAL O PERMANENTE',
-    desc: 'Compra Netflix por un precio razonable, al alcance de tu bolsillo. Perfil propio para ver peliculas, series y documentales en HD y 4K.',
-    ops: ['Cuenta mensual o permanente', 'Perfil y pantallas propias', 'HD y 4K segun el plan', 'Soporte y cambio garantizado']
-  },
-  {
-    id: 'disney', nombre: 'Disney+', sigla: 'D+', tag: 'STREAMING',
-    grad: 'linear-gradient(135deg, #0E2C5F 0%, #1d4ed8 100%)',
-    precio: 'MENSUAL O ANUAL',
-    desc: 'Disney+ con el universo Marvel, Star Wars, Pixar y National Geographic. Elige plan mensual o anual a tu medida.',
-    ops: ['Cuenta compartida o personal', 'Plan mensual o anual', 'Sin cortes ni anuncios', 'Soporte ante cualquier novedad']
-  },
-  {
-    id: 'crunchyroll', nombre: 'Crunchyroll', sigla: 'CR', tag: 'STREAMING',
-    grad: 'linear-gradient(135deg, #F47521 0%, #a34d0d 100%)',
-    precio: 'MENSUAL · SIMULCAST',
-    desc: 'Todo el anime en HD con simulcast, manga y los estrenos de cada temporada. Plan mensual economico para tu bolsillo.',
-    ops: ['Plan mensual accesible', 'Simulcast de los estrenos', 'Catalogo de anime y manga', 'Sin publicidad']
-  },
-  {
-    id: 'paramount', nombre: 'Paramount+', sigla: 'P+', tag: 'STREAMING',
-    grad: 'linear-gradient(135deg, #0064FF 0%, #002c8a 100%)',
-    precio: 'MENSUAL',
-    desc: 'Series, deportes y peliculas exclusivas de Paramount+. Suscripcion mensual a precio comodo.',
-    ops: ['Plan mensual flexible', 'Peliculas y series exclusivas', 'Deportes en vivo', 'Pago seguro por ticket']
-  },
-  {
-    id: 'hbomax', nombre: 'HBO Max', sigla: 'HBO', tag: 'STREAMING',
-    grad: 'linear-gradient(135deg, #991AEB 0%, #4b0a80 100%)',
-    precio: 'MENSUAL O ANUAL',
-    desc: 'HBO Max con los estrenos mas fuertes de DC, HBO y Warner. Mensual o anual, como prefieras.',
-    ops: ['Plan mensual o anual', 'Estrenos y clasicos HBO', 'Maxima calidad de imagen', 'Soporte incluido']
-  },
-  {
-    id: 'steam', nombre: 'Steam', sigla: 'ST', tag: 'GAMING',
-    grad: 'linear-gradient(135deg, #66C0F4 0%, #1B2838 100%)',
-    precio: 'CREDITO Y CUENTAS',
-    desc: 'Saldo y cuentas Steam para comprar tus juegos favoritos. Precio justo y entrega rapida.',
-    ops: ['Tarjetas de regalo y saldo', 'Cuentas seguras', 'Entrega rapida por ticket', 'Precio accesible']
-  },
-  {
-    id: 'vip-haxball', nombre: 'VIP Haxball Room', sigla: 'VIP', tag: 'HAXBALL',
-    grad: 'linear-gradient(135deg, #0AFFD6 0%, #003870 100%)',
-    precio: 'SALA VIP · CUPOS LIMITADOS',
-    desc: 'Sala VIP exclusiva de Haxball con nombre reservado, privilegios dentro de la liga y acceso preferente. Cupos limitados.',
-    ops: ['Nombre VIP reservado', 'Ventajas dentro de la sala', 'Cupos limitados por temporada', 'Soporte del staff']
-  },
-  {
-    id: 'discord-nitro', nombre: 'Discord Nitro', sigla: 'NI', tag: 'DISCORD',
-    grad: 'linear-gradient(135deg, #5865F2 0%, #23272A 100%)',
-    precio: 'MENSUAL O ANUAL',
-    desc: 'Discord Nitro con emojis animados, boosts y banners. Pidelo por ticket y te lo activamos al momento.',
-    ops: ['Nitro mensual o anual', 'Emojis animados y personalizados', '2 boosts para tu servidor', 'Precio al bolsillo']
-  },
-  {
-    id: 'paginas-web', nombre: 'Paginas web / Hosting', sigla: 'WWW', tag: 'DESARROLLO',
-    grad: 'linear-gradient(135deg, #00B8FF 0%, #0040C4 100%)',
-    precio: 'A MEDIDA',
-    desc: 'Disenamos tu pagina web y la alojamos: landing, tienda o portafolio. Hosting y dominio incluidos.',
-    ops: ['Pagina web a medida', 'Hosting y dominio incluidos', 'Diseno responsive', 'Soporte y actualizaciones']
-  },
-  {
-    id: 'bots-discord', nombre: 'Bots Discord', sigla: 'BOT', tag: 'DESARROLLO',
-    grad: 'linear-gradient(135deg, #23272A 0%, #5865F2 100%)',
-    precio: 'A MEDIDA',
-    desc: 'Bots de Discord personalizados: moderacion, musica, niveles, economia y mas. Configurados en tu servidor.',
-    ops: ['Bots de moderacion', 'Musica, niveles y economia', 'Configuracion en tu servidor', 'Precio razonable']
-  }
-];
-
-function pintarShop() {
-  const caja = $('#shopGrid');
-  if (!caja) return;
-  caja.innerHTML = PRODUCTOS.map((p) => `
-    <button class="shop-card reveal" type="button" data-shop="${p.id}" style="--grad:${p.grad}">
-      <span class="shop-logo">${esc(p.sigla)}</span>
-      <span class="shop-tag">${esc(p.tag)}</span>
-      <span class="shop-nombre">${esc(p.nombre)}</span>
-      <span class="shop-precio">${esc(p.precio)}</span>
-    </button>`).join('');
-}
-
-function abrirShop(id) {
-  const m = $('#shopModal');
-  if (!m) return;
-  const p = PRODUCTOS.find((x) => x.id === id);
-  if (!p) return;
-  m.innerHTML = `
-    <div class="shop-modal-bg" data-shop-cerrar></div>
-    <div class="shop-modal-card" role="dialog" aria-modal="true" aria-label="${esc(p.nombre)}">
-      <button class="shop-modal-cerrar" type="button" data-shop-cerrar aria-label="Cerrar">&times;</button>
-      <div class="shop-logo grande" style="--grad:${p.grad}">${esc(p.sigla)}</div>
-      <span class="shop-tag">${esc(p.tag)}</span>
-      <h2>${esc(p.nombre)}</h2>
-      <p class="shop-modal-desc">${esc(p.desc)}</p>
-      <ul class="shop-ops">${p.ops.map((o) => `<li>${esc(o)}</li>`).join('')}</ul>
-      <p class="shop-precio-note">${esc(p.precio)} · a un precio razonable, pensado para tu bolsillo.</p>
-      <a class="btn-shop-discord" href="${INVITE_DISCORD}" target="_blank" rel="noopener">
-        CREA TU TICKET EN DISCORD
-      </a>
-      <small class="shop-modal-aviso">Te llevamos a nuestro servidor: abre un ticket con el nombre del
-        producto y listo. Cuentas permanentes o mensuales segun el plan.</small>
-    </div>`;
-  document.body.classList.add('sin-scroll');
-  m.classList.add('abierto');
-  m.setAttribute('aria-hidden', 'false');
-}
-
-function cerrarShop() {
-  const m = $('#shopModal');
-  if (!m) return;
-  m.classList.remove('abierto');
-  m.setAttribute('aria-hidden', 'true');
-  document.body.classList.remove('sin-scroll');
-}
-
+/* ---------------------------------------------- SHOP (PROXIMAMENTE) */
 document.addEventListener('click', (ev) => {
-  const card = ev.target.closest('[data-shop]');
-  if (card) { abrirShop(card.dataset.shop); return; }
-  if (ev.target.closest('[data-shop-cerrar]')) { cerrarShop(); return; }
-});
-document.addEventListener('keydown', (ev) => {
-  if (ev.key === 'Escape') cerrarShop();
+  const btn = ev.target.closest('[data-nav="shop"], a.nav-shop');
+  if (!btn) return;
+  ev.preventDefault();
+  toast('La tienda se inaugura pronto. Estate atento en el Discord!');
 });
 
 /* -------------------------------------------------------------- FORO */
@@ -1061,8 +966,10 @@ function renderPagina(pagina) {
     case 'donacion':
       pintarDonacion();
       break;
-    case 'shop':
-      pintarShop();
+    case 'pubs':
+      pintarPubs();
+      break;
+    case 'sponsors':
       break;
     case 'equipo-detalle':
       pintarEquipoDetalle();
@@ -1077,7 +984,6 @@ function renderPagina(pagina) {
       pintarResultadosInicio();
       pintarFechas('#porJugar', pendientesOrdenados('all').slice(0, 5), { compacto: true, detalle: false, vacio: 'No hay partidos programados.' });
       pintarLideres();
-      pintarPubs();
       pintarMuseo();
       pintarNoticias();
       pintarAnuncios();
@@ -1113,11 +1019,41 @@ async function iniciar() {
     }
   } catch (err) {
     console.error(err);
-    toast('No se pudo conectar con la base de datos');
+    mostrarErrorBaseDatos();
   } finally {
     revelar();
     requestAnimationFrame(ocultarPreloader);
   }
+}
+
+/* ------------------------------------------- ERROR DE BASE DE DATOS */
+function mostrarErrorBaseDatos() {
+  if ($('#falloPantalla')) return;
+  const caja = document.createElement('div');
+  caja.id = 'falloPantalla';
+  caja.className = 'fallo-pantalla';
+  caja.setAttribute('role', 'alert');
+  caja.innerHTML = `
+    <span class="fallo-cancha" aria-hidden="true"></span>
+    <div class="fallo-card reveal visible">
+      <span class="fallo-logo">
+        <img src="/static/assets/logo-128.webp" width="84" height="84" alt="">
+        <span class="fallo-anillo"></span>
+      </span>
+      <span class="fallo-tag">SIN SERVICIO</span>
+      <h1>La pagina esta caida</h1>
+      <p>No se pudo conectar con la base de datos. Podemos estar de mantenimiento o el servidor tuvo un
+        problema temporal.</p>
+      <div class="fallo-acciones">
+        <button class="btn btn-primary big" type="button" data-fallo-reintentar>REINTENTAR</button>
+        <button class="btn btn-soft big" type="button" data-fallo-puede>ENTENDIDO</button>
+      </div>
+      <small>Si seguis viendo este mensaje, recarga con <b>Ctrl + R</b> o avisanos por el Discord.</small>
+    </div>`;
+  document.body.appendChild(caja);
+
+  caja.querySelector('[data-fallo-reintentar]').addEventListener('click', () => location.reload());
+  caja.querySelector('[data-fallo-puede]').addEventListener('click', () => caja.remove());
 }
 
 document.addEventListener('DOMContentLoaded', iniciar);

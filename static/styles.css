@@ -1159,23 +1159,18 @@ body.carga-activa { overflow: hidden; }
 .nav a.nav-donar {
   color: #fff;
   background: linear-gradient(135deg, #FF4D9D 0%, #ff86c4 100%);
-  box-shadow: 0 0 0 1px rgba(255,255,255,.22), 0 6px 20px rgba(255,77,157,.5);
-  animation: brilloDonar 3s ease-in-out infinite;
+  box-shadow: 0 6px 18px rgba(255,77,157,.38);
 }
 .nav a.nav-donar:hover {
   background: linear-gradient(135deg, #ff5fa8 0%, #ffa6d6 100%);
   color: #fff;
-  box-shadow: 0 0 28px rgba(255,77,157,.85);
+  box-shadow: 0 10px 26px rgba(255,77,157,.6);
 }
 .nav a.nav-donar.activo { color: #fff; background: linear-gradient(135deg, #FF4D9D 0%, #ff86c4 100%); }
 .nav a.nav-donar::after { display: none; }
 .mobile-menu a.nav-donar {
   background: linear-gradient(135deg, #FF4D9D 0%, #ff86c4 100%);
-  color: #fff; box-shadow: 0 6px 18px rgba(255,77,157,.5);
-}
-@keyframes brilloDonar {
-  0%, 100% { box-shadow: 0 0 0 1px rgba(255,255,255,.22), 0 6px 18px rgba(255,77,157,.45); }
-  50% { box-shadow: 0 0 0 1px rgba(255,255,255,.4), 0 8px 30px rgba(255,77,157,.85); }
+  color: #fff; box-shadow: 0 6px 18px rgba(255,77,157,.45);
 }
 
 /* ------------------------------------------- ENLACES A PAGINA EQUIPO */
@@ -1266,114 +1261,181 @@ a.match-team:hover .nm { color: var(--cian); }
 .nav a.nav-shop {
   color: #1a1400;
   background: linear-gradient(135deg, #FFD400 0%, #FFB300 100%);
-  box-shadow: 0 0 0 1px rgba(255,255,255,.28), 0 6px 20px rgba(255,196,0,.5);
-  animation: brilloShop 3s ease-in-out infinite;
+  box-shadow: 0 6px 18px rgba(255,196,0,.38);
 }
 .nav a.nav-shop:hover {
   background: linear-gradient(135deg, #ffdf40 0%, #ffc84d 100%);
   color: #141000;
-  box-shadow: 0 0 28px rgba(255,196,0,.85);
+  box-shadow: 0 10px 26px rgba(255,196,0,.6);
 }
 .nav a.nav-shop.activo { color: #1a1400; background: linear-gradient(135deg, #FFD400 0%, #FFB300 100%); }
 .nav a.nav-shop::after { display: none; }
 .mobile-menu a.nav-shop {
   background: linear-gradient(135deg, #FFD400 0%, #FFB300 100%);
-  color: #1a1400; box-shadow: 0 6px 18px rgba(255,196,0,.5);
-}
-@keyframes brilloShop {
-  0%, 100% { box-shadow: 0 0 0 1px rgba(255,255,255,.28), 0 6px 16px rgba(255,196,0,.4); }
-  50% { box-shadow: 0 0 0 1px rgba(255,255,255,.5), 0 8px 30px rgba(255,196,0,.85); }
+  color: #1a1400; box-shadow: 0 6px 18px rgba(255,196,0,.45);
 }
 
-/* -------------------------------------------------------------- SHOP */
-.shop-hero p b { color: #FFCD3D; }
-.shop-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(220px, 100%), 1fr));
-  gap: 18px;
+/* ---------------------------------------- CTA "UNETE A LA LIGA" */
+.discord-card .btn {
+  width: 100%;
+  background: linear-gradient(135deg, var(--rosa) 0%, #ff77b8 100%);
+  color: var(--blanco);
+  box-shadow: 0 10px 26px rgba(255,77,157,.45);
 }
-.shop-card {
-  position: relative; overflow: hidden;
-  display: flex; flex-direction: column; align-items: flex-start; gap: 8px;
-  padding: 22px 20px 20px; border-radius: var(--radio);
-  text-align: left; font-family: inherit;
-  background: linear-gradient(160deg, rgba(255,255,255,.07), rgba(255,255,255,.02));
-  border: 1px solid var(--linea);
-  cursor: pointer;
-  transition: transform .3s, border-color .3s, box-shadow .3s;
+.discord-card .btn:hover { box-shadow: 0 16px 36px rgba(255,77,157,.65); }
+
+/* ---------------------------------------- LOGOS EN ESTADISTICAS */
+.equipo-punto.escudo-logo {
+  width: 20px; height: 20px; border-radius: 6px;
+  display: inline-flex; align-items: center; justify-content: center;
+  overflow: hidden; vertical-align: middle;
+  background: linear-gradient(150deg, rgba(255,255,255,.18), rgba(0,56,112,.5));
+  box-shadow: none;
 }
-.shop-card::before {
+.equipo-punto.escudo-logo img { width: 100%; height: 100%; object-fit: contain; }
+.escudo-mini.cond-logo { width: 22px; height: 22px; }
+
+/* ------------------------------------------- ERROR BASE DE DATOS */
+.fallo-pantalla {
+  position: fixed; inset: 0; z-index: 900;
+  display: flex; align-items: center; justify-content: center; padding: 22px;
+  background:
+    radial-gradient(900px 420px at 15% -10%, rgba(10,255,214,.14), transparent 60%),
+    radial-gradient(800px 420px at 90% 110%, rgba(255,77,157,.16), transparent 60%),
+    linear-gradient(160deg, #050d1c 0%, #03070f 100%);
+  color: var(--blanco);
+  overflow-y: auto;
+}
+.fallo-cancha {
+  position: absolute; inset: 0; pointer-events: none;
+  background-image:
+    linear-gradient(rgba(10,255,214,.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(10,255,214,.06) 1px, transparent 1px);
+  background-size: 42px 42px;
+  mask-image: radial-gradient(circle at 50% 45%, #000 0%, transparent 72%);
+  -webkit-mask-image: radial-gradient(circle at 50% 45%, #000 0%, transparent 72%);
+}
+.fallo-card {
+  position: relative; z-index: 1;
+  width: 100%; max-width: 460px;
+  display: flex; flex-direction: column; align-items: center; gap: 14px;
+  text-align: center;
+  padding: clamp(30px, 6vw, 46px) clamp(22px, 5vw, 40px);
+  border-radius: 26px;
+  background: linear-gradient(165deg, rgba(13,27,49,.92), rgba(7,18,38,.95));
+  border: 1px solid var(--linea-fuerte);
+  box-shadow: 0 30px 80px rgba(0,4,12,.7), inset 0 1px 0 rgba(255,255,255,.06);
+  animation: falloAparecer .45s cubic-bezier(.2,1.2,.5,1);
+}
+@keyframes falloAparecer {
+  from { opacity: 0; transform: translateY(24px) scale(.96); }
+}
+.fallo-logo {
+  position: relative; display: inline-flex;
+  width: 96px; height: 96px; align-items: center; justify-content: center;
+}
+.fallo-logo img { width: 84px; height: 84px; object-fit: contain; border-radius: 20px; }
+.fallo-anillo {
+  position: absolute; inset: 0; border-radius: 50%;
+  border: 2px solid transparent; border-top-color: var(--cian); border-right-color: rgba(10,255,214,.35);
+  animation: falloGiramos 1.1s linear infinite;
+}
+@keyframes falloGiramos { to { transform: rotate(360deg); } }
+.fallo-card .fallo-tag {
+  font-size: .62rem; font-weight: 800; letter-spacing: .3em;
+  color: #FFCD3D; padding: 5px 14px; border-radius: 999px;
+  background: rgba(255,205,61,.1); border: 1px solid rgba(255,205,61,.35);
+}
+.fallo-card h1 { font-family: var(--fuente-titulo); font-size: 1.7rem; font-weight: 400; letter-spacing: .02em; }
+.fallo-card p { font-size: .92rem; color: var(--texto-suave); line-height: 1.6; margin: 0; }
+.fallo-acciones { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin-top: 6px; }
+.fallo-acciones .btn { min-width: 170px; }
+.fallo-acciones .btn-soft { border-color: var(--linea-fuerte); }
+.fallo-card small { font-size: .72rem; color: var(--texto-tenue); line-height: 1.5; }
+.fallo-card small b { color: var(--cian); }
+
+/* ------------------------------------------------------------ PUBS */
+.pubs-hero { position: relative; overflow: hidden; }
+.pubs-hero::after {
   content: ""; position: absolute; inset: 0; pointer-events: none;
-  background: var(--grad); opacity: .15; transition: opacity .3s;
+  background-image:
+    linear-gradient(rgba(10,255,214,.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(10,255,214,.05) 1px, transparent 1px);
+  background-size: 46px 46px;
+  mask-image: radial-gradient(circle at 50% 40%, #000 0%, transparent 75%);
+  -webkit-mask-image: radial-gradient(circle at 50% 40%, #000 0%, transparent 75%);
 }
-.shop-card:hover {
-  transform: translateY(-8px);
-  border-color: rgba(255,205,61,.55);
-  box-shadow: var(--sombra-alta), 0 0 32px rgba(255,205,61,.16);
+.pubs-hero .wrap, .pubs-hero .etiqueta, .pubs-hero .pubs-lead { position: relative; z-index: 1; }
+.pubs-bola {
+  position: absolute; z-index: 0; border-radius: 50%;
+  width: 90px; height: 90px; pointer-events: none;
+  background: radial-gradient(circle at 30% 30%, rgba(10,255,214,.55), rgba(10,255,214,.08) 62%, transparent 72%);
+  filter: blur(1px);
+  animation: pubsFlotar 5s ease-in-out infinite alternate;
 }
-.shop-card:hover::before { opacity: .24; }
-.shop-logo {
-  position: relative;
-  width: 64px; height: 64px; border-radius: 16px; flex-shrink: 0;
-  display: flex; align-items: center; justify-content: center;
-  background: var(--grad);
-  font-family: var(--fuente-titulo); font-size: 1.7rem; color: #fff;
-  text-shadow: 0 2px 8px rgba(0,0,0,.35);
-  box-shadow: 0 10px 24px rgba(0,0,0,.42);
+.pubs-bola.pasa { width: 130px; height: 130px; right: 8%; bottom: -40px; animation-duration: 7s; animation-delay: 1.2s; }
+@keyframes pubsFlotar {
+  from { transform: translateY(-8px) scale(1); }
+  to { transform: translateY(14px) scale(1.12); }
 }
-.shop-logo.grande { width: 84px; height: 84px; font-size: 2.3rem; border-radius: 20px; }
-.shop-tag { position: relative; font-size: .6rem; letter-spacing: .18em; color: #FFCD3D; font-weight: 700; }
-.shop-nombre { position: relative; font-size: 1.05rem; color: var(--blanco); font-weight: 700; line-height: 1.15; overflow-wrap: anywhere; }
-.shop-precio { position: relative; font-size: .68rem; color: var(--texto-suave); letter-spacing: .06em; }
+.pubs-feat {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 18px;
+  margin-bottom: 34px;
+}
+.pubs-step {
+  padding: 24px 22px; border-radius: var(--radio);
+  background: linear-gradient(160deg, var(--tarjeta-alta) 0%, rgba(255,255,255,.04) 100%);
+  border: 1px solid var(--linea); box-shadow: var(--sombra);
+  transition: transform .3s, border-color .3s;
+}
+.pubs-step:hover { transform: translateY(-6px); border-color: var(--linea-fuerte); }
+.pubs-num {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 40px; height: 40px; border-radius: 13px; margin-bottom: 12px;
+  font-family: var(--fuente-titulo); font-size: 1rem; color: var(--azul-fondo);
+  background: linear-gradient(135deg, var(--cian), #4ee9d1);
+  box-shadow: 0 10px 22px rgba(10,255,214,.3);
+}
+.pubs-step h3 { font-size: 1.04rem; margin-bottom: 6px; }
+.pubs-step p { font-size: .86rem; color: var(--texto-suave); line-height: 1.6; margin: 0; }
+.pubs-tips {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 18px;
+  margin-top: 38px;
+}
+.pubs-tip {
+  padding: 26px 24px; border-radius: var(--radio);
+  background: linear-gradient(160deg, rgba(255,77,157,.14) 0%, rgba(0,56,112,.55) 100%);
+  border: 1px solid rgba(255,77,157,.4); box-shadow: var(--sombra);
+}
+.pubs-tip h3 { font-size: 1.02rem; margin-bottom: 12px; }
+.pubs-tip p { font-size: .88rem; color: var(--texto-suave); line-height: 1.65; }
+.pubs-tip ul { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 7px; }
+.pubs-tip li { font-size: .86rem; color: var(--texto-suave); }
+.pubs-tip .btn { margin-top: 16px; }
 
-.shop-modal { position: fixed; inset: 0; z-index: 520; display: none; align-items: center; justify-content: center; padding: 20px; }
-.shop-modal.abierto { display: flex; }
-.shop-modal-bg { position: absolute; inset: 0; background: rgba(0,4,12,.82); animation: shopApar .25s ease; }
-.shop-modal-card {
-  position: relative; width: 100%; max-width: 460px; max-height: 88vh; overflow-y: auto;
-  display: flex; flex-direction: column; gap: 12px;
-  padding: 30px 28px; border-radius: 24px;
-  background: linear-gradient(165deg, #0d1b31 0%, #071226 100%);
-  border: 1px solid rgba(255,205,61,.4);
-  box-shadow: 0 30px 80px rgba(0,4,12,.75);
-  animation: shopSubir .3s ease;
+/* ---------------------------------------------------------- SPONSORS */
+.sponsor-vacio {
+  max-width: 620px; margin: 0 auto; padding: clamp(40px, 7vw, 64px) clamp(22px, 5vw, 44px);
+  text-align: center; border-radius: var(--radio);
+  background:
+    radial-gradient(560px 240px at 50% -20%, rgba(10,255,214,.13), transparent 70%),
+    linear-gradient(160deg, var(--tarjeta-alta) 0%, rgba(255,255,255,.03) 100%);
+  border: 1px solid var(--linea); box-shadow: var(--sombra);
 }
-@keyframes shopApar { from { opacity: 0; } }
-@keyframes shopSubir { from { opacity: 0; transform: translateY(26px) scale(.97); } }
-.shop-modal-cerrar {
-  position: absolute; top: 14px; right: 14px;
-  width: 34px; height: 34px; border-radius: 10px;
-  background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.18);
-  color: var(--blanco); font-size: 1.1rem; line-height: 1; transition: all .25s;
+.sponsor-diamante {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 74px; height: 74px; border-radius: 22px; margin-bottom: 18px;
+  font-size: 1.9rem; color: var(--cian);
+  background: linear-gradient(150deg, rgba(10,255,214,.16), rgba(255,255,255,.05));
+  border: 1px solid var(--linea-fuerte);
+  animation: sponsorBrillar 2.4s ease-in-out infinite;
 }
-.shop-modal-cerrar:hover { background: #FF4D9D; border-color: #FF4D9D; }
-.shop-modal-card h2 { font-size: 1.5rem; color: var(--blanco); }
-.shop-modal-desc { font-size: .92rem; color: var(--texto-suave); line-height: 1.55; }
-.shop-ops { display: flex; flex-direction: column; gap: 8px; list-style: none; margin: 0; padding: 0; }
-.shop-ops li {
-  padding: 10px 14px; border-radius: 12px;
-  background: rgba(10,255,214,.08); border: 1px solid rgba(10,255,214,.22);
-  color: var(--blanco); font-size: .84rem;
+@keyframes sponsorBrillar {
+  0%, 100% { box-shadow: 0 0 18px rgba(10,255,214,.18); }
+  50% { box-shadow: 0 0 34px rgba(10,255,214,.45); }
 }
-.shop-ops li::before { content: "\2726"; color: var(--cian); margin-right: 6px; }
-.shop-precio-note { font-size: .82rem; color: #FFCD3D; font-weight: 700; }
-.btn-shop-discord {
-  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
-  padding: 14px 20px; border-radius: 999px;
-  background: linear-gradient(135deg, #5865F2, #3f4bd0);
-  color: #fff; font-size: .84rem; font-weight: 800; letter-spacing: .05em;
-  box-shadow: 0 12px 30px rgba(88,101,242,.45);
-  transition: transform .25s, box-shadow .25s;
-}
-.btn-shop-discord:hover { transform: translateY(-3px); box-shadow: 0 18px 40px rgba(88,101,242,.65); }
-.shop-modal-aviso { font-size: .72rem; color: var(--texto-tenue); line-height: 1.5; }
-.sin-scroll { overflow: hidden; }
-
-@media (max-width: 640px) {
-  .shop-grid { gap: 13px; }
-  .shop-card { padding: 18px 16px 16px; }
-  .shop-logo { width: 54px; height: 54px; font-size: 1.4rem; }
-}
+.sponsor-vacio h2 { font-size: 1.5rem; }
+.sponsor-vacio p { font-size: .92rem; color: var(--texto-suave); line-height: 1.65; margin: 0 auto 22px; max-width: 440px; }
 
 /* ------------------------------------------- CTA DONAR (DISCORD) */
 .donar-cta {
