@@ -200,6 +200,16 @@ def redes():
     return render_template("redes.html")
 
 
+@app.route("/pubs")
+def pubs():
+    return render_template("pubs.html")
+
+
+@app.route("/sponsors")
+def sponsors():
+    return render_template("sponsors.html")
+
+
 @app.route("/equipo")
 def equipo():
     return render_template("equipo.html")
@@ -208,11 +218,6 @@ def equipo():
 @app.route("/donacion")
 def donacion():
     return render_template("donacion.html")
-
-
-@app.route("/shop")
-def shop():
-    return render_template("shop.html")
 
 
 @app.route("/equipos/<int:equipo_id>")
