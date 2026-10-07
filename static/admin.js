@@ -498,40 +498,27 @@ function mostrarInfoPartido() {
   if (!form) return;
   if (!f) {
     form.goles_a.value = 0; form.goles_b.value = 0;
-    form.minutos_cs.value = 60;
-    form.portero_a_id.innerHTML = '<option value="">Sin portero</option>';
-    form.portero_b_id.innerHTML = '<option value="">Sin portero</option>';
+    form.minutos_cs_a.value = 0; form.minutos_cs_b.value = 0;
+    form.arquero_a_id.innerHTML = '<option value="">Sin arquero</option>';
+    form.arquero_b_id.innerHTML = '<option value="">Sin arquero</option>';
     $('#listaGoleadores').innerHTML = '';
     $('#listaAsistencias').innerHTML = '';
-    $('#csPrevista').innerHTML = 'Sin partido seleccionado.';
     return;
   }
 
   const jugado = f.goles_a !== null && f.goles_a !== undefined;
   form.goles_a.value = jugado ? (+f.goles_a || 0) : 0;
   form.goles_b.value = jugado ? (+f.goles_b || 0) : 0;
-  form.minutos_cs.value = jugado && f.minutos_cs ? (+f.minutos_cs || 60) : 60;
+  form.minutos_cs_a.value = jugado ? (+f.minutos_cs_a || 0) : 0;
+  form.minutos_cs_b.value = jugado ? (+f.minutos_cs_b || 0) : 0;
 
-  form.portero_a_id.innerHTML = '<option value="">Sin portero</option>' + opcionesJugadores('a', f.portero_a);
-  form.portero_b_id.innerHTML = '<option value="">Sin portero</option>' + opcionesJugadores('b', f.portero_b);
+  form.arquero_a_id.innerHTML = '<option value="">Sin arquero</option>' + opcionesJugadores('a', f.portero_a);
+  form.arquero_b_id.innerHTML = '<option value="">Sin arquero</option>' + opcionesJugadores('b', f.portero_b);
 
   $('#listaGoleadores').innerHTML = jugado
     ? jsonLista(f.goleadores).map((g) => chipHTML('gol', 0, g)).join('') : '';
   $('#listaAsistencias').innerHTML = jugado
     ? jsonLista(f.asistencias).map((a) => chipHTML('asistencia', 0, a)).join('') : '';
-  actualizarCsPrevista();
-}
-
-function actualizarCsPrevista() {
-  const form = $('#formResultado');
-  const nota = $('#csPrevista');
-  if (!form || !nota || !fechaActual) return;
-  const golesA = parseInt(form.goles_a.value || '0', 10);
-  const golesB = parseInt(form.goles_b.value || '0', 10);
-  const csA = golesB === 0 && form.portero_a_id.value ? '1' : '0';
-  const csB = golesA === 0 && form.portero_b_id.value ? '1' : '0';
-  const min = parseInt(form.minutos_cs.value || '60', 10);
-  nota.innerHTML = `CS previsto por ${min} min de partido: <b>${esc(fechaActual.sigla_a)} ${csA}</b> · <b>${esc(fechaActual.sigla_b)} ${csB}</b>`;
 }
 
 $('#selFecha').addEventListener('change', mostrarInfoPartido);
@@ -558,9 +545,12 @@ function chipHTML(tipo, idx, item = {}) {
 }
 
 $('#addGoleador').addEventListener('click', () => {
-  $('#listaGoleadores').insertAdjacentHTML('beforeend', chipHTML('gol', 0));
+  if (!fechaActual) return toast('Selecciona un partido primero');
+  const chip = chipHTML('gol', 0);
+  $('#listaGoleadores').insertAdjacentHTML('beforeend', chip);
 });
 $('#addAsistencia').addEventListener('click', () => {
+  if (!fechaActual) return toast('Selecciona un partido primero');
   $('#listaAsistencias').insertAdjacentHTML('beforeend', chipHTML('asistencia', 0));
 });
 
@@ -574,11 +564,6 @@ document.addEventListener('change', (ev) => {
   const chip = ev.target.closest('.chip-resultado');
   if (chip && ev.target.matches('[name="equipo"]')) {
     chip.querySelector('[name="jugador_id"]').innerHTML = opcionesJugadores(ev.target.value);
-    return;
-  }
-  if (ev.target.closest('#formResultado') &&
-      ev.target.matches('[name="goles_a"], [name="goles_b"], [name="portero_a_id"], [name="portero_b_id"], [name="minutos_cs"]')) {
-    actualizarCsPrevista();
   }
 });
 
@@ -623,14 +608,14 @@ function f_reiniciarResultado() {
   const f = $('#formResultado');
   if (!f) return;
   ['goles_a', 'goles_b'].forEach((n) => { if (f[n]) f[n].value = '0'; });
-  if (f.minutos_cs) f.minutos_cs.value = '60';
+  if (f.minutos_cs_a) f.minutos_cs_a.value = '0';
+  if (f.minutos_cs_b) f.minutos_cs_b.value = '0';
   const a = $('#selFecha').value;
   const partido = ESTADO.fechas.find((x) => String(x.id) === String(a)) || null;
-  if (f.portero_a_id) f.portero_a_id.innerHTML = '<option value="">Sin portero</option>' + (partido ? opcionesJugadores('a') : '');
-  if (f.portero_b_id) f.portero_b_id.innerHTML = '<option value="">Sin portero</option>' + (partido ? opcionesJugadores('b') : '');
+  if (f.arquero_a_id) f.arquero_a_id.innerHTML = '<option value="">Sin arquero</option>' + (partido ? opcionesJugadores('a') : '');
+  if (f.arquero_b_id) f.arquero_b_id.innerHTML = '<option value="">Sin arquero</option>' + (partido ? opcionesJugadores('b') : '');
   $('#listaGoleadores').innerHTML = '';
   $('#listaAsistencias').innerHTML = '';
-  actualizarCsPrevista();
 }
 
 /* --------------------------------------------------------- X5 IDEAL */

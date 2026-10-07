@@ -207,6 +207,9 @@
 .form-grid input[type=date]::-webkit-calendar-picker-indicator,
 .form-grid input[type=time]::-webkit-calendar-picker-indicator { filter: invert(1); cursor: pointer; }
 .form-grid input[type=number] { max-width: 100%; }
+.cs-dupla { display: grid; grid-template-columns: 1fr 1fr; gap: 17px; }
+.cs-caja input[type=number] { min-width: 0; }
+@media (max-width: 560px) { .cs-dupla { grid-template-columns: 1fr; } }
 .form-acciones { grid-column: 1 / -1; display: flex; gap: 11px; flex-wrap: wrap; }
 .form-jugador { align-items: end; }
 .form-jugador > button { align-self: end; white-space: nowrap; }

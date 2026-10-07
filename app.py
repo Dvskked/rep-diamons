@@ -641,7 +641,9 @@ def admin_fechas():
         return bloqueo
     return jsonify({"ok": True, "fechas": db.consultar(
         "SELECT f.*, a.sigla AS sigla_a, b.sigla AS sigla_b,"
-        " r.goles_a, r.goles_b, r.goleadores, r.asistencias, r.cs_a, r.cs_b"
+        " r.goles_a, r.goles_b, r.goleadores, r.asistencias,"
+        " r.cs_a, r.cs_b, r.portero_a, r.portero_b,"
+        " r.minutos_cs_a, r.minutos_cs_b"
         " FROM fechas f"
         " JOIN equipos a ON a.id=f.equipo_a_id"
         " JOIN equipos b ON b.id=f.equipo_b_id"
@@ -740,16 +742,18 @@ def _recalcular_stats():
     a partir de los resultados guardados. Idempotente: se puede llamar
     cuantas veces se quiera sin duplicar datos."""
     filas = db.consultar(
-        "SELECT goleadores, asistencias, portero_a, portero_b, cs_a, cs_b"
+        "SELECT goleadores, asistencias, portero_a, portero_b, cs_a, cs_b,"
+        " minutos_cs_a, minutos_cs_b"
         " FROM resultados"
     )
     # Reinicia por completo para no arrastrar datos de jugadores
     # que ya no aportan en ningun resultado.
-    db.ejecutar("UPDATE jugadores SET goles=0, asistencias=0, cs=0")
+    db.ejecutar("UPDATE jugadores SET goles=0, asistencias=0, cs=0, minutos_cs=0")
 
     goles = {}
     asis = {}
     cs = {}
+    minutos_cs = {}
     for r in filas:
         for g in _json_col(r.get("goleadores"), []):
             pid = g.get("jugador_id")
@@ -759,18 +763,23 @@ def _recalcular_stats():
             pid = a.get("jugador_id")
             if pid:
                 asis[pid] = asis.get(pid, 0) + int(a.get("asistencias") or 1)
-        for lado, portero in (("cs_a", "portero_a"), ("cs_b", "portero_b")):
+        for lado, portero, col_min in (
+                ("cs_a", "portero_a", "minutos_cs_a"),
+                ("cs_b", "portero_b", "minutos_cs_b")):
             if r.get(lado) and r.get(portero):
                 try:
                     pid = int(r[portero])
                 except (TypeError, ValueError):
                     continue
                 cs[pid] = cs.get(pid, 0) + 1
+                minutos_cs[pid] = minutos_cs.get(pid, 0) + int(r.get(col_min) or 0)
 
     for pid in set(goles) | set(asis) | set(cs):
         db.ejecutar(
-            "UPDATE jugadores SET goles=%s, asistencias=%s, cs=%s WHERE id=%s",
-            (goles.get(pid, 0), asis.get(pid, 0), cs.get(pid, 0), pid),
+            "UPDATE jugadores SET goles=%s, asistencias=%s, cs=%s, minutos_cs=%s"
+            " WHERE id=%s",
+            (goles.get(pid, 0), asis.get(pid, 0), cs.get(pid, 0),
+             minutos_cs.get(pid, 0), pid),
         )
 
 
@@ -811,7 +820,9 @@ def admin_guardar_resultado(fecha_id):
     equipo_a_id, equipo_b_id = fecha["equipo_a_id"], fecha["equipo_b_id"]
     goles_a = entero(datos.get("goles_a"))
     goles_b = entero(datos.get("goles_b"))
-    minutos_cs = min(max(entero(datos.get("minutos_cs"), 60), 1), 180)
+    # Minutos de porteria en cero de cada arquero. 0 = no cerco el arco.
+    minutos_cs_a = max(entero(datos.get("minutos_cs_a")), 0)
+    minutos_cs_b = max(entero(datos.get("minutos_cs_b")), 0)
 
     def jugadores_lista(campo, col_extra):
         """Une jugador_id ↔ equipo y normaliza la lista de goles/asistencias."""
@@ -841,25 +852,29 @@ def admin_guardar_resultado(fecha_id):
     goleadores = jugadores_lista("goleadores", "goles")
     asistencias = jugadores_lista("asistencias", "asistencias")
 
-    portero_a = jugador_valido(datos.get("portero_a_id"), equipo_a_id)
-    portero_b = jugador_valido(datos.get("portero_b_id"), equipo_b_id)
-    cs_a = 1 if goles_b == 0 and portero_a else 0
-    cs_b = 1 if goles_a == 0 and portero_b else 0
+    portero_a = jugador_valido(datos.get("arquero_a_id"), equipo_a_id)
+    portero_b = jugador_valido(datos.get("arquero_b_id"), equipo_b_id)
+    cs_a = 1 if goles_b == 0 and minutos_cs_a > 0 and portero_a else 0
+    cs_b = 1 if goles_a == 0 and minutos_cs_b > 0 and portero_b else 0
 
     db.ejecutar(
         "INSERT INTO resultados (fecha_id, goles_a, goles_b, goleadores, asistencias,"
-        " portero_a, portero_b, cs_a, cs_b, minutos_cs)"
-        " VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"
+        " portero_a, portero_b, cs_a, cs_b, minutos_cs, minutos_cs_a, minutos_cs_b)"
+        " VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"
         " ON DUPLICATE KEY UPDATE goles_a=VALUES(goles_a), goles_b=VALUES(goles_b),"
         " goleadores=VALUES(goleadores), asistencias=VALUES(asistencias),"
         " portero_a=VALUES(portero_a), portero_b=VALUES(portero_b),"
-        " cs_a=VALUES(cs_a), cs_b=VALUES(cs_b), minutos_cs=VALUES(minutos_cs)",
+        " cs_a=VALUES(cs_a), cs_b=VALUES(cs_b),"
+        " minutos_cs=VALUES(minutos_cs),"
+        " minutos_cs_a=VALUES(minutos_cs_a), minutos_cs_b=VALUES(minutos_cs_b)",
         (
             fecha_id,
             goles_a, goles_b,
             json.dumps(goleadores, ensure_ascii=False),
             json.dumps(asistencias, ensure_ascii=False),
-            portero_a, portero_b, cs_a, cs_b, minutos_cs,
+            portero_a, portero_b, cs_a, cs_b,
+            max(minutos_cs_a, minutos_cs_b),
+            minutos_cs_a, minutos_cs_b,
         ),
     )
     _recalcular_stats()

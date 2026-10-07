@@ -103,7 +103,9 @@ CREATE TABLE IF NOT EXISTS `resultados` (
   `portero_b`      VARCHAR(80) DEFAULT '',
   `cs_a`           TINYINT(1) NOT NULL DEFAULT 0,
   `cs_b`           TINYINT(1) NOT NULL DEFAULT 0,
-  `minutos_cs`     INT NOT NULL DEFAULT 0,   -- minutos de porteria en cero
+  `minutos_cs`     INT NOT NULL DEFAULT 0,   -- compat: max(minutos_cs_a, minutos_cs_b)
+  `minutos_cs_a`   INT NOT NULL DEFAULT 0,   -- minutos de porteria en cero del arquero A
+  `minutos_cs_b`   INT NOT NULL DEFAULT 0,   -- minutos de porteria en cero del arquero B
   `actualizado`    TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
                     ON UPDATE CURRENT_TIMESTAMP,
   CONSTRAINT fk_res_fecha FOREIGN KEY (`fecha_id`)
