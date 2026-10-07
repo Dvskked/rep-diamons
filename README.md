@@ -13,13 +13,20 @@ y un panel de administracion privado.
 
 ## Caracteristicas
 
-### Pagina publica (`/`)
-- Seccion **LIGA** con doble filtro: division (**D1 / D2**) y vista
-  (**equipos, tabla, fechas, goleadores, asistencias, clean sheets, X5 ideal**).
-- **X5 ideal**: los cinco elegidos por el staff de cada jornada.
-- Estadisticas de jugadores, calendario con resultados y tabla de posiciones.
-- Museo de premios, noticias, anuncios, alianzas, redes, staff y foro.
-- Header de una sola fila, sin boton de donacion (la donacion vive en su seccion).
+### Pagina publica (paginas separadas)
+- **`/` Inicio**: hero con el ultimo resultado y el proximo partido, franja de
+  resultados en movimiento, cards **Ligas en juego** (D1 / D2), listado de
+  resultados con filtro por division, **Por jugar**, **Lideres de la temporada**
+  y las secciones **PUBS**, **Museo**, **Noticias**, **Anuncios**, **Alianzas**
+  y **Foro**.
+- **`/liga` Diamonds League**: doble filtro division (**D1 / D2**) y vista
+  (**Posiciones, Calendario, X5 Ideal, Equipos**). Tabla con PJ, G, E, P, GF,
+  GC, DG y PTS; cancha del cinco ideal por jornada; plantillas por equipo.
+- **`/estadisticas`**: filtro por division + buscador y tabla ordenable por
+  goles, asistencias y clean sheets, con mini-rankings.
+- **`/redes`**, **`/equipo`** (staff) y **`/donacion`** como paginas propias.
+- Header de una sola fila: Inicio, Diamonds League, Estadisticas, Redes
+  sociales, Equipo administracion, Donar y boton **Administrar**.
 - Responsive total, animaciones ligeras (solo `transform`/`opacity`) y
   respeto a `prefers-reduced-motion`.
 
@@ -47,10 +54,11 @@ y un panel de administracion privado.
 ├── db/
 │   ├── schema.sql    # Esquema de tablas
 │   └── seed.sql      # Datos iniciales (equipos, staff, modulos...)
-├── templates/        # index.html, admin.html, parciales
+├── templates/        # base.html + inicio, liga, estadisticas, redes,
+│                     #   equipo, donacion, admin y login
 ├── static/
 │   ├── styles.css    # Hoja publica
-│   ├── app.js        # Logica de la pagina publica
+│   ├── app.js        # Logica de la pagina publica (render por pagina)
 │   ├── admin.css     # Estilos del panel
 │   ├── admin.js      # Logica del panel
 │   └── assets/       # Logos, escudos e imagenes del staff

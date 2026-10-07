@@ -1,0 +1,394 @@
+Aqui tienes la lista de los jugadores, al inicio de sus nombres hay una sigla de 3 caracteres , que es la que corresponde a su equipo, por favor no lo tomes en cuenta... ejemplo: CHE | neptun , solo toma el valor de neptun, sin el CHE, y la posicion quiero que por el momento a todos los dejes como MID:
+
+
+Dominion Fc:
+
+DOM | carlitos
+2 DOM | encadenamurcielago
+3 DOM | chykkyy
+4 DOM | .bufe
+5 DOM | alexisteto.1
+6 DOM | vidal
+7 DOM | frist
+8 DOM | chico
+9 DOM | atze200
+10 DOM | Bruh
+11 DOM | driven?
+12 DOM | gianb
+13 DOM | blister21.
+14 DOM | maxxxiscc
+15 DOM | xuli
+16 DOM | Almighty
+17 DOM | kiru hatade( pistolero)
+18 DOM | crx el debora menores
+
+
+
+Klokan FC:
+
+ KLO | david_lye
+2 KLO | osint
+3 KLO | willyx.0
+4 KLO | Rotzelmejorprimedelk
+5 KLO | imsaikum
+6 KLO | Jeicen
+7 KLO | rocky_ev
+8 KLO | gsk.patomacuin
+9 KLO | guns'ekz
+10 KLO | r3ssak
+11 KLO | Samdarp
+12 KLO | kasane teto
+13 KLO | sunny
+
+
+
+Lexington :
+
+1 LEX | Santiago
+2 LEX | yideimen
+3 LEX | flipssito
+4 LEX | L. Diaz
+5 LEX | redlo
+6 LEX | estym
+7 LEX | joirzinho
+8 LEX | Piedrahita.
+9 LEX | oblea gatona
+10 LEX | karmaale.
+11 LEX | juni
+12 LEX | signal
+13 LEX | Maestro
+14 LEX | Kmvg
+15 LEX | oikawa
+16 LEX | kata
+17 LEX | Muñozz.
+18 LEX | Kyx
+
+
+
+Liga Deportiva Alajuense:
+
+
+1 LDA | Harold
+2 LDA | vini
+3 LDA | Joabsol{
+4 LDA | frznn
+5 LDA | Molina
+6 LDA | minee
+7 LDA | Reki
+8 LDA | Camaoh
+9 LDA | vicoss
+10 LDA | zizi
+11 LDA | hw!
+12 LDA | barryy
+
+
+
+
+Mafia :
+
+1 MCF | cesar61522
+2 MCF | Rapa tu madre
+3 MCF | kai_34839.
+4 MCF | gabito_586231
+5 MCF | rubyn.66
+6 MCF | nicolax_16
+7 MCF | the_smoking_dog
+8 MCF | Manuelito
+9 MCF | geferiarojas
+10 MCF | vag
+11 MCF | incredible750
+12 MCF | rommel07212
+13 MCF | bryanrd28
+
+
+
+
+Melgar:
+
+1 MLG | azulito
+2 NEW | cuevita;
+3 bryan reyna
+4 MLG | julieta.
+5 MLG | cherki
+6 NEW | chisssssssaaaaaaa
+7 alesitoo
+8 MLG | danyaw
+9 MLG | richavxz
+10 NEW | lxnyther19
+11 NEW | tmsv
+12 MLG | okvecino
+
+
+
+My Little Ponys:
+
+
+1 MLP | sh4de
+2 MLP | blapp__
+3 MLP | ramma
+4 MLP | teolight
+5 MLP | kz
+6 MLP | Esteban
+7 MLP | fgf
+8 MLP | jefazogodinez
+9 MLP | Uva
+10 MLP | cris10play
+
+
+
+
+Mystic Storm:
+
+1 MYS | ssantibrs
+2 MYS | hodly
+3 MYS | kdstzz
+4 MYS | ridzak
+5 MYS | nubyol
+6 MYS | Zar
+7 MYS | zzsaigo.
+8 MYS | pinto
+9 MYS | kk_raaa.
+10 MYS | Axos
+11 MYS | Tesu
+12 MYS | pelukin
+13 MYS | liba
+14 MYS | Zeast
+15 MYS | sdl.nahu
+16 MYS | personalized by abyx
+17 MYS | cristianoronaldossj4
+
+
+
+
+Nova Squad 404:
+
+1 404 | Clixz
+2 404 | Drip Drop
+3 404 | Disxy
+4 404 | Big Dick
+5 404 | .com
+6 404 | nocry
+7 404 |Yerii
+8 404 | Zakeo.
+9 404 | Alk
+10 404 | cuenta3sans
+11 404 | dad(2017)
+12 404 | Negroracista
+13 404 | ABRAHAM
+
+
+
+ORENSE :
+
+1 ORE | soft
+2 ORE | srdok
+3 ORE | Chino Huerta
+4 ORE | Benirou
+5 ORE | Wilosussy
+6 ORE | levxs
+7 ORE | Chanvi
+8 ORE | zeijxk
+9 ORE | alan pulido
+10 ORE | Chucky
+11 ORE | patatahott
+12 ORE | Trackzin
+13 ORE | liz.
+14 ORE | jesssct
+15 ORE | int (testing extra)
+16 ORE | cj
+17 ORE | sasori, rfs de sami
+
+
+
+Parceros FC:
+
+
+1 PAR | alanzman
+2 PAR | thiagobyvitao2.0
+3 PAR | itz.mateo7777
+4 PAR | gio
+5 PAR | azel
+6 PAR | joaoxz
+7 PAR | coito
+8 PAR | S-GR
+9 PAR | syrup
+10 PAR | f4lles
+11 PAR | Matt
+12 PAR | torrez
+13 PAR | dick_aura
+14 PAR | cristian_rip__47163
+15 PAR | lux
+16 PAR | incogned_xxxx
+17 PAR | † Capi ぱ
+
+
+
+
+Pereira :
+
+1 PER | russo
+2 PER | zetasky
+3 PER | andresky
+4 PER | Pirlosky
+5 PER | Jaser
+6 PER | Necrofilia
+7 PER | ivn'z !
+8 PER | iNube
+9 PER | Shenlong
+10 PER | Mobz
+11 PER | Ferresky
+12 PER | tavo 90%
+13 PER | frinicius.
+14 PER | Gab.
+15 PER | Fxz!
+
+
+
+
+
+
+
+
+
+
+
+
+D2:
+
+
+Academia Diamond:
+
+[SIN JUGADORES]
+
+
+Associacao Esportiva Fênix :
+
+1 AEF | Uspamaty9
+2 AEF | iori
+3 AEF | pin3
+4 AEF | Carvajal
+5 AEF | Feid
+6 AEF | matt
+7 AEF | Blue
+8 AEF | Oblivion
+9 AEF | Danhersito
+10 AEF | Kendry Paez
+11 AEF | Cicade
+12 AEF | bernew
+13 AEF | nz
+14 AEF | salome
+
+
+
+
+Blue Knight:
+
+1 BKN | ItsAyuxx
+2 BKN | the_only_disrupted
+3 BKN | GKMedioMalo
+4 BKN | ೃ⁀➷ Rokkie
+5 BKN | ! Manoak.
+6 BKN | Hakari
+7 BKN | Dsk -w-
+8 BKN | Flame 火炎
+9 BKN | Maki Maehara
+10 BKN | ayrton.ra.
+
+
+
+
+CD Alianza Platanera:
+
+1 CAP | Johann
+2 CAP | ppl
+3 CAP | akimbotz.
+4 BAR | st_fxx
+5 CAP | AlexBv
+6 CAP | Duquerr
+7 BAR | Zsher
+8 CAP | medicensebas
+9 BAR | Sučić
+10 CAP| When | Garbanzo
+11 BAR | Angox
+12 BAR | Pepe Martínez
+13 BAR | Medianoch+
+14 CAP | milan
+15 CAP | Aleeeezzz
+16 BAR | Roxtar
+17 CAP | lulo
+18 CAP | Mamífero(mc)
+
+
+
+
+CD Spiders:
+
+1 CDS | latapop
+2 CDS | shampoo
+3 CDS | heilser_
+4 CDS | bh
+5 CDS | zurdoPM
+6 CDS | asd
+7 CDS | kitucc
+8 CDS | pesemejo
+9 CDS | puchungo
+10 CDS | ayko
+11 CDS | crazzy
+12 CDS | tuku leon
+13 CDS | Tuca.
+14 CDS | p2
+15 CDS | cato
+
+
+
+
+Deportivo Pasto:
+
+
+1 PAS | trx
+2 PAS | geaeg
+3 PAS | konaaa.8
+4 PAS | Zyrox
+5 PAS | Krov |
+6 PAS | andresex14
+7 PAS | meci
+8 PAS | RiveraX+
+9 PAS | .｡.✰ 𝔸𝕟𝕘𝕖𝕝𝕏𝔻 ✰.｡.
+10 PAS | Gota
+11 PAS | Barin
+12 PAS | mz
+13 PAS | raz
+14 PAS | gg
+15 PAS | Cowell
+16 PAS | Vupaz
+
+
+
+Pollolandia CH :
+
+1 PCH | jonathan5_30
+2 PCH | przzzzzzzz
+3 PCH | Hidan
+4 PCH | coca3litros
+5 PCH | rzkabri
+6 PCH | Mariano Torres
+7 PCH | Naine
+8 PCH | Skey
+
+
+
+
+Visajosos :
+
+
+1 VIS | tigre
+2 VIS | sebaschimi
+3 VIS | adrxxn_n
+4 VIS | Anuel AA
+5 VIS | gkapev2
+6 VIS | bxrzk
+7 VIS | Nchorix
+8 VIS | L
+9 VIS | Dybalita
+10 VIS | Yox
+11 VIS | bkm
