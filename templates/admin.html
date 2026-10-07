@@ -153,8 +153,10 @@
 
         <label>Goles equipo A <input name="goles_a" type="number" min="0" max="99" value="0"></label>
         <label>Goles equipo B <input name="goles_b" type="number" min="0" max="99" value="0"></label>
-        <label>Clean sheets equipo A <input name="cs_a" type="number" min="0" max="99" value="0"></label>
-        <label>Clean sheets equipo B <input name="cs_b" type="number" min="0" max="99" value="0"></label>
+        <label>Portero equipo A <select name="portero_a_id"><option value="">Sin portero</option></select></label>
+        <label>Portero equipo B <select name="portero_b_id"><option value="">Sin portero</option></select></label>
+        <label>Minutos del partido <input name="minutos_cs" type="number" min="1" max="180" value="60"></label>
+        <div class="info-partido ancho" id="csPrevista">Sin partido seleccionado.</div>
 
         <div class="ancho">
           <h4 class="sub">Goleadores</h4>

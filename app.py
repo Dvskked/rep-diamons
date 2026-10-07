@@ -210,6 +210,11 @@ def donacion():
     return render_template("donacion.html")
 
 
+@app.route("/shop")
+def shop():
+    return render_template("shop.html")
+
+
 @app.route("/equipos/<int:equipo_id>")
 def equipo_detalle(equipo_id):
     equipo = db.consultar_uno(
@@ -644,6 +649,23 @@ def admin_fechas():
         " ORDER BY f.fecha DESC, f.hora DESC")})
 
 
+def _division_equipo(equipo_id):
+    """Devuelve la division (D1/D2) de un equipo o None si no existe."""
+    fila = db.consultar_uno("SELECT division FROM equipos WHERE id = %s", (equipo_id,))
+    return fila["division"] if fila else None
+
+
+def _misma_division(equipo_a, equipo_b):
+    """Valida que ambos equipos existan y sean de la misma division."""
+    div_a = _division_equipo(equipo_a)
+    div_b = _division_equipo(equipo_b)
+    if not div_a or not div_b:
+        return "Uno de los equipos no existe"
+    if div_a != div_b:
+        return "No esta permitido programar un partido entre Division %s y Division %s" % (div_a, div_b)
+    return None
+
+
 @app.post("/api/admin/fechas")
 def admin_crear_fecha():
     bloqueo = _bloqueado()
@@ -657,6 +679,9 @@ def admin_crear_fecha():
         return jsonify({"ok": False, "error": "Equipos y fecha son obligatorios"}), 400
     if str(equipo_a) == str(equipo_b):
         return jsonify({"ok": False, "error": "Un equipo no juega consigo mismo"}), 400
+    error = _misma_division(equipo_a, equipo_b)
+    if error:
+        return jsonify({"ok": False, "error": error}), 400
 
     nuevo_id = db.insertar(
         "INSERT INTO fechas (equipo_a_id, equipo_b_id, fecha, hora, jornada, fase, sala)"
@@ -679,6 +704,13 @@ def admin_editar_fecha(fecha_id):
         return bloqueo
 
     datos = _cuerpo()
+    equipo_a, equipo_b = datos.get("equipo_a_id"), datos.get("equipo_b_id")
+    if str(equipo_a) == str(equipo_b):
+        return jsonify({"ok": False, "error": "Un equipo no juega consigo mismo"}), 400
+    error = _misma_division(equipo_a, equipo_b)
+    if error:
+        return jsonify({"ok": False, "error": error}), 400
+
     db.ejecutar(
         "UPDATE fechas SET equipo_a_id=%s, equipo_b_id=%s, fecha=%s, hora=%s,"
         " jornada=%s, fase=%s, sala=%s WHERE id=%s",
@@ -703,16 +735,61 @@ def admin_borrar_fecha(fecha_id):
     return jsonify({"ok": True})
 
 
+def _recalcular_stats():
+    """Recalcula goles, asistencias y clean sheets de todos los jugadores
+    a partir de los resultados guardados. Idempotente: se puede llamar
+    cuantas veces se quiera sin duplicar datos."""
+    filas = db.consultar(
+        "SELECT goleadores, asistencias, portero_a, portero_b, cs_a, cs_b"
+        " FROM resultados"
+    )
+    # Reinicia por completo para no arrastrar datos de jugadores
+    # que ya no aportan en ningun resultado.
+    db.ejecutar("UPDATE jugadores SET goles=0, asistencias=0, cs=0")
+
+    goles = {}
+    asis = {}
+    cs = {}
+    for r in filas:
+        for g in _json_col(r.get("goleadores"), []):
+            pid = g.get("jugador_id")
+            if pid:
+                goles[pid] = goles.get(pid, 0) + int(g.get("goles") or 1)
+        for a in _json_col(r.get("asistencias"), []):
+            pid = a.get("jugador_id")
+            if pid:
+                asis[pid] = asis.get(pid, 0) + int(a.get("asistencias") or 1)
+        for lado, portero in (("cs_a", "portero_a"), ("cs_b", "portero_b")):
+            if r.get(lado) and r.get(portero):
+                try:
+                    pid = int(r[portero])
+                except (TypeError, ValueError):
+                    continue
+                cs[pid] = cs.get(pid, 0) + 1
+
+    for pid in set(goles) | set(asis) | set(cs):
+        db.ejecutar(
+            "UPDATE jugadores SET goles=%s, asistencias=%s, cs=%s WHERE id=%s",
+            (goles.get(pid, 0), asis.get(pid, 0), cs.get(pid, 0), pid),
+        )
+
+
 @app.put("/api/admin/resultados/<int:fecha_id>")
 def admin_guardar_resultado(fecha_id):
-    """Guarda marcador, goleadores, asistencias y clean sheets."""
+    """Guarda marcador, goleadores, asistencias y clean sheets por jugador."""
     bloqueo = _bloqueado()
     if bloqueo:
         return bloqueo
 
     datos = _cuerpo()
-    existe = db.consultar_uno("SELECT id FROM fechas WHERE id = %s", (fecha_id,))
-    if not existe:
+    fecha = db.consultar_uno(
+        "SELECT f.*, a.division AS div_a, b.division AS div_b"
+        " FROM fechas f"
+        " JOIN equipos a ON a.id = f.equipo_a_id"
+        " JOIN equipos b ON b.id = f.equipo_b_id"
+        " WHERE f.id = %s", (fecha_id,)
+    )
+    if not fecha:
         return jsonify({"ok": False, "error": "La fecha no existe"}), 404
 
     def entero(valor, defecto=0):
@@ -721,10 +798,53 @@ def admin_guardar_resultado(fecha_id):
         except (TypeError, ValueError):
             return defecto
 
-    def clean_sheet(valor):
-        if valor in (True, 1, "1", "on", "true", "True", "si", "SI"):
-            return 1
-        return min(max(entero(valor), 0), 99)
+    def jugador_valido(jugador_id, equipo_id):
+        """Devuelve el id en texto si el jugador pertenece al equipo, o ''."""
+        if not jugador_id:
+            return ""
+        fila = db.consultar_uno(
+            "SELECT id FROM jugadores WHERE id = %s AND equipo_id = %s",
+            (jugador_id, equipo_id),
+        )
+        return str(fila["id"]) if fila else ""
+
+    equipo_a_id, equipo_b_id = fecha["equipo_a_id"], fecha["equipo_b_id"]
+    goles_a = entero(datos.get("goles_a"))
+    goles_b = entero(datos.get("goles_b"))
+    minutos_cs = min(max(entero(datos.get("minutos_cs"), 60), 1), 180)
+
+    def jugadores_lista(campo, col_extra):
+        """Une jugador_id ↔ equipo y normaliza la lista de goles/asistencias."""
+        salida = []
+        for item in _a_lista(datos.get(campo)):
+            lado = "b" if str(item.get("equipo")) == "b" else "a"
+            equipo_id = equipo_b_id if lado == "b" else equipo_a_id
+            nombre = (item.get("nombre") or "").strip()
+            jugador_id = jugador_valido(item.get("jugador_id"), equipo_id)
+            if not jugador_id and nombre:
+                mat = db.consultar_uno(
+                    "SELECT id FROM jugadores WHERE nombre = %s AND equipo_id = %s LIMIT 1",
+                    (nombre, equipo_id),
+                )
+                jugador_id = str(mat["id"]) if mat else ""
+            if not jugador_id:
+                continue
+            valor = max(entero(item.get(col_extra), 1), 1)
+            salida.append({
+                "jugador_id": int(jugador_id),
+                "nombre": nombre,
+                "equipo": lado,
+                col_extra: valor,
+            })
+        return salida
+
+    goleadores = jugadores_lista("goleadores", "goles")
+    asistencias = jugadores_lista("asistencias", "asistencias")
+
+    portero_a = jugador_valido(datos.get("portero_a_id"), equipo_a_id)
+    portero_b = jugador_valido(datos.get("portero_b_id"), equipo_b_id)
+    cs_a = 1 if goles_b == 0 and portero_a else 0
+    cs_b = 1 if goles_a == 0 and portero_b else 0
 
     db.ejecutar(
         "INSERT INTO resultados (fecha_id, goles_a, goles_b, goleadores, asistencias,"
@@ -736,16 +856,13 @@ def admin_guardar_resultado(fecha_id):
         " cs_a=VALUES(cs_a), cs_b=VALUES(cs_b), minutos_cs=VALUES(minutos_cs)",
         (
             fecha_id,
-            entero(datos.get("goles_a")), entero(datos.get("goles_b")),
-            json.dumps(_a_lista(datos.get("goleadores")), ensure_ascii=False),
-            json.dumps(_a_lista(datos.get("asistencias")), ensure_ascii=False),
-            (datos.get("portero_a") or "").strip(),
-            (datos.get("portero_b") or "").strip(),
-            clean_sheet(datos.get("cs_a")),
-            clean_sheet(datos.get("cs_b")),
-            entero(datos.get("minutos_cs")),
+            goles_a, goles_b,
+            json.dumps(goleadores, ensure_ascii=False),
+            json.dumps(asistencias, ensure_ascii=False),
+            portero_a, portero_b, cs_a, cs_b, minutos_cs,
         ),
     )
+    _recalcular_stats()
     return jsonify({"ok": True})
 
 
@@ -755,6 +872,7 @@ def admin_borrar_resultado(fecha_id):
     if bloqueo:
         return bloqueo
     db.ejecutar("DELETE FROM resultados WHERE fecha_id = %s", (fecha_id,))
+    _recalcular_stats()
     return jsonify({"ok": True})
 
 

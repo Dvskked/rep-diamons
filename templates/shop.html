@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block pagina %}shop{% endblock %}
+{% block titulo %}Shop | The Diamonds League{% endblock %}
+{% block descripcion %}Tienda oficial de The Diamonds League: Netflix, Disney+, Crunchyroll, Paramount+, HBO Max, Steam, sala VIP de Haxball, Discord Nitro, paginas web y bots de Discord.{% endblock %}
+{% block og_titulo %}Shop | The Diamonds League{% endblock %}
+
+{% block contenido %}
+<section class="page-hero shop-hero">
+  <div class="wrap">
+    <span class="etiqueta">TIENDA OFICIAL</span>
+    <h1 class="display">Shop</h1>
+    <p>Cuentas, suscripciones y servicios al mejor precio. Elige un producto, mira la info y
+      <b>crea tu ticket en nuestro Discord</b> para completar la compra.</p>
+  </div>
+</section>
+
+<div class="wrap page">
+  <div class="shop-grid" id="shopGrid"></div>
+  <p class="sec-sub centro">Todos los productos son a un precio razonable, pensado para tu bolsillo.</p>
+</div>
+
+<div class="shop-modal" id="shopModal" aria-hidden="true"></div>
+{% endblock %}
