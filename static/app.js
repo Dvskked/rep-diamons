@@ -79,7 +79,11 @@ function pintarNav() {
   const mm = $('#mobileMenu');
   if (nav && mm) {
     const enlaces = Array.from(nav.querySelectorAll('a'))
-      .map((a) => `<a href="${esc(a.getAttribute('href'))}"${a.dataset.nav === 'donacion' ? ' class="nav-donar"' : ''}>${esc(a.textContent)}</a>`)
+      .map((a) => {
+        const cls = a.dataset.nav === 'donacion' ? ' class="nav-donar"'
+          : a.dataset.nav === 'shop' ? ' class="nav-shop"' : '';
+        return `<a href="${esc(a.getAttribute('href'))}"${cls}>${esc(a.textContent)}</a>`;
+      })
       .join('');
     mm.innerHTML = enlaces + '<a href="/admin">Administrar</a>';
   }
@@ -152,8 +156,8 @@ function filaPartido(f, opciones = {}) {
   let detalle = '';
   if (jugado && conDetalle && opciones.compacto !== true) {
     const goles = (f.goleadores || []).map((g) =>
-      `${esc(g.jugador)} (${g.equipo === 'b' ? b.sigla || b.nombre : a.sigla || a.nombre}) x${num(g.goles) || 1}`).join(' · ');
-    const asist = (f.asistencias || []).map((x) => esc(x.jugador)).join(' · ');
+      `${esc(g.nombre || g.jugador)} (${g.equipo === 'b' ? b.sigla || b.nombre : a.sigla || a.nombre}) x${num(g.goles) || 1}`).join(' · ');
+    const asist = (f.asistencias || []).map((x) => esc(x.nombre || x.jugador)).join(' · ');
     const tags = [];
     if (num(f.cs_a) > 0) tags.push(`CS ${esc(a.sigla || a.nombre)}`);
     if (num(f.cs_b) > 0) tags.push(`CS ${esc(b.sigla || b.nombre)}`);
@@ -744,6 +748,136 @@ function pintarEquipoDetalle() {
   if (nota) nota.textContent = `${(eq.jugadores || []).length} jugadores`;
 }
 
+/* --------------------------------------------------------------- SHOP */
+const INVITE_DISCORD = 'https://discord.gg/6K7nezXhx6';
+const PRODUCTOS = [
+  {
+    id: 'netflix', nombre: 'Netflix', sigla: 'N', tag: 'STREAMING',
+    grad: 'linear-gradient(135deg, #E50914 0%, #6d0306 100%)',
+    precio: 'COMPARTIDA · MENSUAL O PERMANENTE',
+    desc: 'Compra Netflix por un precio razonable, al alcance de tu bolsillo. Perfil propio para ver peliculas, series y documentales en HD y 4K.',
+    ops: ['Cuenta mensual o permanente', 'Perfil y pantallas propias', 'HD y 4K segun el plan', 'Soporte y cambio garantizado']
+  },
+  {
+    id: 'disney', nombre: 'Disney+', sigla: 'D+', tag: 'STREAMING',
+    grad: 'linear-gradient(135deg, #0E2C5F 0%, #1d4ed8 100%)',
+    precio: 'MENSUAL O ANUAL',
+    desc: 'Disney+ con el universo Marvel, Star Wars, Pixar y National Geographic. Elige plan mensual o anual a tu medida.',
+    ops: ['Cuenta compartida o personal', 'Plan mensual o anual', 'Sin cortes ni anuncios', 'Soporte ante cualquier novedad']
+  },
+  {
+    id: 'crunchyroll', nombre: 'Crunchyroll', sigla: 'CR', tag: 'STREAMING',
+    grad: 'linear-gradient(135deg, #F47521 0%, #a34d0d 100%)',
+    precio: 'MENSUAL · SIMULCAST',
+    desc: 'Todo el anime en HD con simulcast, manga y los estrenos de cada temporada. Plan mensual economico para tu bolsillo.',
+    ops: ['Plan mensual accesible', 'Simulcast de los estrenos', 'Catalogo de anime y manga', 'Sin publicidad']
+  },
+  {
+    id: 'paramount', nombre: 'Paramount+', sigla: 'P+', tag: 'STREAMING',
+    grad: 'linear-gradient(135deg, #0064FF 0%, #002c8a 100%)',
+    precio: 'MENSUAL',
+    desc: 'Series, deportes y peliculas exclusivas de Paramount+. Suscripcion mensual a precio comodo.',
+    ops: ['Plan mensual flexible', 'Peliculas y series exclusivas', 'Deportes en vivo', 'Pago seguro por ticket']
+  },
+  {
+    id: 'hbomax', nombre: 'HBO Max', sigla: 'HBO', tag: 'STREAMING',
+    grad: 'linear-gradient(135deg, #991AEB 0%, #4b0a80 100%)',
+    precio: 'MENSUAL O ANUAL',
+    desc: 'HBO Max con los estrenos mas fuertes de DC, HBO y Warner. Mensual o anual, como prefieras.',
+    ops: ['Plan mensual o anual', 'Estrenos y clasicos HBO', 'Maxima calidad de imagen', 'Soporte incluido']
+  },
+  {
+    id: 'steam', nombre: 'Steam', sigla: 'ST', tag: 'GAMING',
+    grad: 'linear-gradient(135deg, #66C0F4 0%, #1B2838 100%)',
+    precio: 'CREDITO Y CUENTAS',
+    desc: 'Saldo y cuentas Steam para comprar tus juegos favoritos. Precio justo y entrega rapida.',
+    ops: ['Tarjetas de regalo y saldo', 'Cuentas seguras', 'Entrega rapida por ticket', 'Precio accesible']
+  },
+  {
+    id: 'vip-haxball', nombre: 'VIP Haxball Room', sigla: 'VIP', tag: 'HAXBALL',
+    grad: 'linear-gradient(135deg, #0AFFD6 0%, #003870 100%)',
+    precio: 'SALA VIP · CUPOS LIMITADOS',
+    desc: 'Sala VIP exclusiva de Haxball con nombre reservado, privilegios dentro de la liga y acceso preferente. Cupos limitados.',
+    ops: ['Nombre VIP reservado', 'Ventajas dentro de la sala', 'Cupos limitados por temporada', 'Soporte del staff']
+  },
+  {
+    id: 'discord-nitro', nombre: 'Discord Nitro', sigla: 'NI', tag: 'DISCORD',
+    grad: 'linear-gradient(135deg, #5865F2 0%, #23272A 100%)',
+    precio: 'MENSUAL O ANUAL',
+    desc: 'Discord Nitro con emojis animados, boosts y banners. Pidelo por ticket y te lo activamos al momento.',
+    ops: ['Nitro mensual o anual', 'Emojis animados y personalizados', '2 boosts para tu servidor', 'Precio al bolsillo']
+  },
+  {
+    id: 'paginas-web', nombre: 'Paginas web / Hosting', sigla: 'WWW', tag: 'DESARROLLO',
+    grad: 'linear-gradient(135deg, #00B8FF 0%, #0040C4 100%)',
+    precio: 'A MEDIDA',
+    desc: 'Disenamos tu pagina web y la alojamos: landing, tienda o portafolio. Hosting y dominio incluidos.',
+    ops: ['Pagina web a medida', 'Hosting y dominio incluidos', 'Diseno responsive', 'Soporte y actualizaciones']
+  },
+  {
+    id: 'bots-discord', nombre: 'Bots Discord', sigla: 'BOT', tag: 'DESARROLLO',
+    grad: 'linear-gradient(135deg, #23272A 0%, #5865F2 100%)',
+    precio: 'A MEDIDA',
+    desc: 'Bots de Discord personalizados: moderacion, musica, niveles, economia y mas. Configurados en tu servidor.',
+    ops: ['Bots de moderacion', 'Musica, niveles y economia', 'Configuracion en tu servidor', 'Precio razonable']
+  }
+];
+
+function pintarShop() {
+  const caja = $('#shopGrid');
+  if (!caja) return;
+  caja.innerHTML = PRODUCTOS.map((p) => `
+    <button class="shop-card reveal" type="button" data-shop="${p.id}" style="--grad:${p.grad}">
+      <span class="shop-logo">${esc(p.sigla)}</span>
+      <span class="shop-tag">${esc(p.tag)}</span>
+      <span class="shop-nombre">${esc(p.nombre)}</span>
+      <span class="shop-precio">${esc(p.precio)}</span>
+    </button>`).join('');
+}
+
+function abrirShop(id) {
+  const m = $('#shopModal');
+  if (!m) return;
+  const p = PRODUCTOS.find((x) => x.id === id);
+  if (!p) return;
+  m.innerHTML = `
+    <div class="shop-modal-bg" data-shop-cerrar></div>
+    <div class="shop-modal-card" role="dialog" aria-modal="true" aria-label="${esc(p.nombre)}">
+      <button class="shop-modal-cerrar" type="button" data-shop-cerrar aria-label="Cerrar">&times;</button>
+      <div class="shop-logo grande" style="--grad:${p.grad}">${esc(p.sigla)}</div>
+      <span class="shop-tag">${esc(p.tag)}</span>
+      <h2>${esc(p.nombre)}</h2>
+      <p class="shop-modal-desc">${esc(p.desc)}</p>
+      <ul class="shop-ops">${p.ops.map((o) => `<li>${esc(o)}</li>`).join('')}</ul>
+      <p class="shop-precio-note">${esc(p.precio)} · a un precio razonable, pensado para tu bolsillo.</p>
+      <a class="btn-shop-discord" href="${INVITE_DISCORD}" target="_blank" rel="noopener">
+        CREA TU TICKET EN DISCORD
+      </a>
+      <small class="shop-modal-aviso">Te llevamos a nuestro servidor: abre un ticket con el nombre del
+        producto y listo. Cuentas permanentes o mensuales segun el plan.</small>
+    </div>`;
+  document.body.classList.add('sin-scroll');
+  m.classList.add('abierto');
+  m.setAttribute('aria-hidden', 'false');
+}
+
+function cerrarShop() {
+  const m = $('#shopModal');
+  if (!m) return;
+  m.classList.remove('abierto');
+  m.setAttribute('aria-hidden', 'true');
+  document.body.classList.remove('sin-scroll');
+}
+
+document.addEventListener('click', (ev) => {
+  const card = ev.target.closest('[data-shop]');
+  if (card) { abrirShop(card.dataset.shop); return; }
+  if (ev.target.closest('[data-shop-cerrar]')) { cerrarShop(); return; }
+});
+document.addEventListener('keydown', (ev) => {
+  if (ev.key === 'Escape') cerrarShop();
+});
+
 /* -------------------------------------------------------------- FORO */
 function pintarForo() {
   const caja = $('#foroLista');
@@ -926,6 +1060,9 @@ function renderPagina(pagina) {
       break;
     case 'donacion':
       pintarDonacion();
+      break;
+    case 'shop':
+      pintarShop();
       break;
     case 'equipo-detalle':
       pintarEquipoDetalle();

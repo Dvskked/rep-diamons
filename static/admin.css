@@ -453,6 +453,8 @@
   outline: none; border-color: var(--cian); box-shadow: 0 0 0 3px rgba(10,255,214,.16);
 }
 .chip select option { background: #04121f; color: var(--blanco); }
+.chip.chip-resultado { grid-template-columns: 130px minmax(0, 1fr) 70px 34px; }
+.chip.chip-resultado select[name=equipo] { font-size: .76rem; letter-spacing: .02em; }
 .chip-quitar {
   width: 32px; height: 32px; border-radius: 10px;
   background: rgba(255,77,157,.24); border: 1.5px solid rgba(255,77,157,.5);

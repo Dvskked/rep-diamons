@@ -152,6 +152,31 @@ async function cargarResumen() {
 const POSICIONES = ['GK', 'Mid', 'Dfwd', 'Fwd'];
 const EQUIPOS_DIVISION = ['D1', 'D2'];
 let filtroDivEquipo = 'D1';
+
+let fechaActual = null; // fecha seleccionada en el tab de resultados
+
+function opcionEquipo(e) {
+  return `<option value="${e.id}">${esc(e.nombre)} (${esc(e.sigla)}) · ${esc(e.division || 'D1')}</option>`;
+}
+
+function equipoIdPara(lado) {
+  if (!fechaActual) return '';
+  return lado === 'b' ? fechaActual.equipo_b_id : fechaActual.equipo_a_id;
+}
+
+function siglaEquipoLado(lado) {
+  if (!fechaActual) return lado === 'b' ? 'EQUIPO B' : 'EQUIPO A';
+  return lado === 'b' ? (fechaActual.sigla_b || 'B') : (fechaActual.sigla_a || 'A');
+}
+
+function opcionesJugadores(lado, selJugadorId) {
+  const eid = equipoIdPara(lado);
+  const eq = ESTADO.equipos.find((x) => String(x.id) === String(eid));
+  const jugs = (eq && eq.jugadores) || [];
+  const opt = jugs.map((j) =>
+    `<option value="${j.id}"${String(selJugadorId) === String(j.id) ? ' selected' : ''}>${esc(j.nombre)}</option>`).join('');
+  return opt || '<option value="">Sin jugadores</option>';
+}
 let jugadorEditando = null;
 
 function opcionesPosicion(sel) {
@@ -246,13 +271,23 @@ function pintarEquipos() {
   `<div class="vacio-mini">No hay equipos en ${filtroDivEquipo}. Cambia de division o crea uno nuevo.</div>`;
 }
 
+function pintarEquiposB() {
+  const a = document.querySelector('[name="equipo_a_id"]');
+  const b = document.querySelector('[name="equipo_b_id"]');
+  if (!a || !b) return;
+  const div = (ESTADO.equipos.find((e) => String(e.id) === String(a.value)) || {}).division || 'D1';
+  const previo = b.value;
+  b.innerHTML = ESTADO.equipos
+    .filter((e) => (e.division || 'D1') === div)
+    .map(opcionEquipo).join('');
+  if (previo && Array.from(b.options).some((o) => o.value === previo)) b.value = previo;
+}
+
 function llenarSelectEquipos() {
-  const opciones = ESTADO.equipos.map((e) =>
-    `<option value="${e.id}">${esc(e.nombre)} (${esc(e.sigla)})</option>`).join('');
-  ['equipo_a_id', 'equipo_b_id'].forEach((n) => {
-    const s = $(`[name="${n}"]`);
-    if (s) s.innerHTML = opciones;
-  });
+  const a = document.querySelector('[name="equipo_a_id"]');
+  const b = document.querySelector('[name="equipo_b_id"]');
+  if (a) a.innerHTML = ESTADO.equipos.map(opcionEquipo).join('');
+  pintarEquiposB();
   if (!$('#selFecha').options.length) actualizarSelectFechas();
 }
 
@@ -410,6 +445,12 @@ function actualizarSelectFechas() {
 $('#formFecha').addEventListener('submit', async (ev) => {
   ev.preventDefault();
   const d = Object.fromEntries(new FormData(ev.target));
+  const divA = (ESTADO.equipos.find((e) => String(e.id) === String(d.equipo_a_id)) || {}).division;
+  const divB = (ESTADO.equipos.find((e) => String(e.id) === String(d.equipo_b_id)) || {}).division;
+  if (divA && divB && divA !== divB) {
+    toast(`No esta permitido jugar entre ${divA} y ${divB}. Elige dos equipos de la misma division.`);
+    return;
+  }
   try {
     await post('/api/admin/fechas', d);
     ev.target.reset();
@@ -447,42 +488,71 @@ function jsonLista(v) {
 
 function mostrarInfoPartido() {
   const id = $('#selFecha').value;
-  const f = ESTADO.fechas.find((x) => String(x.id) === String(id));
+  const f = ESTADO.fechas.find((x) => String(x.id) === String(id)) || null;
+  fechaActual = f;
   $('#infoPartido').innerHTML = f
     ? `⚽ <b>${esc(f.sigla_a)} vs ${esc(f.sigla_b)}</b> · ${fechaCorta(f.fecha)} ${String(f.hora || '').slice(0, 5)}`
     : 'Selecciona un partido para registrar su resultado.';
 
   const form = $('#formResultado');
-  if (!form || !f) return;
+  if (!form) return;
+  if (!f) {
+    form.goles_a.value = 0; form.goles_b.value = 0;
+    form.minutos_cs.value = 60;
+    form.portero_a_id.innerHTML = '<option value="">Sin portero</option>';
+    form.portero_b_id.innerHTML = '<option value="">Sin portero</option>';
+    $('#listaGoleadores').innerHTML = '';
+    $('#listaAsistencias').innerHTML = '';
+    $('#csPrevista').innerHTML = 'Sin partido seleccionado.';
+    return;
+  }
 
   const jugado = f.goles_a !== null && f.goles_a !== undefined;
   form.goles_a.value = jugado ? (+f.goles_a || 0) : 0;
   form.goles_b.value = jugado ? (+f.goles_b || 0) : 0;
-  form.cs_a.value = jugado ? (+f.cs_a || 0) : 0;
-  form.cs_b.value = jugado ? (+f.cs_b || 0) : 0;
+  form.minutos_cs.value = jugado && f.minutos_cs ? (+f.minutos_cs || 60) : 60;
+
+  form.portero_a_id.innerHTML = '<option value="">Sin portero</option>' + opcionesJugadores('a', f.portero_a);
+  form.portero_b_id.innerHTML = '<option value="">Sin portero</option>' + opcionesJugadores('b', f.portero_b);
 
   $('#listaGoleadores').innerHTML = jugado
     ? jsonLista(f.goleadores).map((g) => chipHTML('gol', 0, g)).join('') : '';
   $('#listaAsistencias').innerHTML = jugado
     ? jsonLista(f.asistencias).map((a) => chipHTML('asistencia', 0, a)).join('') : '';
+  actualizarCsPrevista();
+}
+
+function actualizarCsPrevista() {
+  const form = $('#formResultado');
+  const nota = $('#csPrevista');
+  if (!form || !nota || !fechaActual) return;
+  const golesA = parseInt(form.goles_a.value || '0', 10);
+  const golesB = parseInt(form.goles_b.value || '0', 10);
+  const csA = golesB === 0 && form.portero_a_id.value ? '1' : '0';
+  const csB = golesA === 0 && form.portero_b_id.value ? '1' : '0';
+  const min = parseInt(form.minutos_cs.value || '60', 10);
+  nota.innerHTML = `CS previsto por ${min} min de partido: <b>${esc(fechaActual.sigla_a)} ${csA}</b> · <b>${esc(fechaActual.sigla_b)} ${csB}</b>`;
 }
 
 $('#selFecha').addEventListener('change', mostrarInfoPartido);
 
 function chipHTML(tipo, idx, item = {}) {
   const opc = (v, t) => `<option value="${v}" ${item.equipo === v ? 'selected' : ''}>${t}</option>`;
+  const equipoSel = item.equipo === 'b' ? 'b' : 'a';
+  const cantidad = tipo === 'gol' ? (item.goles || 1) : (item.asistencias || 1);
+  const jugadorSel = tipo === 'gol' ? (item.jugador_id || item.id) : (item.jugador_id || item.id);
   if (tipo === 'gol') {
-    return `<div class="chip" data-tipo="gol">
-      <input placeholder="Jugador" name="jugador" value="${esc(item.jugador || '')}">
-      <select name="equipo">${opc('a', 'Equipo A')}${opc('b', 'Equipo B')}</select>
-      <input type="number" min="1" value="${item.goles || 1}" name="cantidad" title="Goles">
+    return `<div class="chip chip-resultado" data-tipo="gol">
+      <select name="equipo">${opc('a', siglaEquipoLado('a'))}${opc('b', siglaEquipoLado('b'))}</select>
+      <select name="jugador_id">${opcionesJugadores(equipoSel, jugadorSel)}</select>
+      <input type="number" min="1" value="${cantidad}" name="cantidad" title="Goles">
       <button class="chip-quitar" type="button">&times;</button>
     </div>`;
   }
-  return `<div class="chip" data-tipo="asistencia">
-    <input placeholder="Jugador" name="jugador" value="${esc(item.jugador || '')}">
-    <select name="equipo">${opc('a', 'Equipo A')}${opc('b', 'Equipo B')}</select>
-    <input type="number" min="1" value="${item.asistencias || 1}" name="cantidad" title="Asistencias">
+  return `<div class="chip chip-resultado" data-tipo="asistencia">
+    <select name="equipo">${opc('a', siglaEquipoLado('a'))}${opc('b', siglaEquipoLado('b'))}</select>
+    <select name="jugador_id">${opcionesJugadores(equipoSel, jugadorSel)}</select>
+    <input type="number" min="1" value="${cantidad}" name="cantidad" title="Asistencias">
     <button class="chip-quitar" type="button">&times;</button>
   </div>`;
 }
@@ -499,15 +569,29 @@ document.addEventListener('click', (ev) => {
   if (q) q.closest('.chip').remove();
 });
 
+document.addEventListener('change', (ev) => {
+  if (ev.target.matches('[name="equipo_a_id"]')) { pintarEquiposB(); return; }
+  const chip = ev.target.closest('.chip-resultado');
+  if (chip && ev.target.matches('[name="equipo"]')) {
+    chip.querySelector('[name="jugador_id"]').innerHTML = opcionesJugadores(ev.target.value);
+    return;
+  }
+  if (ev.target.closest('#formResultado') &&
+      ev.target.matches('[name="goles_a"], [name="goles_b"], [name="portero_a_id"], [name="portero_b_id"], [name="minutos_cs"]')) {
+    actualizarCsPrevista();
+  }
+});
+
 function leerChips(selector, tipo) {
   return $$(`${selector} .chip`).map((c) => {
-    const v = (c.querySelector('[name=jugador]').value || '').trim();
-    if (!v) return null;
+    const sel = c.querySelector('[name=jugador_id]');
+    const jid = (sel && sel.value) || '';
+    const nombre = (sel && sel.selectedOptions.length && sel.selectedOptions[0].textContent.trim()) || '';
+    if (!jid) return null;
     const cantidad = parseInt(c.querySelector('[name=cantidad]').value || '1', 10);
     const equipo = c.querySelector('[name=equipo]').value;
-    return tipo === 'gol'
-      ? { jugador: v, equipo, goles: cantidad }
-      : { jugador: v, equipo, asistencias: cantidad };
+    const base = { jugador_id: jid, nombre, equipo };
+    return tipo === 'gol' ? { ...base, goles: cantidad } : { ...base, asistencias: cantidad };
   }).filter(Boolean);
 }
 
@@ -537,9 +621,16 @@ $('#btnBorrarResultado').addEventListener('click', () => {
 
 function f_reiniciarResultado() {
   const f = $('#formResultado');
-  ['goles_a', 'goles_b', 'cs_a', 'cs_b'].forEach((n) => { if (f[n]) f[n].value = '0'; });
+  if (!f) return;
+  ['goles_a', 'goles_b'].forEach((n) => { if (f[n]) f[n].value = '0'; });
+  if (f.minutos_cs) f.minutos_cs.value = '60';
+  const a = $('#selFecha').value;
+  const partido = ESTADO.fechas.find((x) => String(x.id) === String(a)) || null;
+  if (f.portero_a_id) f.portero_a_id.innerHTML = '<option value="">Sin portero</option>' + (partido ? opcionesJugadores('a') : '');
+  if (f.portero_b_id) f.portero_b_id.innerHTML = '<option value="">Sin portero</option>' + (partido ? opcionesJugadores('b') : '');
   $('#listaGoleadores').innerHTML = '';
   $('#listaAsistencias').innerHTML = '';
+  actualizarCsPrevista();
 }
 
 /* --------------------------------------------------------- X5 IDEAL */

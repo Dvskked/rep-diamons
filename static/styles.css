@@ -1262,6 +1262,142 @@ a.match-team:hover .nm { color: var(--cian); }
   filter: drop-shadow(0 8px 18px rgba(0,0,0,.42));
 }
 
+/* ------------------------------------------------- BOTON SHOP AMARILLO */
+.nav a.nav-shop {
+  color: #1a1400;
+  background: linear-gradient(135deg, #FFD400 0%, #FFB300 100%);
+  box-shadow: 0 0 0 1px rgba(255,255,255,.28), 0 6px 20px rgba(255,196,0,.5);
+  animation: brilloShop 3s ease-in-out infinite;
+}
+.nav a.nav-shop:hover {
+  background: linear-gradient(135deg, #ffdf40 0%, #ffc84d 100%);
+  color: #141000;
+  box-shadow: 0 0 28px rgba(255,196,0,.85);
+}
+.nav a.nav-shop.activo { color: #1a1400; background: linear-gradient(135deg, #FFD400 0%, #FFB300 100%); }
+.nav a.nav-shop::after { display: none; }
+.mobile-menu a.nav-shop {
+  background: linear-gradient(135deg, #FFD400 0%, #FFB300 100%);
+  color: #1a1400; box-shadow: 0 6px 18px rgba(255,196,0,.5);
+}
+@keyframes brilloShop {
+  0%, 100% { box-shadow: 0 0 0 1px rgba(255,255,255,.28), 0 6px 16px rgba(255,196,0,.4); }
+  50% { box-shadow: 0 0 0 1px rgba(255,255,255,.5), 0 8px 30px rgba(255,196,0,.85); }
+}
+
+/* -------------------------------------------------------------- SHOP */
+.shop-hero p b { color: #FFCD3D; }
+.shop-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(220px, 100%), 1fr));
+  gap: 18px;
+}
+.shop-card {
+  position: relative; overflow: hidden;
+  display: flex; flex-direction: column; align-items: flex-start; gap: 8px;
+  padding: 22px 20px 20px; border-radius: var(--radio);
+  text-align: left; font-family: inherit;
+  background: linear-gradient(160deg, rgba(255,255,255,.07), rgba(255,255,255,.02));
+  border: 1px solid var(--linea);
+  cursor: pointer;
+  transition: transform .3s, border-color .3s, box-shadow .3s;
+}
+.shop-card::before {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background: var(--grad); opacity: .15; transition: opacity .3s;
+}
+.shop-card:hover {
+  transform: translateY(-8px);
+  border-color: rgba(255,205,61,.55);
+  box-shadow: var(--sombra-alta), 0 0 32px rgba(255,205,61,.16);
+}
+.shop-card:hover::before { opacity: .24; }
+.shop-logo {
+  position: relative;
+  width: 64px; height: 64px; border-radius: 16px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--grad);
+  font-family: var(--fuente-titulo); font-size: 1.7rem; color: #fff;
+  text-shadow: 0 2px 8px rgba(0,0,0,.35);
+  box-shadow: 0 10px 24px rgba(0,0,0,.42);
+}
+.shop-logo.grande { width: 84px; height: 84px; font-size: 2.3rem; border-radius: 20px; }
+.shop-tag { position: relative; font-size: .6rem; letter-spacing: .18em; color: #FFCD3D; font-weight: 700; }
+.shop-nombre { position: relative; font-size: 1.05rem; color: var(--blanco); font-weight: 700; line-height: 1.15; overflow-wrap: anywhere; }
+.shop-precio { position: relative; font-size: .68rem; color: var(--texto-suave); letter-spacing: .06em; }
+
+.shop-modal { position: fixed; inset: 0; z-index: 520; display: none; align-items: center; justify-content: center; padding: 20px; }
+.shop-modal.abierto { display: flex; }
+.shop-modal-bg { position: absolute; inset: 0; background: rgba(0,4,12,.82); animation: shopApar .25s ease; }
+.shop-modal-card {
+  position: relative; width: 100%; max-width: 460px; max-height: 88vh; overflow-y: auto;
+  display: flex; flex-direction: column; gap: 12px;
+  padding: 30px 28px; border-radius: 24px;
+  background: linear-gradient(165deg, #0d1b31 0%, #071226 100%);
+  border: 1px solid rgba(255,205,61,.4);
+  box-shadow: 0 30px 80px rgba(0,4,12,.75);
+  animation: shopSubir .3s ease;
+}
+@keyframes shopApar { from { opacity: 0; } }
+@keyframes shopSubir { from { opacity: 0; transform: translateY(26px) scale(.97); } }
+.shop-modal-cerrar {
+  position: absolute; top: 14px; right: 14px;
+  width: 34px; height: 34px; border-radius: 10px;
+  background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.18);
+  color: var(--blanco); font-size: 1.1rem; line-height: 1; transition: all .25s;
+}
+.shop-modal-cerrar:hover { background: #FF4D9D; border-color: #FF4D9D; }
+.shop-modal-card h2 { font-size: 1.5rem; color: var(--blanco); }
+.shop-modal-desc { font-size: .92rem; color: var(--texto-suave); line-height: 1.55; }
+.shop-ops { display: flex; flex-direction: column; gap: 8px; list-style: none; margin: 0; padding: 0; }
+.shop-ops li {
+  padding: 10px 14px; border-radius: 12px;
+  background: rgba(10,255,214,.08); border: 1px solid rgba(10,255,214,.22);
+  color: var(--blanco); font-size: .84rem;
+}
+.shop-ops li::before { content: "\2726"; color: var(--cian); margin-right: 6px; }
+.shop-precio-note { font-size: .82rem; color: #FFCD3D; font-weight: 700; }
+.btn-shop-discord {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 14px 20px; border-radius: 999px;
+  background: linear-gradient(135deg, #5865F2, #3f4bd0);
+  color: #fff; font-size: .84rem; font-weight: 800; letter-spacing: .05em;
+  box-shadow: 0 12px 30px rgba(88,101,242,.45);
+  transition: transform .25s, box-shadow .25s;
+}
+.btn-shop-discord:hover { transform: translateY(-3px); box-shadow: 0 18px 40px rgba(88,101,242,.65); }
+.shop-modal-aviso { font-size: .72rem; color: var(--texto-tenue); line-height: 1.5; }
+.sin-scroll { overflow: hidden; }
+
+@media (max-width: 640px) {
+  .shop-grid { gap: 13px; }
+  .shop-card { padding: 18px 16px 16px; }
+  .shop-logo { width: 54px; height: 54px; font-size: 1.4rem; }
+}
+
+/* ------------------------------------------- CTA DONAR (DISCORD) */
+.donar-cta {
+  margin-top: 34px; padding: clamp(26px, 4vw, 38px);
+  text-align: center;
+  background:
+    radial-gradient(600px 220px at 50% -30%, rgba(255,77,157,.22), transparent 70%),
+    linear-gradient(160deg, rgba(255,255,255,.07), rgba(255,255,255,.02));
+  border: 1.5px solid rgba(255,77,157,.45);
+  border-radius: var(--radio);
+  box-shadow: 0 20px 50px rgba(0,6,18,.5), inset 0 1px 0 rgba(255,255,255,.05);
+}
+.donar-cta h2 { color: var(--blanco); margin-bottom: 8px; }
+.donar-cta p { color: var(--texto-suave); max-width: 520px; margin: 0 auto 22px; font-size: .96rem; }
+.btn-donar-cta {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 14px 26px; border-radius: 999px;
+  background: linear-gradient(135deg, #5865F2, #3f4bd0);
+  color: #fff; font-size: .82rem; font-weight: 800; letter-spacing: .05em;
+  box-shadow: 0 12px 30px rgba(88,101,242,.45);
+  transition: transform .25s, box-shadow .25s;
+}
+.btn-donar-cta:hover { transform: translateY(-3px); box-shadow: 0 18px 40px rgba(88,101,242,.65); }
+
 /* ------------------------------------------------- MOVIMIENTO REDUCIDO */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
