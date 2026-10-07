@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>{% block titulo %}The Diamonds League | Liga de HaxBall X5{% endblock %}</title>
+<meta name="description" content="{% block descripcion %}Posiciones, resultados y estadisticas de The Diamonds League, la liga de HaxBall X5. Division 1 y Division 2.{% endblock %}">
+<meta name="keywords" content="The Diamonds League, HaxBall, liga HaxBall, HaxBall X5, division, fechas HaxBall, resultados HaxBall, clasificacion, goleadores, clean sheet">
+<meta name="author" content="Neptunzinho">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<link rel="canonical" href="https://diamonds-league.vercel.app{{ request.path }}">
+<meta name="theme-color" content="#003870">
+
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="The Diamonds League">
+<meta property="og:locale" content="es_ES">
+<meta property="og:title" content="{% block og_titulo %}The Diamonds League | Liga de HaxBall X5{% endblock %}">
+<meta property="og:description" content="Posiciones, resultados y estadisticas de la liga de HaxBall X5.">
+<meta property="og:url" content="https://diamonds-league.vercel.app{{ request.path }}">
+<meta property="og:image" content="/static/assets/logo-mark.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="/static/assets/logo-mark.png">
+
+<link rel="icon" type="image/png" href="/static/assets/favicon-64.png">
+<link rel="apple-touch-icon" href="/static/assets/logo-mark.png">
+<link rel="preload" as="image" href="/static/assets/logo-320.webp" type="image/webp">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Barlow:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="/static/styles.css">
+<noscript><style>.preloader{display:none}body.carga-activa{overflow:auto}</style></noscript>
+{% block head %}{% endblock %}
+</head>
+<body class="carga-activa" data-pagina="{% block pagina %}inicio{% endblock %}"{% block body_attrs %}{% endblock %}>
+
+<!-- ============ PANTALLA DE CARGA ============ -->
+<div class="preloader" id="preloader" role="status" aria-live="polite">
+  <div class="preloader-caja">
+    <div class="preloader-logo">
+      <img src="/static/assets/logo-128.webp" width="116" height="116" alt="">
+      <span class="preloader-anillo"></span>
+    </div>
+    <strong>The Diamonds League</strong>
+    <small>CARGANDO</small>
+    <div class="preloader-barra"><i></i></div>
+  </div>
+</div>
+
+<!-- ============ HEADER ============ -->
+<header class="top" id="topbar">
+  <div class="wrap top-inner">
+    <a class="brand" href="/" aria-label="The Diamonds League, inicio">
+      <img class="brand-logo" src="/static/assets/logo-128.webp" width="42" height="42" alt="Escudo The Diamonds League">
+      <span class="brand-txt">
+        <strong class="marca">THE DIAMONDS <b>LEAGUE</b></strong>
+        <small>HAXBALL X5</small>
+      </span>
+    </a>
+
+    <nav class="nav" id="navPrincipal" aria-label="Navegacion principal">
+      <a href="/" data-nav="inicio">Inicio</a>
+      <a href="/liga" data-nav="liga">Diamonds League</a>
+      <a href="/estadisticas" data-nav="estadisticas">Estadisticas</a>
+      <a href="/redes" data-nav="redes">Redes sociales</a>
+      <a href="/equipo" data-nav="equipo">Equipo administracion</a>
+      <a class="nav-donar" href="/donacion" data-nav="donacion">Donar</a>
+    </nav>
+
+    <div class="top-right">
+      <a class="btn-admin" href="/admin" id="btnAdmin">Administrar</a>
+      <button class="menu-toggle" type="button" id="menuToggle" aria-label="Abrir menu" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </div>
+  <div class="mobile-menu" id="mobileMenu"></div>
+</header>
+
+<main class="main" id="main">
+{% block contenido %}{% endblock %}
+</main>
+
+<!-- ============ FOOTER ============ -->
+<footer class="foot">
+  <div class="wrap foot-inner">
+    <a class="brand foot-brand" href="/" aria-label="The Diamonds League, inicio">
+      <img class="brand-logo" src="/static/assets/logo-128.webp" width="42" height="42" alt="">
+      <span class="brand-txt">
+        <strong class="marca">THE DIAMONDS <b>LEAGUE</b></strong>
+        <small>HAXBALL X5</small>
+      </span>
+    </a>
+    <nav class="foot-nav" aria-label="Secciones del sitio">
+      <div class="foot-col">
+        <h4>Liga</h4>
+        <a href="/">Inicio</a>
+        <a href="/liga">Diamonds League</a>
+        <a href="/estadisticas">Estadisticas</a>
+      </div>
+      <div class="foot-col">
+        <h4>Comunidad</h4>
+        <a href="/redes">Redes sociales</a>
+        <a href="/equipo">Equipo administracion</a>
+        <a href="/donacion">Donar</a>
+      </div>
+      <div class="foot-col">
+        <h4>Mas de la liga</h4>
+        <a href="/#pubs">Salas</a>
+        <a href="/#museo">Museo</a>
+        <a href="/#noticias">Noticias</a>
+        <a href="/#anuncios">Anuncios</a>
+        <a href="/#alianzas">Alianzas</a>
+        <a href="/#foro">Foro</a>
+      </div>
+    </nav>
+  </div>
+  <div class="wrap foot-base">
+    <span>Compitiendo en HaxBall X5. Los resultados se confirman con el staff de la liga.</span>
+    <span>The Diamonds League &middot; &copy; 2026 Neptunzinho</span>
+  </div>
+</footer>
+
+<button class="btn-top" type="button" id="btnTop" aria-label="Volver arriba">&uarr;</button>
+<div class="toast" id="toast" role="status" aria-live="polite"><span></span><p></p></div>
+
+<script src="/static/app.js" defer></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

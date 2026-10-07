@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block pagina %}equipo-detalle{% endblock %}
+{% block body_attrs %} data-equipo="{{ equipo.id }}"{% endblock %}
+{% block titulo %}{{ equipo.nombre }} | Plantilla, resultados y posicion - The Diamonds League{% endblock %}
+{% block descripcion %}Plantilla, resultados, proximos partidos y posicion en la tabla de {{ equipo.nombre }} en The Diamonds League (HaxBall X5).{% endblock %}
+{% block og_titulo %}{{ equipo.nombre }} | The Diamonds League{% endblock %}
+
+{% block contenido %}
+<section class="page-hero equipo-hero">
+  <div class="wrap">
+    <a class="volver-link" href="/liga">&larr; Volver a la liga</a>
+    <div class="equipo-hero-main">
+      <div class="equipo-hero-escudo" id="eqEscudo"></div>
+      <div class="equipo-hero-txt">
+        <span class="etiqueta" id="eqDivision">DIVISION</span>
+        <h1 class="display" id="eqNombre">{{ equipo.nombre }}</h1>
+        <p id="eqMeta"></p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="wrap page">
+  <div class="equipo-stats" id="eqStats"></div>
+
+  <div class="equipo-detalle-grid">
+    <div class="equipo-col">
+      <div class="sec-head"><h2>Ultimos resultados</h2></div>
+      <div id="eqResultados"></div>
+      <div class="sec-head"><h2>Proximos partidos</h2></div>
+      <div id="eqProximos"></div>
+    </div>
+    <div class="equipo-col">
+      <div class="sec-head"><h2>Plantilla</h2><span class="sec-note" id="eqPlantillaNota"></span></div>
+      <div class="equipo-plantilla" id="eqPlantilla"></div>
+    </div>
+  </div>
+</div>
+{% endblock %}

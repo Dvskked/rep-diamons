@@ -182,7 +182,43 @@ def _subir_escudo():
 
 @app.route("/")
 def index():
-    return render_template("index.html")
+    return render_template("inicio.html")
+
+
+@app.route("/liga")
+def liga():
+    return render_template("liga.html")
+
+
+@app.route("/estadisticas")
+def estadisticas():
+    return render_template("estadisticas.html")
+
+
+@app.route("/redes")
+def redes():
+    return render_template("redes.html")
+
+
+@app.route("/equipo")
+def equipo():
+    return render_template("equipo.html")
+
+
+@app.route("/donacion")
+def donacion():
+    return render_template("donacion.html")
+
+
+@app.route("/equipos/<int:equipo_id>")
+def equipo_detalle(equipo_id):
+    equipo = db.consultar_uno(
+        "SELECT id, nombre, sigla, division, escudo FROM equipos WHERE id = %s",
+        (equipo_id,)
+    )
+    if not equipo:
+        abort(404)
+    return render_template("equipo_detalle.html", equipo=equipo)
 
 
 @app.route("/admin")

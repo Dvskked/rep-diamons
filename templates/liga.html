@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block pagina %}liga{% endblock %}
+{% block titulo %}Diamonds League | Posiciones, calendario y plantillas - The Diamonds League{% endblock %}
+{% block descripcion %}Posiciones, calendario, resultados y plantillas de la Division 1 y la Division 2 de The Diamonds League (HaxBall X5).{% endblock %}
+{% block og_titulo %}Diamonds League | Posiciones y calendario{% endblock %}
+
+{% block contenido %}
+<section class="page-hero">
+  <div class="wrap">
+    <span class="etiqueta">LIGA OFICIAL</span>
+    <h1 class="display">Diamonds League</h1>
+    <p>Posiciones, calendario, resultados y plantillas de la Division 1 y la Division 2.</p>
+  </div>
+</section>
+
+<div class="wrap page">
+  <div class="toolbar reveal">
+    <div class="chips" id="ligaDivision" role="group" aria-label="Division">
+      <button class="chip activa" type="button" data-division="D1">Division 1</button>
+      <button class="chip" type="button" data-division="D2">Division 2</button>
+    </div>
+    <div class="chips" id="ligaVista" role="group" aria-label="Vista">
+      <button class="chip activa" type="button" data-vista="posiciones">Posiciones</button>
+      <button class="chip" type="button" data-vista="calendario">Calendario</button>
+      <button class="chip" type="button" data-vista="x5">X5 Ideal</button>
+      <button class="chip" type="button" data-vista="equipos">Equipos</button>
+    </div>
+  </div>
+
+  <div class="panel-panel activo" data-panel="posiciones">
+    <div class="sec-head"><h2>Posiciones</h2><span class="sec-note" id="posNota"></span></div>
+    <div class="tabla-wrap">
+      <table class="tabla" id="tablaPosiciones">
+        <caption class="visually-hidden">Clasificacion de la temporada</caption>
+        <thead>
+          <tr>
+            <th scope="col">#</th><th scope="col">EQUIPO</th><th scope="col">PJ</th>
+            <th scope="col">G</th><th scope="col">E</th><th scope="col">P</th>
+            <th scope="col">GF</th><th scope="col">GC</th><th scope="col">DG</th><th scope="col">PTS</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="panel-panel" data-panel="calendario">
+    <div class="sec-head"><h2>Calendario y resultados</h2></div>
+    <div id="ligaCalendario"></div>
+  </div>
+
+  <div class="panel-panel" data-panel="x5">
+    <div class="sec-head">
+      <h2>X5 Ideal</h2>
+      <label class="x5-campo"><span>JORNADA</span><select id="x5Jornada" aria-label="Jornada"></select></label>
+    </div>
+    <p class="sec-sub">Los cinco elegidos por el staff para cada jornada de la division seleccionada.</p>
+    <div class="x5-cancha" id="x5Cancha"></div>
+  </div>
+
+  <div class="panel-panel" data-panel="equipos">
+    <div class="sec-head"><h2>Equipos y plantillas</h2></div>
+    <div class="equipos-grid" id="equiposGrid"></div>
+  </div>
+</div>
+{% endblock %}

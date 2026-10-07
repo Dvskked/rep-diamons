@@ -1,0 +1,177 @@
+{% extends "base.html" %}
+{% block pagina %}inicio{% endblock %}
+{% block titulo %}The Diamonds League | Liga de HaxBall X5 - Posiciones, resultados y estadisticas{% endblock %}
+{% block descripcion %}Posiciones, resultados, calendario y estadisticas de The Diamonds League: liga oficial de HaxBall X5 con Division 1 y Division 2.{% endblock %}
+{% block og_titulo %}The Diamonds League | Liga de HaxBall X5{% endblock %}
+
+{% block contenido %}
+
+<!-- ================= HERO ================= -->
+<section class="hero">
+  <svg class="pitch" viewBox="0 0 800 400" preserveAspectRatio="xMaxYMid slice" aria-hidden="true" focusable="false">
+    <g fill="none" stroke="currentColor" stroke-width="2">
+      <rect x="20" y="20" width="760" height="360" rx="6" />
+      <line x1="400" y1="20" x2="400" y2="380" />
+      <circle cx="400" cy="200" r="72" />
+      <rect x="20" y="115" width="96" height="170" />
+      <rect x="684" y="115" width="96" height="170" />
+      <rect x="4" y="165" width="16" height="70" />
+      <rect x="780" y="165" width="16" height="70" />
+    </g>
+  </svg>
+  <div class="wrap hero-inner">
+    <div class="hero-text reveal">
+      <span class="hero-tag">LIGA OFICIAL DE HAXBALL X5</span>
+      <h1 class="display">The Diamonds League</h1>
+      <p class="hero-lead">Posiciones, resultados y estadisticas de la Division 1 y la Division 2.
+        Se actualizan con cada partido confirmado por el staff.</p>
+      <div class="hero-actions">
+        <a class="btn btn-primary big" href="/liga">Ver resultados</a>
+        <a class="btn btn-soft big" href="/donacion">Donar</a>
+      </div>
+    </div>
+    <div class="hero-side" id="heroUltimo"></div>
+  </div>
+</section>
+
+<!-- ================= FRANJA RESULTADOS ================= -->
+<div class="strip" id="strip" role="region" aria-label="Ultimos resultados" hidden>
+  <span class="strip-label">Resultados</span>
+  <div class="strip-viewport" tabindex="0">
+    <div class="strip-track" id="stripTrack"></div>
+  </div>
+</div>
+
+<div class="wrap page">
+
+  <!-- ================= DIVISIONES ================= -->
+  <section class="block" aria-labelledby="h-ligas">
+    <div class="sec-head">
+      <h2 id="h-ligas">Ligas en juego</h2>
+      <a class="link-btn" href="/liga">Ver la liga</a>
+    </div>
+    <div class="cards" id="ligasGrid"></div>
+  </section>
+
+  <div class="cols">
+    <!-- ================= RESULTADOS ================= -->
+    <section class="col-main" id="resultados" aria-labelledby="h-res">
+      <div class="sec-head">
+        <h2 id="h-res">Resultados</h2>
+        <div class="chips" id="resFiltro" role="group" aria-label="Filtrar por division"></div>
+      </div>
+      <p class="sec-note" id="resNota" aria-live="polite"></p>
+      <div id="resLista"></div>
+      <a class="btn ghost more" href="/liga">Ver todos los resultados</a>
+    </section>
+
+    <!-- ================= LATERAL ================= -->
+    <aside class="col-side" aria-label="Por jugar y lideres">
+      <section class="side-card" aria-labelledby="h-next">
+        <div class="side-head"><h2 id="h-next">Por jugar</h2></div>
+        <div id="porJugar"></div>
+      </section>
+
+      <section class="side-card" aria-labelledby="h-lead">
+        <div class="side-head"><h2 id="h-lead">Lideres de la temporada</h2></div>
+        <div class="chips chips-sub" id="liderTabs" role="group" aria-label=" Estadistica"></div>
+        <div id="lideres"></div>
+        <a class="link-btn card-more" href="/estadisticas">Ver todas las estadisticas</a>
+      </section>
+
+      <div class="discord-card">
+        <h2>Unete a la liga</h2>
+        <p>Los partidos se coordinan y los resultados se confirman con el staff de The Diamonds League.</p>
+        <a class="btn big" id="ctaComunidad" href="/redes">Redes y comunidad</a>
+      </div>
+    </aside>
+  </div>
+
+  <!-- ================= SALAS ================= -->
+  <section class="block" id="pubs" aria-labelledby="h2-pubs">
+    <div class="sec-head">
+      <div>
+        <span class="etiqueta" data-etiqueta="pubs">PUBS</span>
+        <h2 id="h2-pubs" data-titulo="pubs">Salas de HaxBall</h2>
+        <p data-subtitulo="pubs" class="sec-sub">Entra directo a las salas publicas de la liga.</p>
+      </div>
+    </div>
+    <div class="salas-grid" id="salasGrid"></div>
+  </section>
+
+  <!-- ================= MUSEO ================= -->
+  <section class="block" id="museo" aria-labelledby="h2-museo">
+    <div class="sec-head">
+      <div>
+        <span class="etiqueta" data-etiqueta="museo">MUSEO</span>
+        <h2 id="h2-museo" data-titulo="museo">Museo de la liga</h2>
+        <p data-subtitulo="museo" class="sec-sub">Premios entregados en temporadas anteriores.</p>
+      </div>
+      <div class="chips" id="museoFiltros" role="group" aria-label="Filtrar premios"></div>
+    </div>
+    <div class="museo-grid" id="museoGrid"></div>
+  </section>
+
+  <!-- ================= NOTICIAS ================= -->
+  <section class="block" id="noticias" aria-labelledby="h2-noticias">
+    <div class="sec-head">
+      <div>
+        <span class="etiqueta" data-etiqueta="noticias">NOTICIAS</span>
+        <h2 id="h2-noticias" data-titulo="noticias">Noticias</h2>
+        <p data-subtitulo="noticias" class="sec-sub">Reportajes y Advances de la jornada.</p>
+      </div>
+    </div>
+    <div class="noticias-grid" id="noticiasGrid"></div>
+  </section>
+
+  <!-- ================= ANUNCIOS ================= -->
+  <section class="block" id="anuncios" aria-labelledby="h2-anuncios">
+    <div class="sec-head">
+      <div>
+        <span class="etiqueta" data-etiqueta="anuncios">ANUNCIOS - NOVEDADES</span>
+        <h2 id="h2-anuncios" data-titulo="anuncios">Anuncios y novedades</h2>
+        <p data-subtitulo="anuncios" class="sec-sub">Comunicados oficiales de la liga.</p>
+      </div>
+    </div>
+    <div class="anuncios-grid" id="anunciosGrid"></div>
+  </section>
+
+  <!-- ================= ALIANZAS ================= -->
+  <section class="block" id="alianzas" aria-labelledby="h2-alianzas">
+    <div class="sec-head">
+      <div>
+        <span class="etiqueta" data-etiqueta="alianzas">ALIANZAS</span>
+        <h2 id="h2-alianzas" data-titulo="alianzas">Alianzas y afiliados</h2>
+        <p data-subtitulo="alianzas" class="sec-sub">Servers aliados y la proxima afiliacion.</p>
+      </div>
+    </div>
+    <div class="alianzas-grid" id="alianzasGrid"></div>
+  </section>
+
+  <!-- ================= FORO ================= -->
+  <section class="block" id="foro" aria-labelledby="h2-foro">
+    <div class="sec-head">
+      <div>
+        <span class="etiqueta">FORO</span>
+        <h2 id="h2-foro">Sugerencias de la comunidad</h2>
+        <p class="sec-sub">Escribe tu nombre y deja tu comentario. Todos lo pueden ver.</p>
+      </div>
+    </div>
+    <div class="foro-layout">
+      <form class="foro-form" id="foroForm">
+        <h3>PUBLICAR MENSAJE</h3>
+        <label>Tu nombre
+          <input type="text" id="foroNombre" maxlength="60" placeholder="Ej: Neptunzinho" required>
+        </label>
+        <label>Mensaje
+          <textarea id="foroMensaje" rows="5" maxlength="1000" placeholder="Escribe tu sugerencia o mensaje..." required></textarea>
+        </label>
+        <button class="btn btn-primary" type="submit">PUBLICAR</button>
+        <p class="form-msg" id="foroMsg" role="status"></p>
+      </form>
+      <div class="foro-lista" id="foroLista"></div>
+    </div>
+  </section>
+
+</div>
+{% endblock %}

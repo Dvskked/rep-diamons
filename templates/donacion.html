@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block pagina %}donacion{% endblock %}
+{% block titulo %}Donaciones | The Diamonds League{% endblock %}
+{% block descripcion %}Metodos para apoyar a The Diamonds League, la liga de HaxBall X5: PayPal, Nequi, BTC y mas.{% endblock %}
+{% block og_titulo %}Donaciones | The Diamonds League{% endblock %}
+
+{% block contenido %}
+<section class="page-hero">
+  <div class="wrap">
+    <span class="etiqueta" data-etiqueta="donacion">DONACION</span>
+    <h1 class="display" data-titulo="donacion">Donaciones</h1>
+    <p data-subtitulo="donacion">Metodos para apoyar a la liga.</p>
+  </div>
+</section>
+
+<div class="wrap page">
+  <div class="donacion-grid" id="donacionGrid"></div>
+  <p class="sec-sub centro">Cada aporte se destina a mantener los servidores y los premios de la liga.</p>
+</div>
+{% endblock %}

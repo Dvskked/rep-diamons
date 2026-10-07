@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block pagina %}estadisticas{% endblock %}
+{% block titulo %}Estadisticas | Goleadores, asistencias y clean sheets - The Diamonds League{% endblock %}
+{% block descripcion %}Estadisticas de jugadores de The Diamonds League: goleadores, asistencias y clean sheets de la Division 1 y Division 2.{% endblock %}
+{% block og_titulo %}Estadisticas | The Diamonds League{% endblock %}
+
+{% block contenido %}
+<section class="page-hero">
+  <div class="wrap">
+    <span class="etiqueta">TEMPORADA ACTUAL</span>
+    <h1 class="display">Estadisticas</h1>
+    <p>Goleadores, asistencias y clean sheets de la Division 1 y la Division 2.</p>
+  </div>
+</section>
+
+<div class="wrap page">
+  <div class="toolbar reveal">
+    <div class="chips" id="statDivision" role="group" aria-label="Division">
+      <button class="chip activa" type="button" data-division="all">Todas</button>
+      <button class="chip" type="button" data-division="D1">Division 1</button>
+      <button class="chip" type="button" data-division="D2">Division 2</button>
+    </div>
+    <label class="buscador">
+      <span class="visually-hidden">Buscar jugador</span>
+      <input type="search" id="statBuscar" placeholder="Buscar jugador o equipo..." autocomplete="off">
+    </label>
+  </div>
+
+  <div class="sec-head">
+    <h2>Estadisticas de jugadores</h2>
+    <span class="sec-note" id="statNota"></span>
+  </div>
+  <div class="tabla-wrap">
+    <table class="tabla tabla-stats" id="tablaJugadores">
+      <caption class="visually-hidden">Estadisticas de jugadores</caption>
+      <thead>
+        <tr>
+          <th scope="col">#</th><th scope="col">JUGADOR</th><th scope="col">EQUIPO</th>
+          <th scope="col">DIV</th>
+          <th scope="col" class="ord" data-orden="goles">GOLES <i></i></th>
+          <th scope="col" class="ord" data-orden="asistencias">ASIST <i></i></th>
+          <th scope="col" class="ord" data-orden="cs">CLEAN SHEETS <i></i></th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <div class="mini-cols">
+    <section class="stat-card reveal"><h3>GOLEADORES</h3><div id="listaGoles"></div></section>
+    <section class="stat-card reveal"><h3>ASISTENCIAS</h3><div id="listaAsistencias"></div></section>
+    <section class="stat-card reveal"><h3>CLEAN SHEETS</h3><div id="listaCs"></div></section>
+  </div>
+</div>
+{% endblock %}
