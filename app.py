@@ -248,6 +248,19 @@ def uploads(nombre):
 # --------------------------------------------------------------------------
 
 
+@app.teardown_appcontext
+def shutdown_session(exception=None):
+    try:
+        if hasattr(g, "db"):
+            g.db.close()
+    except Exception:
+        pass
+    try:
+        if hasattr(g, "cur"):
+            g.cur.close()
+    except Exception:
+        pass
+
 @app.get("/api/sitio")
 def api_sitio():
     """Todo el contenido publico de la pagina en una sola llamada."""
