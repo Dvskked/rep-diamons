@@ -26,7 +26,7 @@ def conexion(sin_db=False):
         cursorclass=DictCursor,
         charset="utf8mb4",
         autocommit=True,
-        connect_timeout=15,
+        connect_timeout=5,
     )
 
 

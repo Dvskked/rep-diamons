@@ -31,16 +31,21 @@ def obtener_config():
     """Arma la configuracion de MySQL desde el entorno."""
     uri = os.getenv("MYSQL_ADDON_URI", "").strip()
     if uri and not os.getenv("MYSQL_ADDON_HOST"):
-        return _config_desde_uri(uri)
+        cfg = _config_desde_uri(uri)
+        cfg["host"] = os.getenv("MYSQL_HOST") or os.getenv("MYSQLHOST") or cfg["host"]
+        cfg["user"] = os.getenv("MYSQL_USER") or os.getenv("MYSQLUSER") or cfg["user"]
+        cfg["password"] = os.getenv("MYSQL_PASSWORD") or os.getenv("MYSQLPASSWORD") or cfg["password"]
+        cfg["database"] = os.getenv("MYSQL_DATABASE") or os.getenv("MYSQLDATABASE") or cfg["database"]
+        cfg["port"] = int(os.getenv("MYSQL_PORT") or os.getenv("MYSQLPORT") or cfg["port"] or 3306)
+        return cfg
 
     return {
-        "host": os.getenv("MYSQL_ADDON_HOST", "localhost"),
-        "user": os.getenv("MYSQL_ADDON_USER", "root"),
-        "password": os.getenv("MYSQL_ADDON_PASSWORD", ""),
-        "database": os.getenv("MYSQL_ADDON_DB", "diamonds"),
-        "port": int(os.getenv("MYSQL_ADDON_PORT", "3306")),
+        "host": os.getenv("MYSQL_HOST") or os.getenv("MYSQLHOST") or os.getenv("MYSQL_ADDON_HOST", "localhost"),
+        "user": os.getenv("MYSQL_USER") or os.getenv("MYSQLUSER") or os.getenv("MYSQL_ADDON_USER", "root"),
+        "password": os.getenv("MYSQL_PASSWORD") or os.getenv("MYSQLPASSWORD") or os.getenv("MYSQL_ADDON_PASSWORD", ""),
+        "database": os.getenv("MYSQL_DATABASE") or os.getenv("MYSQLDATABASE") or os.getenv("MYSQL_ADDON_DB", "diamonds"),
+        "port": int(os.getenv("MYSQL_PORT") or os.getenv("MYSQLPORT") or os.getenv("MYSQL_ADDON_PORT", "3306")),
     }
-
 
 DB = obtener_config()
 SECRET_KEY = os.getenv("SECRET_KEY", "diamonds-league-neptunzinho-2026")
