@@ -1,0 +1,10 @@
+const fs=require('fs');
+const s=fs.readFileSync('static/app.js','utf8');
+const start=s.indexOf('function pintarEquipo()');
+const end=s.indexOf('function pintarRedes()');
+if(start>=0 && end>start){
+  const rep='function pintarEquipo(){const caja=;if(!caja)return;const items=cont(\"equipo\");const iconos={OWNER:\"??\",FUNDADOR:\"??\",FUNDADORA:\"??\",DESARROLLADOR:\"???\",MASTER:\"????\",COACH:\"??<\",STAFF:\"??\"};const fund=[],staff=[],dev=[];items.forEach(p=>{const r=(p.dato_extra||\"\").toUpperCase();if(r==\"DESARROLLADOR\"){dev.push(p);}else if(r==\"FUNDADOR\"||r==\"FUNDADORA\"){fund.push(p);}else{staff.push(p);}});let html=\"\";if(fund.length){html+=\"<h3 class=\\\"equipo-seccion-titulo\\\">FUNDADORES</h3><div class=\\\"equipo-staff-grid\\\">\";fund.forEach(p=>{html+=renderStaffHTML(p,iconos,false);});html+=\"</div>\";}if(staff.length){html+=\"<h3 class=\\\"equipo-seccion-titulo\\\">STAFF</h3><div class=\\\"equipo-staff-grid\\\">\";staff.forEach(p=>{html+=renderStaffHTML(p,iconos,false);});html+=\"</div>\";}if(dev.length){html+=\"<h3 class=\\\"equipo-seccion-titulo\\\">DESARROLLADOR</h3><div class=\\\"equipo-staff-grid\\\">\";dev.forEach(p=>{html+=renderStaffHTML(p,iconos,true);});html+=\"</div>\";}caja.innerHTML=html||vacio(\"Equipo no publicado.\");}function renderStaffHTML(p,iconos,isDev){const rol=(p.dato_extra||\"STAFF\").toUpperCase();let foto=\"\";if(p.imagen){foto='<img src=\\\"/static/'+esc(p.imagen)+'\\\" alt=\\\"'+esc(p.titulo)+'\\\" loading=\\\"lazy\\\" decoding=\\\"async\\\">';}else{foto=iniciales(p.titulo);}let part=\"\";if(p.subtitulo){part='<p class=\\\"staff-user\\\">Discord · @'+esc(p.subtitulo)+'</p>';}return '<article class=\\\"staff-card reveal '+(isDev?'dev':'')+'\\\"><div class=\\\"staff-avatar\\\">'+foto+'</div><span class=\\\"staff-rol\\\">'+(iconos[rol]||'??')+' '+esc(rol)+'</span><h4>'+esc(p.titulo)+'</h4>'+part+'<p>'+esc(p.texto||'')+'</p></article>';}\n';
+  const res=s.slice(0,start)+rep+s.slice(end);
+  fs.writeFileSync('static/app.js',res,'utf8');
+  console.log('ok');
+}
