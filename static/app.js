@@ -80,9 +80,11 @@ function pintarNav() {
   if (nav && mm) {
     const enlaces = Array.from(nav.querySelectorAll('a'))
       .map((a) => {
+        const href = a.getAttribute('href') || '#';
         const cls = a.dataset.nav === 'donacion' ? ' class="nav-donar"'
           : a.dataset.nav === 'shop' ? ' class="nav-shop"' : '';
-        return `<a href="${esc(a.getAttribute('href'))}"${cls}>${esc(a.textContent)}</a>`;
+        const ext = /^https?:/i.test(href) ? ' target="_blank" rel="noopener"' : '';
+        return `<a href="${esc(href)}"${cls}${ext}>${esc(a.textContent)}</a>`;
       })
       .join('');
     mm.innerHTML = enlaces + '<a href="/admin">Administrar</a>';
@@ -549,8 +551,60 @@ function pintarPubs() {
 }
 
 /* ------------------------------------------------------------ MUSEO */
-function pintarMuseo(){const caja=document.querySelector("#museoGrid");if(!caja)return;const items=cont('museo');const filtrosBox=document.querySelector("#museoFiltros");if(filtrosBox){const cats=new Set(['TODO']);items.forEach(function(m){if(m.categoria) cats.add(m.categoria);});const orden=['TODO','PREMIOS D2','PREMIOS D1','RANKINGS D2','RANKINGS D1','CAMPEONES'];filtrosBox.innerHTML=Array.from(cats).sort(function(a,b){const ia=orden.indexOf(a),ib=orden.indexOf(b);if(ia<0&&ib<0)return a.localeCompare(b);if(ia<0)return 1;if(ib<0)return -1;return ia-ib;}).map(function(c){return '<button class="filtro" data-cat="'+esc(c)+'">'+esc(c)+'</button>';}).join('');Array.from(document.querySelectorAll('#museoFiltros .filtro')).forEach(function(btn){btn.addEventListener('click',function(){Array.from(document.querySelectorAll('#museoFiltros .filtro')).forEach(function(x){x.classList.remove('activo');});btn.classList.add('activo');pintarMuseoFiltrado(btn.dataset.cat);});});const act=filtrosBox.querySelector('.filtro.activo');const fAct=act?act.dataset.cat:(Array.from(cats).includes('TODO')?'TODO':Array.from(cats)[0]);pintarMuseoFiltrado(fAct);return;}pintarMuseoFiltrado('TODO');}
-function pintarMuseoFiltrado(filtro){const caja=document.querySelector("#museoGrid");if(!caja)return;let items=cont('museo');if(filtro&&filtro!=='TODO') items=items.filter(function(m){return (m.categoria||'')===filtro;});items.sort(function(a,b){return (num(a.orden)-num(b.orden))||(a.titulo||'').localeCompare(b.titulo||'');});if(!items.length){caja.innerHTML=vacio('No hay elementos en el museo.');return;}caja.innerHTML=items.map(function(i){let img=i.imagen||i.dato_extra||'';if(img&&!img.startsWith('assets/')&&!img.startsWith('http')) img='assets/'+img;const tieneImg=!!img;const imagenHtml=tieneImg?'<div class="museo-img"><img src="/static/'+esc(img)+'" alt="'+esc(i.titulo||'')+'" loading="lazy" decoding="async"></div>':'';var sub=i.subtitulo?'<p class="museo-sub">'+esc(i.subtitulo)+'</p>':'';var txt=i.texto?'<p>'+esc(i.texto)+'</p>':'';return '<article class="museo-card reveal '+(tieneImg?'con-imagen':'')+'"><div class="museo-contenido">'+imagenHtml+'<h4>'+esc(i.titulo||'')+'</h4>'+sub+txt+'</div></article>';}).join('');revelar();}
+function pintarMuseo() {
+  const caja = $('#museoGrid');
+  if (!caja) return;
+  const items = cont('museo');
+  const filtrosBox = $('#museoFiltros');
+  if (filtrosBox) {
+    const cats = new Set(['TODO']);
+    items.forEach((m) => { if (m.categoria) cats.add(m.categoria); });
+    const orden = ['TODO', 'PREMIOS D1', 'PREMIOS D2', 'RANKINGS D1', 'RANKINGS D2', 'CAMPEONES'];
+    filtrosBox.innerHTML = Array.from(cats)
+      .sort((a, b) => {
+        const ia = orden.indexOf(a), ib = orden.indexOf(b);
+        if (ia < 0 && ib < 0) return a.localeCompare(b);
+        if (ia < 0) return 1;
+        if (ib < 0) return -1;
+        return ia - ib;
+      })
+      .map((c) => `<button type="button" class="chip filtro${c === 'TODO' ? ' activa activo' : ''}" data-cat="${esc(c)}">${esc(c)}</button>`)
+      .join('');
+    filtrosBox.onclick = (ev) => {
+      const btn = ev.target.closest('[data-cat]');
+      if (!btn) return;
+      filtrosBox.querySelectorAll('.filtro').forEach((x) => x.classList.remove('activa', 'activo'));
+      btn.classList.add('activa', 'activo');
+      pintarMuseoFiltrado(btn.dataset.cat);
+    };
+  }
+  pintarMuseoFiltrado('TODO');
+}
+
+function pintarMuseoFiltrado(filtro) {
+  const caja = $('#museoGrid');
+  if (!caja) return;
+  let items = cont('museo');
+  if (filtro && filtro !== 'TODO') {
+    items = items.filter((m) => (m.categoria || '') === filtro);
+  }
+  items = items.slice().sort((a, b) =>
+    (num(a.orden) - num(b.orden)) || (a.titulo || '').localeCompare(b.titulo || ''));
+  if (!items.length) { caja.innerHTML = vacio('No hay elementos en el museo.'); return; }
+  caja.innerHTML = items.map((i) => {
+    let img = i.imagen || '';
+    if (img && !img.startsWith('assets/') && !img.startsWith('http')) img = 'assets/' + img;
+    const imagenHtml = img
+      ? `<div class="museo-img"><img src="/static/${esc(img)}" alt="${esc(i.titulo || '')}" loading="lazy" decoding="async"></div>`
+      : '';
+    const tag = i.dato_extra ? `<span class="museo-tag">${esc(i.dato_extra)}</span>` : '';
+    const sub = i.subtitulo ? `<p class="museo-sub">${esc(i.subtitulo)}</p>` : '';
+    const txt = i.texto ? `<p class="museo-txt">${esc(i.texto)}</p>` : '';
+    return `<article class="museo-card reveal ${img ? 'con-imagen' : ''}">${imagenHtml}${tag}<h4>${esc(i.titulo || '')}</h4>${sub}${txt}</article>`;
+  }).join('');
+  revelar();
+}
+
 function pintarNoticias() {
   const caja = $('#noticiasGrid');
   if (!caja) return;
@@ -599,15 +653,67 @@ function pintarAlianzas() {
 }
 
 /* ----------------------------------------------------------- EQUIPO */
-function pintarEquipo(){const caja=document.querySelector('#equipoGrid');if(!caja)return;const items=cont('equipo');const iconos={OWNER:'??',FUNDADOR:'??',FUNDADORA:'??',DESARROLLADOR:'???',MASTER:'????',COACH:'??<',STAFF:'??'};const fund=[],staff=[],dev=[];items.forEach(function(p){const r=(p.dato_extra||'').toUpperCase();if(r==='DESARROLLADOR'){dev.push(p);}else if(r==='FUNDADOR'||r==='FUNDADORA'){fund.push(p);}else{staff.push(p);}});let html='';if(fund.length){html+='<h3 class="equipo-seccion-titulo">FUNDADORES</h3><div class="equipo-staff-grid">';fund.forEach(function(p){html+=renderStaffHTML(p,iconos,false);});html+='</div>';}if(staff.length){html+='<h3 class="equipo-seccion-titulo">STAFF</h3><div class="equipo-staff-grid">';staff.forEach(function(p){html+=renderStaffHTML(p,iconos,false);});html+='</div>';}if(dev.length){html+='<h3 class="equipo-seccion-titulo">DESARROLLADOR</h3><div class="equipo-staff-grid">';dev.forEach(function(p){html+=renderStaffHTML(p,iconos,true);});html+='</div>';}caja.innerHTML=html||vacio('Equipo no publicado.');}
-function renderStaffHTML(p,iconos,isDev){const rol=(p.dato_extra||'STAFF').toUpperCase();let foto='';if(p.imagen){foto='<img src="/static/'+esc(p.imagen)+'" alt="'+esc(p.titulo)+'" loading="lazy" decoding="async">';}else{foto=iniciales(p.titulo);}let part='';if(p.subtitulo){part='<p class="staff-user">Discord · @'+esc(p.subtitulo)+'</p>';}return '<article class="staff-card reveal '+(isDev?'dev':'')+'"><div class="staff-avatar">'+foto+'</div><span class="staff-rol">'+(iconos[rol]||'??')+' '+esc(rol)+'</span><h4>'+esc(p.titulo)+'</h4>'+part+'<p>'+esc(p.texto||'')+'</p></article>';}
+const ROLES_INFO = {
+  'OWNER': { grupo: 'owners', etiqueta: "OWNER'S" },
+  'FUNDADOR': { grupo: 'owners', etiqueta: "OWNER'S" },
+  'FUNDADORA': { grupo: 'owners', etiqueta: "OWNER'S" },
+  'MASTER': { grupo: 'staff', etiqueta: 'STAFF' },
+  'STAFF': { grupo: 'staff', etiqueta: 'STAFF' },
+  'COACH': { grupo: 'staff', etiqueta: 'STAFF' },
+  'MOD': { grupo: 'staff', etiqueta: 'STAFF' },
+  'DESARROLLADOR': { grupo: 'dev', etiqueta: 'DESARROLLADOR' }
+};
+const GRUPOS_EQUIPO = [
+  { clave: 'owners', titulo: "Owner's", color: '#FFD86B' },
+  { clave: 'staff', titulo: 'Staff', color: '#0AFFD6' },
+  { clave: 'dev', titulo: 'Desarrollador', color: '#FF4D9D' }
+];
+function infoRol(rol) {
+  return ROLES_INFO[String(rol || 'STAFF').toUpperCase()] || { grupo: 'staff', etiqueta: 'STAFF' };
+}
+function pintarEquipo() {
+  const caja = $('#equipoGrid');
+  if (!caja) return;
+  const items = cont('equipo');
+  if (!items.length) { caja.innerHTML = vacio('Equipo no publicado.'); return; }
+  const porGrupo = { owners: [], staff: [], dev: [] };
+  items.forEach((p) => { porGrupo[infoRol(p.dato_extra).grupo].push(p); });
+  caja.innerHTML = GRUPOS_EQUIPO.filter((g) => porGrupo[g.clave].length).map((g) => {
+    const tarjetas = porGrupo[g.clave].map(renderStaffHTML).join('');
+    return `<section class="equipo-grupo ${g.clave}" style="--rol:${g.color}">
+      <h3 class="equipo-seccion-titulo">${esc(g.titulo)}</h3>
+      <div class="equipo-staff-grid">${tarjetas}</div>
+    </section>`;
+  }).join('');
+  revelar();
+}
+function renderStaffHTML(p) {
+  const info = infoRol(p.dato_extra);
+  const foto = p.imagen
+    ? `<img src="/static/${esc(p.imagen)}" alt="Foto de ${esc(p.titulo)}" loading="lazy" decoding="async">`
+    : iniciales(p.titulo);
+  const user = p.subtitulo ? `<p class="staff-user">Discord &middot; @${esc(p.subtitulo)}</p>` : '';
+  const texto = p.texto ? `<p class="staff-texto">${esc(p.texto)}</p>` : '';
+  return `<article class="staff-card ${info.grupo} reveal">
+    <div class="staff-avatar">${foto}</div>
+    <span class="staff-rol">${esc(info.etiqueta)}</span>
+    <h4>${esc(p.titulo)}</h4>
+    ${user}${texto}
+  </article>`;
+}
+
 function pintarRedes() {
   const caja = $('#redesGrid');
   if (!caja) return;
   caja.innerHTML = cont('redes').map((r) => {
+    const logo = r.imagen
+      ? `<span class="red-logo"><img src="/static/${esc(r.imagen)}" alt="${esc(r.titulo)}" loading="lazy" decoding="async"></span>`
+      : `<span class="red-logo sin-logo">${iniciales(r.titulo)}</span>`;
+    const usuario = r.subtitulo ? `<span class="user">${esc(r.subtitulo)}</span>` : '';
     const inner = `
+      ${logo}
       <strong>${esc(r.titulo)}</strong>
-      ${r.subtitulo ? `<span class="user">@${esc(r.subtitulo)}</span>` : ''}
+      ${usuario}
       <p>${esc(r.texto || '')}</p>
       <b>${r.enlace ? 'VER PERFIL' : 'PROXIMAMENTE'}</b>`;
     return r.enlace
@@ -719,14 +825,6 @@ function pintarEquipoDetalle() {
   const nota = $('#eqPlantillaNota');
   if (nota) nota.textContent = `${(eq.jugadores || []).length} jugadores`;
 }
-
-/* ---------------------------------------------- SHOP (PROXIMAMENTE) */
-document.addEventListener('click', (ev) => {
-  const btn = ev.target.closest('[data-nav="shop"], a.nav-shop');
-  if (!btn) return;
-  ev.preventDefault();
-  toast('La tienda se inaugura pronto. Estate atento en el Discord!');
-});
 
 /* -------------------------------------------------------------- FORO */
 function pintarForo() {
