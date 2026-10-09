@@ -87,20 +87,25 @@
 <div class="login-modal" id="loginModal" aria-hidden="true" role="dialog" aria-label="Acceso de administracion">
   <div class="login-card">
     <button class="login-close" type="button" data-close-login aria-label="Cerrar">&times;</button>
-    <img class="login-logo" src="/static/assets/logo-128.webp" width="78" height="78" alt="Logo The Diamonds League">
-    <h3>ADMINISTRAR</h3>
-    <p>Acceso exclusivo para el staff de la liga.</p>
+    <div class="login-header">
+      <img class="login-logo" src="/static/assets/logo-128.webp" width="92" height="92" alt="Logo The Diamonds League">
+      <span class="login-glow"></span>
+    </div>
+    <h3>THE DIAMONDS LEAGUE</h3>
+    <p class="login-sub">Acceso exclusivo para el staff de la liga</p>
     <form id="loginForm">
       <label>Usuario
-        <input type="text" name="usuario" autocomplete="username" required>
+        <input type="text" name="usuario" autocomplete="username" placeholder="Ingresa tu usuario" required>
       </label>
-      <label>Contraseña
-        <input type="password" name="clave" autocomplete="current-password" required>
+      <label>Contrase�a
+        <input type="password" name="clave" autocomplete="current-password" placeholder="Ingresa tu contrase�a" required>
       </label>
       <p class="login-error" id="loginError" role="alert"></p>
-      <button type="submit" class="btn btn-primary btn-block">ENTRAR</button>
+      <button type="submit" class="btn btn-primary btn-block login-submit">ENTRAR AL PANEL</button>
     </form>
+    <p class="login-foot">� The Diamonds League</p>
   </div>
+</div>
 </div>
 
 <!-- ============ HEADER ============ -->

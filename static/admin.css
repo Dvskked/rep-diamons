@@ -24,7 +24,21 @@
   transition: color .25s;
 }
 .volver:hover { color: var(--cian); }
-.login-card { max-width: 420px; }
+.login-card { max-width: 440px; background: linear-gradient(160deg, rgba(10,255,214,.12) 0%, rgba(0,56,112,.45) 100%); border: 1px solid var(--linea-fuerte); box-shadow: var(--sombra-alta), 0 0 44px rgba(10,255,214,.18); border-radius: var(--radio-grande); padding: 40px 34px; text-align: center; position: relative; overflow: hidden; }
+.login-card::after { content: ""; position: absolute; inset: 0; background: radial-gradient(120% 80% at 50% 0%, rgba(255,255,255,.08), transparent); pointer-events: none; }
+.login-card > * { position: relative; z-index: 1; }
+.login-header { position: relative; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 10px; }
+.login-glow { position: absolute; inset: -18px; border-radius: 50%; background: radial-gradient(circle, rgba(10,255,214,.38) 0%, rgba(10,255,214,.16) 40%, transparent 70%); filter: blur(14px); z-index: 0; pointer-events: none; }
+.login-logo { position: relative; z-index: 1; width: 92px; height: 92px; margin: 0 auto; filter: drop-shadow(0 0 40px rgba(10,255,214,.5)); }
+.login-sub { margin-top: -2px; margin-bottom: 20px; font-size: .88rem; color: var(--texto-suave); }
+.login-submit { margin-top: 6px; padding: 14px 18px; font-size: .78rem; letter-spacing: .14em; }
+.login-foot { margin-top: 20px; font-size: .66rem; letter-spacing: .16em; color: var(--texto-tenue); }
+.login-card h3 { font-family: var(--fuente-titulo); font-size: 1.8rem; letter-spacing: .08em; margin-bottom: 6px; }
+.login-card p { color: var(--texto-suave); margin-bottom: 18px; }
+.login-card form { display: flex; flex-direction: column; gap: 14px; margin-top: 8px; }
+.login-card label { text-align: left; font-size: .78rem; letter-spacing: .08em; text-transform: uppercase; color: var(--texto-suave); }
+.login-card input { padding: 12px 14px; border-radius: var(--radio-chico); background: rgba(255,255,255,.08); border: 1.5px solid var(--linea); color: var(--blanco); font-size: .95rem; transition: border-color .25s, background .25s, box-shadow .25s; }
+.login-card input:focus { outline: none; border-color: var(--cian); background: rgba(10,255,214,.12); box-shadow: 0 0 0 3px rgba(10,255,214,.22); }
 .login-pie {
   margin-top: 24px; font-size: .68rem; letter-spacing: .14em; color: var(--texto-tenue);
 }

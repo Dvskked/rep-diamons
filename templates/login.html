@@ -14,22 +14,25 @@
   <a class="volver" href="/">&larr; Volver a la pagina</a>
 
   <div class="login-card">
-    <img class="login-logo" src="/static/assets/logo-128.webp" alt="">
-    <h3>ADMINISTRAR</h3>
-    <p>Acceso exclusivo para el staff de la liga.</p>
+    <div class="login-header">
+      <img class="login-logo" src="/static/assets/logo-128.webp" alt="">
+      <span class="login-glow"></span>
+    </div>
+    <h3>THE DIAMONDS LEAGUE</h3>
+    <p class="login-sub">Acceso exclusivo para el staff de la liga</p>
 
     <form id="loginForm">
       <label>Usuario
-        <input type="text" name="usuario" autocomplete="username" required autofocus>
+        <input type="text" name="usuario" autocomplete="username" placeholder="Ingresa tu usuario" required autofocus>
       </label>
-      <label>Contrasena
-        <input type="password" name="clave" autocomplete="current-password" required>
+      <label>Contrase�a
+        <input type="password" name="clave" autocomplete="current-password" placeholder="Ingresa tu contrase�a" required>
       </label>
       <p class="login-error" id="loginError"></p>
-      <button type="submit" class="btn btn-primary btn-block">ENTRAR</button>
+      <button type="submit" class="btn btn-primary btn-block login-submit">ENTRAR AL PANEL</button>
     </form>
 
-    <div class="login-pie">The Diamonds League · (c) Neptunzinho</div>
+    <div class="login-pie">The Diamonds League �� (c) Neptunzinho</div>
   </div>
 </div>
 
