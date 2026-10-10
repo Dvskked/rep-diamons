@@ -10,7 +10,7 @@ const $$ = (sel, ctx = document) => Array.from(ctx.querySelectorAll(sel));
 const DATOS = { modulos: [], contenidos: {}, equipos: [], fechas: [], ideales: [], foro: [] };
 
 /* Estado de la seccion LIGA (division seleccionada + vista activa) */
-const LIGA = { division: 'D1', vista: 'posiciones' };
+const LIGA = { division: 'D1', vista: 'posiciones', jornada: 'TODAS' };
 
 /* Estado de INICIO (filtro de resultados + ranking lateral) */
 const INICIO = { filtro: 'all', ranking: 'goles' };
@@ -122,6 +122,32 @@ function fechasDivision(div = LIGA.division) {
     if (!f.division_a && !f.division_b) return true;
     return f.division_a === div || f.division_b === div;
   });
+}
+
+function jornadasDisponibles(div) {
+  const set = new Set();
+  fechasDivision(div).forEach((f) => { if (f.jornada) set.add(f.jornada); });
+  return Array.from(set).sort((a, b) => a.localeCompare(b, 'es', { numeric: true }));
+}
+
+function pintarJornadaSelect(div) {
+  const sel = $('#ligaJornada');
+  if (!sel) return;
+  const jornadas = jornadasDisponibles(div);
+  const actual = jornadas.includes(LIGA.jornada) ? LIGA.jornada : 'TODAS';
+  sel.innerHTML = ['<option value="TODAS">TODAS</option>'].concat(
+    jornadas.map((j) =>
+      `<option value="${esc(j)}"${j === actual ? ' selected' : ''}>${esc(j)}</option>`)
+  ).join('');
+  sel.disabled = !jornadas.length;
+  LIGA.jornada = actual;
+}
+
+function pintarCalendario() {
+  const fechas = fechasDivision(LIGA.division)
+    .filter((f) => LIGA.jornada === 'TODAS' || (f.jornada || '') === LIGA.jornada)
+    .sort((a, b) => fechaHora(a) - fechaHora(b));
+  pintarFechas('#ligaCalendario', fechas, { vacio: `Todavia no hay fechas en la Division ${LIGA.division}.` });
 }
 
 function escudoMini(eq) {
@@ -503,9 +529,8 @@ function pintarLiga() {
   $$('#ligaDivision .chip').forEach((b) => b.classList.toggle('activa', b.dataset.division === LIGA.division));
 
   pintarTablaPosiciones();
-
-  const fechas = fechasDivision(LIGA.division).sort((a, b) => fechaHora(a) - fechaHora(b));
-  pintarFechas('#ligaCalendario', fechas, { vacio: `Todavia no hay fechas en la Division ${LIGA.division}.` });
+  pintarJornadaSelect(LIGA.division);
+  pintarCalendario();
 
   const grid = $('#equiposGrid');
   if (grid) {
@@ -955,6 +980,9 @@ function eventosLiga() {
   }
   const sel = $('#x5Jornada');
   if (sel) sel.addEventListener('change', pintarX5Cancha);
+
+  const selJ = $('#ligaJornada');
+  if (selJ) selJ.addEventListener('change', () => { LIGA.jornada = selJ.value; pintarCalendario(); });
 }
 
 /* ------------------------------------------------------- EVENTOS INICIO */
