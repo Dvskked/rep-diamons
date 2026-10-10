@@ -10,10 +10,10 @@ const $$ = (sel, ctx = document) => Array.from(ctx.querySelectorAll(sel));
 const DATOS = { modulos: [], contenidos: {}, equipos: [], fechas: [], ideales: [], foro: [] };
 
 /* Estado de la seccion LIGA (division seleccionada + vista activa) */
-const LIGA = { division: 'D1', vista: 'posiciones', jornada: 'TODAS' };
+const LIGA = { division: 'D1', vista: 'posiciones' };
 
-/* Estado de INICIO (filtro de resultados + ranking lateral) */
-const INICIO = { filtro: 'all', ranking: 'goles' };
+/* Estado de INICIO (ranking lateral) */
+const INICIO = { ranking: 'goles' };
 
 /* Estado de ESTADISTICAS (filtro + busqueda + orden) */
 const STATS = { division: 'all', buscar: '', orden: 'goles', dir: 'desc' };
@@ -124,30 +124,33 @@ function fechasDivision(div = LIGA.division) {
   });
 }
 
-function jornadasDisponibles(div) {
-  const set = new Set();
-  fechasDivision(div).forEach((f) => { if (f.jornada) set.add(f.jornada); });
-  return Array.from(set).sort((a, b) => a.localeCompare(b, 'es', { numeric: true }));
-}
-
-function pintarJornadaSelect(div) {
-  const sel = $('#ligaJornada');
-  if (!sel) return;
-  const jornadas = jornadasDisponibles(div);
-  const actual = jornadas.includes(LIGA.jornada) ? LIGA.jornada : 'TODAS';
-  sel.innerHTML = ['<option value="TODAS">TODAS</option>'].concat(
-    jornadas.map((j) =>
-      `<option value="${esc(j)}"${j === actual ? ' selected' : ''}>${esc(j)}</option>`)
-  ).join('');
-  sel.disabled = !jornadas.length;
-  LIGA.jornada = actual;
-}
-
 function pintarCalendario() {
+  const caja = $('#ligaCalendario');
+  if (!caja) return;
+
   const fechas = fechasDivision(LIGA.division)
-    .filter((f) => LIGA.jornada === 'TODAS' || (f.jornada || '') === LIGA.jornada)
+    .slice()
     .sort((a, b) => fechaHora(a) - fechaHora(b));
-  pintarFechas('#ligaCalendario', fechas, { vacio: `Todavia no hay fechas en la Division ${LIGA.division}.` });
+  if (!fechas.length) {
+    caja.innerHTML = vacio(`Todavia no hay fechas en la Division ${LIGA.division}.`);
+    return;
+  }
+
+  const grupos = new Map();
+  fechas.forEach((f) => {
+    const clave = (f.jornada || 'SIN JORNADA').trim();
+    if (!grupos.has(clave)) grupos.set(clave, []);
+    grupos.get(clave).push(f);
+  });
+
+  const jornadas = Array.from(grupos.keys())
+    .sort((a, b) => a.localeCompare(b, 'es', { numeric: true }));
+
+  caja.innerHTML = jornadas.map((j) => `
+    <section class="jornada-grupo reveal">
+      <h3 class="jornada-titulo">${esc(j)}</h3>
+      <div class="jornada-partidos">${grupos.get(j).map((f) => filaPartido(f)).join('')}</div>
+    </section>`).join('');
 }
 
 function escudoMini(eq) {
@@ -200,13 +203,17 @@ function filaPartido(f, opciones = {}) {
       const asis = (f.asistencias || [])
         .filter((x) => (x.equipo || 'a') === lado)
         .map((x) => `<span class="stat-line"><i class="ic-asis" title="Asistencias">👟</i>${esc(x.nombre || x.jugador)}<strong>x${num(x.asistencias) || 1}</strong></span>`);
+      const opuesto = lado === 'b' ? 'a' : 'b';
+      const auto = (f.autogoles || [])
+        .filter((x) => (x.equipo || 'a') === opuesto)
+        .map((x) => `<span class="stat-line"><i class="ic-autogol" title="Autogol">🥅</i>${esc(x.nombre || x.jugador)} <em>(AG)</em></span>`);
       const esB = lado === 'b';
       const conCs = num(esB ? f.cs_b : f.cs_a) > 0;
       const portero = esB ? f.portero_b : f.portero_a;
       const csLine = conCs && portero
         ? `<span class="stat-line"><i class="ic-cs" title="Clean sheet">🧤</i>${esc(nombreJugador(portero) || portero)}<strong>${num(esB ? f.minutos_cs_b : f.minutos_cs_a)} MIN</strong></span>`
         : '';
-      return goles.concat(asis, csLine ? [csLine] : []).join('');
+      return goles.concat(asis, auto, csLine ? [csLine] : []).join('');
     };
     const htmlA = blocDe('a');
     const htmlB = blocDe('b');
@@ -263,6 +270,7 @@ function tarjetaEquipo(eq) {
       <span class="jugador-stats">
         <i title="Goles">${num(j.goles)}G</i>
         <i title="Asistencias">${num(j.asistencias)}A</i>
+        ${num(j.autogoles) ? `<i title="Autogoles">${num(j.autogoles)}AG</i>` : ''}
         ${num(j.cs) ? `<i title="Clean sheets">${num(j.cs)}CS</i>` : ''}
       </span>
     </div>`).join('') || '<p class="partido-detalle">Sin jugadores registrados.</p>';
@@ -332,7 +340,8 @@ function jugadoresTodos(div = 'all') {
     if (div && div !== 'all' && e.division !== div) return;
     (e.jugadores || []).forEach((j) => lista.push({
       id: j.id, nombre: j.nombre, dorsal: j.dorsal, posicion: j.posicion,
-      goles: num(j.goles), asistencias: num(j.asistencias), cs: num(j.cs),
+      goles: num(j.goles), asistencias: num(j.asistencias),
+      autogoles: num(j.autogoles), cs: num(j.cs),
       equipo: e.nombre, color: e.color, escudo: e.escudo, division: e.division
     }));
   });
@@ -394,30 +403,18 @@ function pendientesOrdenados(div) {
 function pintarResultadosInicio() {
   const caja = $('#resLista');
   if (!caja) return;
-  const todos = jugadosOrdenados(INICIO.filtro);
+  const todos = jugadosOrdenados('all');
   const lista = todos.slice(0, 6);
   caja.innerHTML = lista.length
     ? lista.map((f) => filaPartido(f)).join('')
-    : vacio(INICIO.filtro === 'D1' || INICIO.filtro === 'D2'
-        ? `Todavia no hay resultados en la Division ${INICIO.filtro.slice(1)}.`
-        : 'Todavia no hay resultados.');
+    : vacio('Todavia no hay resultados.');
 
   const nota = $('#resNota');
   if (nota) {
     nota.textContent = lista.length
       ? `Mostrando ${lista.length} de ${todos.length} partidos jugados.`
-      : (INICIO.filtro === 'D1' || INICIO.filtro === 'D2'
-          ? `Ningun partido jugado en la Division ${INICIO.filtro.slice(1)} por ahora.`
-          : '');
+      : '';
   }
-}
-
-function pintarFiltroResultados() {
-  const caja = $('#resFiltro');
-  if (!caja) return;
-  const opciones = [['all', 'Todos'], ['D1', 'Division 1'], ['D2', 'Division 2']];
-  caja.innerHTML = opciones.map(([v, t]) =>
-    `<button class="chip${INICIO.filtro === v ? ' activa' : ''}" type="button" data-filtro="${v}">${t}</button>`).join('');
 }
 
 function pintarStrip() {
@@ -529,7 +526,6 @@ function pintarLiga() {
   $$('#ligaDivision .chip').forEach((b) => b.classList.toggle('activa', b.dataset.division === LIGA.division));
 
   pintarTablaPosiciones();
-  pintarJornadaSelect(LIGA.division);
   pintarCalendario();
 
   const grid = $('#equiposGrid');
@@ -564,9 +560,9 @@ function pintarStats() {
       <td>${esc(j.nombre)}${j.dorsal ? ` <span style="color:var(--texto-tenue)">#${esc(j.dorsal)}</span>` : ''}</td>
       <td><span class="eq">${insignia}<span>${esc(j.equipo)}</span></span></td>
       <td>${esc(j.division)}</td>
-      <td>${j.goles}</td><td>${j.asistencias}</td><td>${j.cs}</td>
+      <td>${j.goles}</td><td>${j.asistencias}</td><td>${j.autogoles}</td><td>${j.cs}</td>
     </tr>`;
-  }).join('') || `<tr><td colspan="7">${vacio('Sin jugadores que coincidan.')}</td></tr>`;
+  }).join('') || `<tr><td colspan="8">${vacio('Sin jugadores que coincidan.')}</td></tr>`;
 
   const nota = $('#statNota');
   if (nota) nota.textContent = `${filas.length} jugadores`;
@@ -980,23 +976,10 @@ function eventosLiga() {
   }
   const sel = $('#x5Jornada');
   if (sel) sel.addEventListener('change', pintarX5Cancha);
-
-  const selJ = $('#ligaJornada');
-  if (selJ) selJ.addEventListener('change', () => { LIGA.jornada = selJ.value; pintarCalendario(); });
 }
 
 /* ------------------------------------------------------- EVENTOS INICIO */
 function eventosInicio() {
-  const filtro = $('#resFiltro');
-  if (filtro) {
-    filtro.addEventListener('click', (ev) => {
-      const btn = ev.target.closest('[data-filtro]');
-      if (!btn) return;
-      INICIO.filtro = btn.dataset.filtro;
-      pintarFiltroResultados();
-      pintarResultadosInicio();
-    });
-  }
   const tabs = $('#liderTabs');
   if (tabs) {
     const opciones = [['goles', 'Goles'], ['asistencias', 'Asistencias'], ['cs', 'Clean Sheets']];
@@ -1072,7 +1055,6 @@ function renderPagina(pagina) {
       pintarHero();
       pintarStrip();
       pintarLigas();
-      pintarFiltroResultados();
       pintarResultadosInicio();
       pintarFechas('#porJugar', pendientesOrdenados('all').slice(0, 5), { compacto: true, detalle: false, vacio: 'No hay partidos programados.' });
       pintarLideres();

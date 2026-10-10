@@ -503,6 +503,7 @@ function mostrarInfoPartido() {
     form.arquero_b_id.innerHTML = '<option value="">Sin arquero</option>';
     $('#listaGoleadores').innerHTML = '';
     $('#listaAsistencias').innerHTML = '';
+    $('#listaAutogoles').innerHTML = '';
     return;
   }
 
@@ -519,6 +520,8 @@ function mostrarInfoPartido() {
     ? jsonLista(f.goleadores).map((g) => chipHTML('gol', 0, g)).join('') : '';
   $('#listaAsistencias').innerHTML = jugado
     ? jsonLista(f.asistencias).map((a) => chipHTML('asistencia', 0, a)).join('') : '';
+  $('#listaAutogoles').innerHTML = jugado
+    ? jsonLista(f.autogoles).map((a) => chipHTML('autogol', 0, a)).join('') : '';
 }
 
 $('#selFecha').addEventListener('change', mostrarInfoPartido);
@@ -526,20 +529,14 @@ $('#selFecha').addEventListener('change', mostrarInfoPartido);
 function chipHTML(tipo, idx, item = {}) {
   const opc = (v, t) => `<option value="${v}" ${item.equipo === v ? 'selected' : ''}>${t}</option>`;
   const equipoSel = item.equipo === 'b' ? 'b' : 'a';
-  const cantidad = tipo === 'gol' ? (item.goles || 1) : (item.asistencias || 1);
-  const jugadorSel = tipo === 'gol' ? (item.jugador_id || item.id) : (item.jugador_id || item.id);
-  if (tipo === 'gol') {
-    return `<div class="chip chip-resultado" data-tipo="gol">
-      <select name="equipo">${opc('a', siglaEquipoLado('a'))}${opc('b', siglaEquipoLado('b'))}</select>
-      <select name="jugador_id">${opcionesJugadores(equipoSel, jugadorSel)}</select>
-      <input type="number" min="1" value="${cantidad}" name="cantidad" title="Goles">
-      <button class="chip-quitar" type="button">&times;</button>
-    </div>`;
-  }
-  return `<div class="chip chip-resultado" data-tipo="asistencia">
+  const titulos = { gol: 'Goles', asistencia: 'Asistencias', autogol: 'Autogoles' };
+  const cantidad = tipo === 'gol' ? (item.goles || 1)
+    : tipo === 'autogol' ? (item.autogoles || 1) : (item.asistencias || 1);
+  const jugadorSel = item.jugador_id || item.id;
+  return `<div class="chip chip-resultado" data-tipo="${tipo}">
     <select name="equipo">${opc('a', siglaEquipoLado('a'))}${opc('b', siglaEquipoLado('b'))}</select>
     <select name="jugador_id">${opcionesJugadores(equipoSel, jugadorSel)}</select>
-    <input type="number" min="1" value="${cantidad}" name="cantidad" title="Asistencias">
+    <input type="number" min="1" value="${cantidad}" name="cantidad" title="${titulos[tipo]}">
     <button class="chip-quitar" type="button">&times;</button>
   </div>`;
 }
@@ -552,6 +549,10 @@ $('#addGoleador').addEventListener('click', () => {
 $('#addAsistencia').addEventListener('click', () => {
   if (!fechaActual) return toast('Selecciona un partido primero');
   $('#listaAsistencias').insertAdjacentHTML('beforeend', chipHTML('asistencia', 0));
+});
+$('#addAutogol').addEventListener('click', () => {
+  if (!fechaActual) return toast('Selecciona un partido primero');
+  $('#listaAutogoles').insertAdjacentHTML('beforeend', chipHTML('autogol', 0));
 });
 
 document.addEventListener('click', (ev) => {
@@ -576,7 +577,9 @@ function leerChips(selector, tipo) {
     const cantidad = parseInt(c.querySelector('[name=cantidad]').value || '1', 10);
     const equipo = c.querySelector('[name=equipo]').value;
     const base = { jugador_id: jid, nombre, equipo };
-    return tipo === 'gol' ? { ...base, goles: cantidad } : { ...base, asistencias: cantidad };
+    if (tipo === 'gol') return { ...base, goles: cantidad };
+    if (tipo === 'autogol') return { ...base, autogoles: cantidad };
+    return { ...base, asistencias: cantidad };
   }).filter(Boolean);
 }
 
@@ -586,6 +589,7 @@ $('#formResultado').addEventListener('submit', async (ev) => {
   const d = Object.fromEntries(new FormData(f));
   d.goleadores = leerChips('#listaGoleadores', 'gol');
   d.asistencias = leerChips('#listaAsistencias', 'asistencia');
+  d.autogoles = leerChips('#listaAutogoles', 'autogol');
   try {
     await put(`/api/admin/resultados/${d.fecha_id}`, d);
     await cargarFechas();
@@ -616,6 +620,7 @@ function f_reiniciarResultado() {
   if (f.arquero_b_id) f.arquero_b_id.innerHTML = '<option value="">Sin arquero</option>' + (partido ? opcionesJugadores('b') : '');
   $('#listaGoleadores').innerHTML = '';
   $('#listaAsistencias').innerHTML = '';
+  $('#listaAutogoles').innerHTML = '';
 }
 
 /* --------------------------------------------------------- X5 IDEAL */

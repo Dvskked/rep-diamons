@@ -62,6 +62,7 @@ CREATE TABLE IF NOT EXISTS `jugadores` (
   `posicion`  VARCHAR(20) DEFAULT 'Mid',
   `goles`     INT NOT NULL DEFAULT 0,
   `asistencias` INT NOT NULL DEFAULT 0,
+  `autogoles` INT NOT NULL DEFAULT 0,      -- goles en propia puerta
   `cs`        INT NOT NULL DEFAULT 0,      -- clean sheets
   `minutos_cs` INT NOT NULL DEFAULT 0,
   `creado`    TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -99,6 +100,7 @@ CREATE TABLE IF NOT EXISTS `resultados` (
   `goles_b`        INT NOT NULL DEFAULT 0,
   `goleadores`     TEXT DEFAULT NULL,   -- JSON: [{"jugador":"..","equipo":"a","goles":2}]
   `asistencias`    TEXT DEFAULT NULL,   -- JSON: [{"jugador":"..","equipo":"a","asistencias":1}]
+  `autogoles`      TEXT DEFAULT NULL,   -- JSON: [{"jugador":"..","equipo":"a","autogoles":1}]
   `portero_a`      VARCHAR(80) DEFAULT '',
   `portero_b`      VARCHAR(80) DEFAULT '',
   `cs_a`           TINYINT(1) NOT NULL DEFAULT 0,
