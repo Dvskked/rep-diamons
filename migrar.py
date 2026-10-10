@@ -43,6 +43,11 @@ def migrar():
                  " AFTER nombre")
         print("      + jugadores.dorsal")
 
+    if "autogoles" not in cols_jug:
+        ejecutar("ALTER TABLE jugadores ADD COLUMN autogoles INT NOT NULL DEFAULT 0"
+                 " AFTER asistencias")
+        print("      + jugadores.autogoles")
+
     if "posicion" in cols_jug:
         ejecutar("UPDATE jugadores SET posicion = CASE"
                  " WHEN posicion IN ('Portero','GK') THEN 'GK'"
@@ -50,6 +55,12 @@ def migrar():
                  " WHEN posicion IN ('Defensa','Defensor','Dfwd') THEN 'Dfwd'"
                  " ELSE 'Fwd' END"
                  " WHERE posicion NOT IN ('GK','Mid','Dfwd','Fwd')")
+
+    cols_res = columnas("resultados")
+    if "autogoles" not in cols_res:
+        ejecutar("ALTER TABLE resultados ADD COLUMN autogoles TEXT DEFAULT NULL"
+                 " AFTER asistencias")
+        print("      + resultados.autogoles")
 
     db.ejecutar(
         "CREATE TABLE IF NOT EXISTS `ideales` ("
