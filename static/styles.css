@@ -505,17 +505,32 @@ body.carga-activa { overflow: hidden; }
   padding: 2px 9px; border-radius: 999px;
   background: rgba(10,255,214,.12); border: 1px solid var(--linea-fuerte); color: var(--cian);
 }
-.match-detalle { grid-column: 1 / -1; font-size: .74rem; color: var(--texto-suave); margin-top: 4px; }
-.match-detalle b { color: var(--cian); }
+.match-detalle {
+  grid-column: 1 / -1; margin-top: 8px; padding-top: 10px;
+  border-top: 1px dashed var(--linea);
+  display: grid; grid-template-columns: 1fr 1fr; gap: 10px 22px;
+  font-size: .78rem; color: var(--texto-suave);
+}
+.match-detalle strong { color: var(--cian); font-weight: 700; }
+.detalle-col { display: flex; flex-direction: column; align-items: flex-start; gap: 5px; min-width: 0; }
+.detalle-col.b { align-items: flex-end; }
+.stat-line {
+  display: inline-flex; align-items: baseline; gap: 6px; flex-wrap: wrap;
+  max-width: 100%; white-space: normal;
+}
+.detalle-col.b .stat-line { justify-content: flex-end; text-align: right; }
+.stat-line i { font-style: normal; font-size: .98rem; line-height: 1; flex-shrink: 0; }
+.stat-line strong { color: var(--cian); font-weight: 700; white-space: nowrap; }
+.match-detalle + .match-meta { margin-top: 6px; }
 .escudo-mini {
-  width: 24px; height: 24px; border-radius: 7px; flex-shrink: 0;
+  width: 34px; height: 34px; border-radius: 9px; flex-shrink: 0;
   display: flex; align-items: center; justify-content: center; overflow: hidden;
   background: linear-gradient(150deg, rgba(255,255,255,.18), rgba(0,56,112,.5)), var(--eq, var(--cian));
-  color: var(--blanco); font-size: .62rem; font-weight: 700;
+  color: var(--blanco); font-size: .66rem; font-weight: 700;
   text-shadow: 0 1px 5px rgba(0,0,0,.5);
 }
+.escudo-mini.logo-img { background: transparent; border: none; box-shadow: none; }
 .escudo-mini img { width: 100%; height: 100%; object-fit: contain; }
-.match-detalle + .match-meta { margin-top: 6px; }
 
 .partido { /* compat: tarjeta de partido grande */
   display: grid; grid-template-columns: 140px 1fr auto; gap: 22px; align-items: center;
@@ -651,15 +666,16 @@ body.carga-activa { overflow: hidden; }
   background: linear-gradient(90deg, var(--eq) 0%, transparent 78%);
 }
 .equipo-card:hover { transform: translateY(-8px); border-color: var(--linea-fuerte); box-shadow: var(--sombra-alta); }
-.equipo-topo { display: flex; align-items: center; gap: 14px; margin-bottom: 15px; }
+.equipo-topo { display: flex; align-items: center; gap: 16px; margin-bottom: 15px; }
 .escudo {
-  flex-shrink: 0; width: 56px; height: 56px; border-radius: 15px;
+  flex-shrink: 0; width: 82px; height: 82px; border-radius: 20px;
   display: flex; align-items: center; justify-content: center;
   background: linear-gradient(150deg, rgba(255,255,255,.20), rgba(0,56,112,.55)), var(--eq);
   border: 1px solid rgba(255,255,255,.22);
   color: var(--blanco); text-shadow: 0 1px 7px rgba(0,0,0,.55);
-  font-size: 1.1rem; font-weight: 700; overflow: hidden;
+  font-size: 1.3rem; font-weight: 700; overflow: hidden;
 }
+.escudo.logo-img { background: transparent; border: none; box-shadow: none; }
 .escudo img { width: 100%; height: 100%; object-fit: contain; }
 .equipo-nombre { min-width: 0; }
 .equipo-nombre h4 { font-size: 1.1rem; color: var(--blanco); overflow-wrap: anywhere; }
@@ -1195,6 +1211,9 @@ body.carga-activa { overflow: hidden; }
   .x5-orden { font-size: 1.3rem; }
   .match { grid-template-columns: 1fr auto; }
   .match-team.b { grid-column: 1; justify-content: flex-start; text-align: left; flex-direction: row-reverse; }
+  .match-detalle { grid-template-columns: 1fr; gap: 8px; }
+  .detalle-col.b { align-items: flex-start; }
+  .detalle-col.b .stat-line { justify-content: flex-start; text-align: left; }
 }
 
 /* ------------------------------------------------- BOTON DONAR ROSA */
@@ -1238,14 +1257,14 @@ a.match-team:hover .nm { color: var(--cian); }
 .volver-link:hover { color: var(--cian); transform: translateX(-4px); }
 .equipo-hero-main { display: flex; align-items: center; gap: 22px; margin-top: 16px; }
 .equipo-hero-escudo {
-  width: 108px; height: 108px; flex-shrink: 0;
+  width: 116px; height: 116px; flex-shrink: 0;
   display: flex; align-items: center; justify-content: center;
   border-radius: 26px; overflow: hidden;
-  background: radial-gradient(circle at 50% 32%, rgba(10,255,214,.2), rgba(255,255,255,.04));
-  border: 1.5px solid var(--linea-fuerte);
-  box-shadow: var(--sombra-alta), inset 0 0 34px rgba(10,255,214,.1);
+  background: transparent;
+  border: none;
+  box-shadow: none;
 }
-.equipo-hero-escudo img { width: 78%; height: 78%; object-fit: contain; }
+.equipo-hero-escudo img { width: 100%; height: 100%; object-fit: contain; }
 .equipo-hero-escudo span {
   font-family: var(--fuente-titulo); font-size: 2.6rem; color: var(--cian);
 }
@@ -1332,14 +1351,14 @@ a.match-team:hover .nm { color: var(--cian); }
 
 /* ---------------------------------------- LOGOS EN ESTADISTICAS */
 .equipo-punto.escudo-logo {
-  width: 20px; height: 20px; border-radius: 6px;
+  width: 32px; height: 32px; border-radius: 9px;
   display: inline-flex; align-items: center; justify-content: center;
   overflow: hidden; vertical-align: middle;
-  background: linear-gradient(150deg, rgba(255,255,255,.18), rgba(0,56,112,.5));
+  background: transparent;
   box-shadow: none;
 }
 .equipo-punto.escudo-logo img { width: 100%; height: 100%; object-fit: contain; }
-.escudo-mini.cond-logo { width: 22px; height: 22px; }
+.escudo-mini.cond-logo { width: 34px; height: 34px; }
 
 /* ------------------------------------------- ERROR BASE DE DATOS */
 .fallo-pantalla {

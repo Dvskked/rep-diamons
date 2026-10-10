@@ -66,6 +66,16 @@ const cont = (modulo) => DATOS.contenidos[modulo] || [];
 
 const porId = (id) => DATOS.equipos.find((e) => e.id === id) || null;
 
+const nombreJugador = (id) => {
+  if (id == null || id === '') return '';
+  const buscado = String(id);
+  for (const e of DATOS.equipos) {
+    const j = (e.jugadores || []).find((x) => String(x.id) === buscado);
+    if (j) return j.nombre;
+  }
+  return '';
+};
+
 function vacio(txt) {
   return `<p style="grid-column:1/-1;padding:44px;text-align:center;color:var(--texto-suave)">${esc(txt)}</p>`;
 }
@@ -118,7 +128,7 @@ function escudoMini(eq) {
   if (!eq) return '';
   const color = esc(eq.color || '');
   if (eq.escudo) {
-    return `<span class="escudo-mini" style="--eq:${color}"><img src="/static/${esc(eq.escudo)}" alt="" loading="lazy"></span>`;
+    return `<span class="escudo-mini logo-img" style="--eq:${color}"><img src="/static/${esc(eq.escudo)}" alt="" loading="lazy"></span>`;
   }
   return `<span class="escudo-mini" style="--eq:${color}">${iniciales(eq.sigla || eq.nombre)}</span>`;
 }
@@ -157,17 +167,27 @@ function filaPartido(f, opciones = {}) {
 
   let detalle = '';
   if (jugado && conDetalle && opciones.compacto !== true) {
-    const goles = (f.goleadores || []).map((g) =>
-      `${esc(g.nombre || g.jugador)} (${g.equipo === 'b' ? b.sigla || b.nombre : a.sigla || a.nombre}) x${num(g.goles) || 1}`).join(' · ');
-    const asist = (f.asistencias || []).map((x) => esc(x.nombre || x.jugador)).join(' · ');
-    const tags = [];
-    if (num(f.cs_a) > 0) tags.push(`CS ${esc(a.sigla || a.nombre)}`);
-    if (num(f.cs_b) > 0) tags.push(`CS ${esc(b.sigla || b.nombre)}`);
-    if (goles || asist || tags.length) {
+    const blocDe = (lado) => {
+      const goles = (f.goleadores || [])
+        .filter((g) => (g.equipo || 'a') === lado)
+        .map((g) => `<span class="stat-line"><i class="ic-gol" title="Goles">⚽</i>${esc(g.nombre || g.jugador)}<strong>x${num(g.goles) || 1}</strong></span>`);
+      const asis = (f.asistencias || [])
+        .filter((x) => (x.equipo || 'a') === lado)
+        .map((x) => `<span class="stat-line"><i class="ic-asis" title="Asistencias">👟</i>${esc(x.nombre || x.jugador)}<strong>x${num(x.asistencias) || 1}</strong></span>`);
+      const esB = lado === 'b';
+      const conCs = num(esB ? f.cs_b : f.cs_a) > 0;
+      const portero = esB ? f.portero_b : f.portero_a;
+      const csLine = conCs && portero
+        ? `<span class="stat-line"><i class="ic-cs" title="Clean sheet">🧤</i>${esc(nombreJugador(portero) || portero)}<strong>${num(esB ? f.minutos_cs_b : f.minutos_cs_a)} MIN</strong></span>`
+        : '';
+      return goles.concat(asis, csLine ? [csLine] : []).join('');
+    };
+    const htmlA = blocDe('a');
+    const htmlB = blocDe('b');
+    if (htmlA || htmlB) {
       detalle = `<div class="match-detalle">
-        ${goles ? `Goles: <b>${goles}</b>` : ''}
-        ${asist ? `<br>Asistencias: ${asist}` : ''}
-        ${tags.length ? `<div class="partido-tags">${tags.map((t) => `<span>${t}</span>`).join('')}</div>` : ''}
+        <div class="detalle-col a">${htmlA}</div>
+        <div class="detalle-col b">${htmlB}</div>
       </div>`;
     }
   }
@@ -200,6 +220,7 @@ function tarjetaEquipo(eq) {
   const escudo = eq.escudo
     ? `<img src="/static/${esc(eq.escudo)}" alt="Escudo de ${esc(eq.nombre)}" loading="lazy">`
     : iniciales(eq.sigla);
+  const escudoClase = eq.escudo ? 'escudo logo-img' : 'escudo';
 
   const meta = [
     eq.entrenador && `DT. ${esc(eq.entrenador)}`,
@@ -223,7 +244,7 @@ function tarjetaEquipo(eq) {
   return `
     <article class="equipo-card reveal" style="--eq:${esc(color)}">
       <a class="equipo-topo" href="/equipos/${eq.id}">
-        <div class="escudo">${escudo}</div>
+        <div class="${escudoClase}">${escudo}</div>
         <div class="equipo-nombre">
           <h4>${esc(eq.nombre)}</h4>
           <small>${esc(eq.sigla)}</small>
@@ -294,7 +315,7 @@ function jugadoresTodos(div = 'all') {
 
 function filaRanking(j, i, campo) {
   const insignia = j.escudo
-    ? `<span class="equipo-punto escudo-logo"><img src="/static/${esc(j.escudo)}" alt="" loading="lazy"></span>`
+    ? `<span class="equipo-punto escudo-logo logo-img"><img src="/static/${esc(j.escudo)}" alt="" loading="lazy"></span>`
     : `<i class="equipo-punto" style="background:${esc(j.color || 'var(--cian)')}"></i>`;
   return `
     <div class="rank-fila">
@@ -510,7 +531,7 @@ function pintarStats() {
 
   cuerpo.innerHTML = filas.map((j, i) => {
     const insignia = j.escudo
-      ? `<span class="escudo-mini cond-logo"><img src="/static/${esc(j.escudo)}" alt="" loading="lazy"></span>`
+      ? `<span class="escudo-mini cond-logo logo-img"><img src="/static/${esc(j.escudo)}" alt="" loading="lazy"></span>`
       : `<i class="equipo-punto" style="background:${esc(j.color || 'var(--cian)')}"></i>`;
     return `
     <tr>
