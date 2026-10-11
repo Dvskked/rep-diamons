@@ -62,6 +62,25 @@ def migrar():
                  " AFTER asistencias")
         print("      + resultados.autogoles")
 
+    # Clean sheets en minutos con decimales (minutos + segundos, ej: 3.40)
+    for col in ("minutos_cs", "minutos_cs_a", "minutos_cs_b"):
+        if col in cols_res:
+            ejecutar("ALTER TABLE resultados MODIFY COLUMN `%s` DECIMAL(7,2)"
+                     " NOT NULL DEFAULT 0" % col)
+            print("      ~ resultados.%s -> DECIMAL(7,2)" % col)
+        else:
+            ejecutar("ALTER TABLE resultados ADD COLUMN `%s` DECIMAL(7,2)"
+                     " NOT NULL DEFAULT 0" % col)
+            print("      + resultados.%s DECIMAL(7,2)" % col)
+    if "minutos_cs" in cols_jug:
+        ejecutar("ALTER TABLE jugadores MODIFY COLUMN `minutos_cs` DECIMAL(7,2)"
+                 " NOT NULL DEFAULT 0")
+        print("      ~ jugadores.minutos_cs -> DECIMAL(7,2)")
+    else:
+        ejecutar("ALTER TABLE jugadores ADD COLUMN `minutos_cs` DECIMAL(7,2)"
+                 " NOT NULL DEFAULT 0")
+        print("      + jugadores.minutos_cs DECIMAL(7,2)")
+
     db.ejecutar(
         "CREATE TABLE IF NOT EXISTS `ideales` ("
         "  `id` INT AUTO_INCREMENT PRIMARY KEY,"

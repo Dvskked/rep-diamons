@@ -190,6 +190,11 @@ def liga():
     return render_template("liga.html")
 
 
+@app.route("/museo")
+def museo():
+    return render_template("museo.html")
+
+
 @app.route("/estadisticas")
 def estadisticas():
     return render_template("estadisticas.html")
@@ -301,6 +306,7 @@ def api_sitio():
         "       b.color AS color_b, b.division AS division_b,"
         "       r.goles_a, r.goles_b, r.goleadores, r.asistencias, r.autogoles,"
         "       r.portero_a, r.portero_b, r.cs_a, r.cs_b, r.minutos_cs,"
+        "       r.minutos_cs_a, r.minutos_cs_b,"
         "       (r.id IS NOT NULL) AS jugado"
         " FROM fechas f"
         " JOIN equipos a ON a.id = f.equipo_a_id"
@@ -798,7 +804,7 @@ def _recalcular_stats():
                 except (TypeError, ValueError):
                     continue
                 cs[pid] = cs.get(pid, 0) + 1
-                minutos_cs[pid] = minutos_cs.get(pid, 0) + int(r.get(col_min) or 0)
+                minutos_cs[pid] = minutos_cs.get(pid, 0) + float(r.get(col_min) or 0)
 
     for pid in set(goles) | set(asis) | set(autogoles) | set(cs):
         db.ejecutar(
@@ -833,6 +839,13 @@ def admin_guardar_resultado(fecha_id):
         except (TypeError, ValueError):
             return defecto
 
+    def decimal_min(valor, defecto=0.0):
+        """Minutos de porteria en cero: acepta decimales (ej: 3.42)."""
+        try:
+            return float(str(valor).replace(",", ".").strip())
+        except (TypeError, ValueError):
+            return defecto
+
     def jugador_valido(jugador_id, equipo_id):
         """Devuelve el id en texto si el jugador pertenece al equipo, o ''."""
         if not jugador_id:
@@ -847,8 +860,9 @@ def admin_guardar_resultado(fecha_id):
     goles_a = entero(datos.get("goles_a"))
     goles_b = entero(datos.get("goles_b"))
     # Minutos de porteria en cero de cada arquero. 0 = no cerco el arco.
-    minutos_cs_a = max(entero(datos.get("minutos_cs_a")), 0)
-    minutos_cs_b = max(entero(datos.get("minutos_cs_b")), 0)
+    # Acepta decimales porque el tiempo se cuenta con minutos y segundos.
+    minutos_cs_a = max(decimal_min(datos.get("minutos_cs_a")), 0)
+    minutos_cs_b = max(decimal_min(datos.get("minutos_cs_b")), 0)
 
     def jugadores_lista(campo, col_extra):
         """Une jugador_id ↔ equipo y normaliza la lista de goles/asistencias."""

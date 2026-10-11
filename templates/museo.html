@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block pagina %}museo{% endblock %}
+{% block titulo %}Museo | Premios, balones de oro y rankings - The Diamonds League{% endblock %}
+{% block descripcion %}Museo de The Diamonds League: balones de oro, botas de oro, guantes de oro, mejores clubes y rankings de temporadas anteriores.{% endblock %}
+{% block og_titulo %}Museo | The Diamonds League{% endblock %}
+
+{% block contenido %}
+<section class="page-hero">
+  <div class="wrap">
+    <span class="etiqueta" data-etiqueta="museo">MUSEO</span>
+    <h1 class="display" data-titulo="museo">Museo de la liga</h1>
+    <p data-subtitulo="museo">Premios, balones de oro y todo lo que se ha entregado en temporadas anteriores.</p>
+  </div>
+</section>
+
+<div class="wrap page">
+  <div class="sec-head museo-cabecera">
+    <h2>Galeria de la historia</h2>
+    <span class="sec-note" id="museoNota"></span>
+  </div>
+
+  <div class="filtros reveal" id="museoFiltros" role="group" aria-label="Filtrar premios"></div>
+  <div class="museo-grid reveal" id="museoGrid"></div>
+</div>
+{% endblock %}
