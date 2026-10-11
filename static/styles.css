@@ -525,6 +525,7 @@ body.carga-activa { overflow: hidden; }
 .match-detalle + .match-meta { margin-top: 6px; }
 
 /* ------------------------------------------------- JORNADAS (CALENDARIO) */
+.jornada-chips { margin-bottom: 24px; }
 .jornada-grupo + .jornada-grupo { margin-top: 26px; }
 .jornada-titulo {
   display: inline-flex; align-items: center; gap: 9px;
@@ -760,6 +761,25 @@ body.carga-activa { overflow: hidden; }
   display: grid; grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr));
   gap: 22px; margin-top: 34px;
 }
+.stats-bloque + .stats-bloque { margin-top: 42px; }
+.stats-duo {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(min(340px, 100%), 1fr));
+  gap: 22px;
+}
+.stats-col-titulo {
+  display: flex; align-items: center; gap: 9px;
+  font-family: var(--fuente-titulo); font-weight: 400; letter-spacing: .08em;
+  font-size: .98rem; color: var(--cian); margin-bottom: 12px;
+}
+.stats-col-titulo i {
+  width: 4px; height: 16px; border-radius: 999px;
+  background: var(--cian); box-shadow: 0 0 12px rgba(10,255,214,.6);
+}
+.stats-vacio {
+  padding: 32px 22px; text-align: center; border-radius: var(--radio);
+  background: rgba(0, 8, 24, .45); border: 1px dashed var(--linea);
+  color: var(--texto-suave); font-size: .86rem;
+}
 
 /* ------------------------------------------------------------ X5 IDEAL */
 .x5-campo { display: flex; align-items: center; gap: 10px; }
@@ -834,9 +854,11 @@ body.carga-activa { overflow: hidden; }
 .sala-card b { margin-top: 10px; font-size: .73rem; letter-spacing: .12em; color: var(--cian); position: relative; z-index: 1; }
 
 /* ------------------------------------------------------------- MUSEO */
+.museo-cabecera { align-items: flex-end; }
 .museo-grid {
-  display: grid; grid-template-columns: repeat(auto-fill, minmax(min(230px, 100%), 1fr)); gap: 22px;
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(min(260px, 100%), 1fr)); gap: 24px;
 }
+.museo-cuerpo { padding-top: 16px; }
 .museo-card {
   padding: 16px 16px 24px; border-radius: var(--radio); text-align: center;
   background: linear-gradient(165deg, rgba(10,255,214,.14) 0%, rgba(0,56,112,.5) 100%);
@@ -860,13 +882,21 @@ body.carga-activa { overflow: hidden; }
 .museo-card .museo-sub { font-size: .92rem; font-weight: 700; color: var(--cian); margin-bottom: 3px; }
 .museo-card .museo-txt { font-size: .72rem; letter-spacing: .08em; text-transform: uppercase; color: var(--texto-tenue); }
 .museo-img {
-  position: relative; width: 100%; aspect-ratio: 4 / 5;
+  position: relative; width: 100%; aspect-ratio: 3 / 5;
   border-radius: calc(var(--radio) - 5px); overflow: hidden;
   box-shadow: inset 0 0 0 1px rgba(255,255,255,.08), 0 18px 40px -26px rgba(10,255,214,.85);
   background: radial-gradient(120% 80% at 50% 0%, rgba(10,255,214,.16), rgba(0,56,112,.4));
 }
-.museo-img img { width: 100%; height: 100%; object-fit: cover; transition: transform .5s ease; }
-.museo-card.con-imagen:hover .museo-img img { transform: scale(1.06); }
+.museo-img img {
+  width: 100%; height: 100%; object-fit: contain; padding: 6px;
+  filter: drop-shadow(0 10px 24px rgba(0,0,0,.45));
+  transition: transform .5s ease;
+}
+.museo-card.con-imagen:hover .museo-img img { transform: scale(1.04); }
+@media (max-width: 560px) {
+  .museo-img { aspect-ratio: auto; }
+  .museo-img img { height: auto; max-height: 62vh; object-fit: contain; }
+}
 
 /* ---------------------------------------------------------- NOTICIAS */
 .noticias-grid {

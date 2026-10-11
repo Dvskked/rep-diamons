@@ -9,8 +9,8 @@ const $$ = (sel, ctx = document) => Array.from(ctx.querySelectorAll(sel));
 
 const DATOS = { modulos: [], contenidos: {}, equipos: [], fechas: [], ideales: [], foro: [] };
 
-/* Estado de la seccion LIGA (division seleccionada + vista activa) */
-const LIGA = { division: 'D1', vista: 'posiciones' };
+/* Estado de la seccion LIGA (division seleccionada + vista activa + jornada) */
+const LIGA = { division: 'D1', vista: 'posiciones', jornada: '' };
 
 /* Estado de INICIO (ranking lateral) */
 const INICIO = { ranking: 'goles' };
@@ -44,6 +44,42 @@ const fechaLarga = (f) => {
 const horaCorta = (h) => h ? String(h).slice(0, 5) : '';
 
 const num = (v) => { const n = Number(v); return Number.isFinite(n) ? n : 0; };
+
+/* Escudos locales de respaldo (static/assets/d1 y d2) para equipos que
+   todavia no tienen imagen subida en la base de datos. */
+const ESCUDOS_LOCALES = {
+  alajuense: 'assets/d1/Alajuense.png',
+  dominion: 'assets/d1/dominion.png',
+  klokan: 'assets/d1/Klokan.png',
+  lexington: 'assets/d1/Lexington.png',
+  littlepony: 'assets/d1/littlepony.png',
+  mafia: 'assets/d1/mafia.png',
+  melgar: 'assets/d1/melgar.png',
+  mysticstorm: 'assets/d1/mysticstorm.png',
+  novasquad: 'assets/d1/Novasquad.png',
+  orense: 'assets/d1/ORENSE.png',
+  parceros: 'assets/d1/parceros.png',
+  pereira: 'assets/d1/PEREIRA.png',
+  blueknight: 'assets/d2/blueKnight.png',
+  deportivopasto: 'assets/d2/deportivopasto.png',
+  distritoevolutions: 'assets/d2/distritoevolutions.png',
+  fenix: 'assets/d2/fenix.png',
+  platanera: 'assets/d2/platanera.png',
+  pollolandia: 'assets/d2/pollolandia.png',
+  spider: 'assets/d2/spider.png',
+  visajosos: 'assets/d2/visajosos.png'
+};
+
+const slug = (txt) => String(txt || '').toLowerCase()
+  .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+  .replace(/[^a-z0-9]/g, '');
+
+/* Devuelve la ruta del escudo del equipo: el subido o uno local de respaldo. */
+function escudoDe(eq) {
+  if (!eq) return '';
+  if (eq.escudo) return eq.escudo;
+  return ESCUDOS_LOCALES[slug(eq.nombre)] || '';
+}
 
 function toast(texto) {
   const t = $('#toast');
@@ -126,12 +162,16 @@ function fechasDivision(div = LIGA.division) {
 
 function pintarCalendario() {
   const caja = $('#ligaCalendario');
+  const chipsBox = $('#ligaJornadas');
   if (!caja) return;
 
   const fechas = fechasDivision(LIGA.division)
     .slice()
     .sort((a, b) => fechaHora(a) - fechaHora(b));
   if (!fechas.length) {
+    if (chipsBox) chipsBox.innerHTML = '';
+    const nota = $('#calNota');
+    if (nota) nota.textContent = '';
     caja.innerHTML = vacio(`Todavia no hay fechas en la Division ${LIGA.division}.`);
     return;
   }
@@ -146,18 +186,35 @@ function pintarCalendario() {
   const jornadas = Array.from(grupos.keys())
     .sort((a, b) => a.localeCompare(b, 'es', { numeric: true }));
 
-  caja.innerHTML = jornadas.map((j) => `
-    <section class="jornada-grupo reveal">
-      <h3 class="jornada-titulo">${esc(j)}</h3>
-      <div class="jornada-partidos">${grupos.get(j).map((f) => filaPartido(f)).join('')}</div>
-    </section>`).join('');
+  const actual = jornadas.includes(LIGA.jornada) ? LIGA.jornada : jornadas[0];
+  LIGA.jornada = actual;
+
+  if (chipsBox) {
+    chipsBox.innerHTML = jornadas
+      .map((j) => `<button class="chip${j === actual ? ' activa' : ''}" type="button" data-jornada="${esc(j)}">${esc(j)}</button>`)
+      .join('');
+    chipsBox.hidden = jornadas.length <= 1;
+  }
+
+  const partidos = grupos.get(actual) || [];
+  const jugados = partidos.filter((f) => f.jugado).length;
+  const nota = $('#calNota');
+  if (nota) {
+    nota.textContent = `${partidos.length} partidos · ${jugados} jugados · Division ${LIGA.division}`;
+  }
+
+  caja.innerHTML = `<section class="jornada-grupo reveal">
+      <div class="jornada-partidos">${partidos.map((f) => filaPartido(f)).join('')}</div>
+    </section>`;
+  revelar();
 }
 
 function escudoMini(eq) {
   if (!eq) return '';
   const color = esc(eq.color || '');
-  if (eq.escudo) {
-    return `<span class="escudo-mini logo-img" style="--eq:${color}"><img src="/static/${esc(eq.escudo)}" alt="" loading="lazy"></span>`;
+  const src = escudoDe(eq);
+  if (src) {
+    return `<span class="escudo-mini logo-img" style="--eq:${color}"><img src="/static/${esc(src)}" alt="" loading="lazy"></span>`;
   }
   return `<span class="escudo-mini" style="--eq:${color}">${iniciales(eq.sigla || eq.nombre)}</span>`;
 }
@@ -211,7 +268,7 @@ function filaPartido(f, opciones = {}) {
       const conCs = num(esB ? f.cs_b : f.cs_a) > 0;
       const portero = esB ? f.portero_b : f.portero_a;
       const csLine = conCs && portero
-        ? `<span class="stat-line"><i class="ic-cs" title="Clean sheet">🧤</i>${esc(nombreJugador(portero) || portero)}<strong>${num(esB ? f.minutos_cs_b : f.minutos_cs_a)} MIN</strong></span>`
+        ? `<span class="stat-line"><i class="ic-cs" title="Clean sheet">🧤</i>${esc(nombreJugador(portero) || portero)}<strong>${fmtMin(esB ? f.minutos_cs_b : f.minutos_cs_a)} MIN</strong></span>`
         : '';
       return goles.concat(asis, auto, csLine ? [csLine] : []).join('');
     };
@@ -250,10 +307,11 @@ function pintarFechas(destino, fechas, opciones = {}) {
 /* ------------------------------------------------------------ TARJETAS */
 function tarjetaEquipo(eq) {
   const color = eq.color || 'var(--cian)';
-  const escudo = eq.escudo
-    ? `<img src="/static/${esc(eq.escudo)}" alt="Escudo de ${esc(eq.nombre)}" loading="lazy">`
+  const src = escudoDe(eq);
+  const escudo = src
+    ? `<img src="/static/${esc(src)}" alt="Escudo de ${esc(eq.nombre)}" loading="lazy">`
     : iniciales(eq.sigla);
-  const escudoClase = eq.escudo ? 'escudo logo-img' : 'escudo';
+  const escudoClase = src ? 'escudo logo-img' : 'escudo';
 
   const meta = [
     eq.entrenador && `DT. ${esc(eq.entrenador)}`,
@@ -341,8 +399,8 @@ function jugadoresTodos(div = 'all') {
     (e.jugadores || []).forEach((j) => lista.push({
       id: j.id, nombre: j.nombre, dorsal: j.dorsal, posicion: j.posicion,
       goles: num(j.goles), asistencias: num(j.asistencias),
-      autogoles: num(j.autogoles), cs: num(j.cs),
-      equipo: e.nombre, color: e.color, escudo: e.escudo, division: e.division
+      autogoles: num(j.autogoles), cs: num(j.cs), minutos_cs: num(j.minutos_cs),
+      equipo: e.nombre, color: e.color, escudo: escudoDe(e), division: e.division
     }));
   });
   return lista;
@@ -539,42 +597,69 @@ function pintarLiga() {
 }
 
 /* ------------------------------------------------------- PAGINA ESTADISTICAS */
-function pintarStats() {
-  const cuerpo = $('#tablaJugadores tbody');
-  if (!cuerpo) return;
+const fmtMin = (v) => {
+  const n = num(v);
+  return Number.isInteger(n) ? String(n) : (Math.round(n * 100) / 100).toString();
+};
 
+function insigniaJugador(j) {
+  return j.escudo
+    ? `<span class="escudo-mini cond-logo logo-img"><img src="/static/${esc(j.escudo)}" alt="" loading="lazy"></span>`
+    : `<i class="equipo-punto" style="background:${esc(j.color || 'var(--cian)')}"></i>`;
+}
+
+/* Tabla de ranking por division para una estadistica concreta. */
+function tablaStats(destino, div, campo, opciones = {}) {
+  const box = $(destino);
+  if (!box) return 0;
   const buscar = STATS.buscar.trim().toLowerCase();
-  let filas = jugadoresTodos(STATS.division).filter((j) =>
-    !buscar || j.nombre.toLowerCase().includes(buscar) || j.equipo.toLowerCase().includes(buscar));
+  const valor = opciones.valor || ((j) => j[campo]);
+  const filas = jugadoresTodos(div)
+    .map((j) => ({ ...j, _val: num(valor(j)) }))
+    .filter((j) => j._val > 0)
+    .filter((j) => !buscar || j.nombre.toLowerCase().includes(buscar) || j.equipo.toLowerCase().includes(buscar))
+    .sort((a, b) => b._val - a._val || a.nombre.localeCompare(b.nombre))
+    .slice(0, opciones.limite || 15);
 
-  const campo = STATS.orden, dir = STATS.dir === 'asc' ? 1 : -1;
-  filas = filas.slice().sort((a, b) => dir * (a[campo] - b[campo]) || a.nombre.localeCompare(b.nombre));
+  if (!filas.length) {
+    box.innerHTML = `<p class="stats-vacio">Sin datos por ahora.</p>`;
+    return 0;
+  }
+  const fmt = opciones.formato || ((v) => v);
+  box.innerHTML = `<div class="tabla-wrap"><table class="tabla tabla-stats">
+    <caption class="visually-hidden">${esc(opciones.titulo || 'Estadistica')}</caption>
+    <thead><tr>
+      <th scope="col">#</th><th scope="col">JUGADOR</th>
+      <th scope="col">EQUIPO</th><th scope="col">${esc(opciones.columna || '')}</th>
+    </tr></thead>
+    <tbody>${filas.map((j, i) => `
+      <tr>
+        <td class="pos">${i + 1}</td>
+        <td>${esc(j.nombre)}${j.dorsal ? ` <span style="color:var(--texto-tenue)">#${esc(j.dorsal)}</span>` : ''}</td>
+        <td><span class="eq">${insigniaJugador(j)}<span>${esc(j.equipo)}</span></span></td>
+        <td class="pos">${esc(fmt(j._val))}</td>
+      </tr>`).join('')}
+    </tbody>
+  </table></div>`;
+  return filas.length;
+}
 
-  cuerpo.innerHTML = filas.map((j, i) => {
-    const insignia = j.escudo
-      ? `<span class="escudo-mini cond-logo logo-img"><img src="/static/${esc(j.escudo)}" alt="" loading="lazy"></span>`
-      : `<i class="equipo-punto" style="background:${esc(j.color || 'var(--cian)')}"></i>`;
-    return `
-    <tr>
-      <td class="pos">${i + 1}</td>
-      <td>${esc(j.nombre)}${j.dorsal ? ` <span style="color:var(--texto-tenue)">#${esc(j.dorsal)}</span>` : ''}</td>
-      <td><span class="eq">${insignia}<span>${esc(j.equipo)}</span></span></td>
-      <td>${esc(j.division)}</td>
-      <td>${j.goles}</td><td>${j.asistencias}</td><td>${j.autogoles}</td><td>${j.cs}</td>
-    </tr>`;
-  }).join('') || `<tr><td colspan="8">${vacio('Sin jugadores que coincidan.')}</td></tr>`;
+function pintarStats() {
+  if (!$('#tablaGolesD1')) return;
 
-  const nota = $('#statNota');
-  if (nota) nota.textContent = `${filas.length} jugadores`;
+  const nGoles = tablaStats('#tablaGolesD1', 'D1', 'goles', { columna: 'GOLES', titulo: 'Goleadores Division 1' })
+    + tablaStats('#tablaGolesD2', 'D2', 'goles', { columna: 'GOLES', titulo: 'Goleadores Division 2' });
 
-  $$('#tablaJugadores th.ord').forEach((th) => {
-    th.classList.toggle('asc', th.dataset.orden === campo && STATS.dir === 'asc');
-    th.classList.toggle('desc', th.dataset.orden === campo && STATS.dir === 'desc');
-  });
+  const nAsis = tablaStats('#tablaAsisD1', 'D1', 'asistencias', { columna: 'ASIST', titulo: 'Asistidores Division 1' })
+    + tablaStats('#tablaAsisD2', 'D2', 'asistencias', { columna: 'ASIST', titulo: 'Asistidores Division 2' });
 
-  listaRanking('#listaGoles', 'goles', STATS.division);
-  listaRanking('#listaAsistencias', 'asistencias', STATS.division);
-  listaRanking('#listaCs', 'cs', STATS.division);
+  const csValor = (j) => (num(j.minutos_cs) > 0 ? num(j.minutos_cs) : num(j.cs));
+  const nCs = tablaStats('#tablaCsD1', 'D1', null, { valor: csValor, columna: 'CS (MIN)', formato: fmtMin, titulo: 'Clean sheets Division 1' })
+    + tablaStats('#tablaCsD2', 'D2', null, { valor: csValor, columna: 'CS (MIN)', formato: fmtMin, titulo: 'Clean sheets Division 2' });
+
+  const notaG = $('#notaGoles'); if (notaG) notaG.textContent = `${nGoles} jugadores con gol`;
+  const notaA = $('#notaAsis'); if (notaA) notaA.textContent = `${nAsis} jugadores con asistencia`;
+  const notaC = $('#notaCs'); if (notaC) notaC.textContent = `${nCs} arqueros con clean sheet`;
 }
 
 /* ------------------------------------------------------------ PUBS */
@@ -632,6 +717,9 @@ function pintarMuseoFiltrado(filtro) {
   }
   items = items.slice().sort((a, b) =>
     (num(a.orden) - num(b.orden)) || (a.titulo || '').localeCompare(b.titulo || ''));
+  const nota = $('#museoNota');
+  if (nota) nota.textContent = items.length
+    ? `${items.length} ${items.length === 1 ? 'pieza' : 'piezas'} en exhibicion` : '';
   if (!items.length) { caja.innerHTML = vacio('No hay elementos en el museo.'); return; }
   caja.innerHTML = items.map((i) => {
     let img = i.imagen || '';
@@ -642,7 +730,10 @@ function pintarMuseoFiltrado(filtro) {
     const tag = i.dato_extra ? `<span class="museo-tag">${esc(i.dato_extra)}</span>` : '';
     const sub = i.subtitulo ? `<p class="museo-sub">${esc(i.subtitulo)}</p>` : '';
     const txt = i.texto ? `<p class="museo-txt">${esc(i.texto)}</p>` : '';
-    return `<article class="museo-card reveal ${img ? 'con-imagen' : ''}">${imagenHtml}${tag}<h4>${esc(i.titulo || '')}</h4>${sub}${txt}</article>`;
+    return `<article class="museo-card reveal ${img ? 'con-imagen' : ''}">
+      ${imagenHtml}
+      <div class="museo-cuerpo">${tag}<h4>${esc(i.titulo || '')}</h4>${sub}${txt}</div>
+    </article>`;
   }).join('');
   revelar();
 }
@@ -798,9 +889,10 @@ function pintarEquipoDetalle() {
 
   const cajaEscudo = $('#eqEscudo');
   if (cajaEscudo) {
+    const src = escudoDe(eq);
     cajaEscudo.style.setProperty('--eq', eq.color || 'var(--cian)');
-    cajaEscudo.innerHTML = eq.escudo
-      ? `<img src="/static/${esc(eq.escudo)}" alt="Escudo de ${esc(eq.nombre)}">`
+    cajaEscudo.innerHTML = src
+      ? `<img src="/static/${esc(src)}" alt="Escudo de ${esc(eq.nombre)}">`
       : `<span>${iniciales(eq.sigla || eq.nombre)}</span>`;
   }
 
@@ -964,7 +1056,17 @@ function eventosLiga() {
       const btn = ev.target.closest('[data-division]');
       if (!btn) return;
       LIGA.division = btn.dataset.division;
+      LIGA.jornada = '';
       pintarLiga();
+    });
+  }
+  const jornadas = $('#ligaJornadas');
+  if (jornadas) {
+    jornadas.addEventListener('click', (ev) => {
+      const btn = ev.target.closest('[data-jornada]');
+      if (!btn) return;
+      LIGA.jornada = btn.dataset.jornada;
+      pintarCalendario();
     });
   }
   const vista = $('#ligaVista');
@@ -996,28 +1098,10 @@ function eventosInicio() {
 
 /* --------------------------------------------------- EVENTOS ESTADISTICAS */
 function eventosStats() {
-  const div = $('#statDivision');
-  if (div) {
-    div.addEventListener('click', (ev) => {
-      const btn = ev.target.closest('[data-division]');
-      if (!btn) return;
-      STATS.division = btn.dataset.division;
-      $$('#statDivision .chip').forEach((b) => b.classList.toggle('activa', b === btn));
-      pintarStats();
-    });
-  }
   const buscar = $('#statBuscar');
   if (buscar) {
     buscar.addEventListener('input', () => { STATS.buscar = buscar.value; pintarStats(); });
   }
-  $$('#tablaJugadores th.ord').forEach((th) => {
-    th.addEventListener('click', () => {
-      const campo = th.dataset.orden;
-      if (STATS.orden === campo) STATS.dir = STATS.dir === 'asc' ? 'desc' : 'asc';
-      else { STATS.orden = campo; STATS.dir = 'desc'; }
-      pintarStats();
-    });
-  });
 }
 
 /* ------------------------------------------------------------- RENDER */
@@ -1031,6 +1115,9 @@ function renderPagina(pagina) {
     case 'estadisticas':
       eventosStats();
       pintarStats();
+      break;
+    case 'museo':
+      pintarMuseo();
       break;
     case 'redes':
       pintarRedes();
@@ -1058,7 +1145,6 @@ function renderPagina(pagina) {
       pintarResultadosInicio();
       pintarFechas('#porJugar', pendientesOrdenados('all').slice(0, 5), { compacto: true, detalle: false, vacio: 'No hay partidos programados.' });
       pintarLideres();
-      pintarMuseo();
       pintarNoticias();
       pintarAnuncios();
       pintarAlianzas();
