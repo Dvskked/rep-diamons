@@ -81,6 +81,53 @@ function escudoDe(eq) {
   return ESCUDOS_LOCALES[slug(eq.nombre)] || '';
 }
 
+/* Imagenes locales del museo (static/assets/museo) para piezas que todavia
+   no tienen imagen cargada en la base de datos. */
+const MUSEO_IMGS = {
+  balondeorod1: 'assets/museo/d1-balon-de-oro.webp',
+  botadeorod1: 'assets/museo/d1-bota-de-oro.webp',
+  guantedeorod1: 'assets/museo/d1-guante-de-oro.webp',
+  balondeorod2: 'assets/museo/d2-balon-de-oro.webp',
+  botadeorod2: 'assets/museo/d2-bota-de-oro.webp',
+  guantedeorod2: 'assets/museo/d2-guante-de-oro.webp',
+  rankingbalond1: 'assets/museo/d1-ranking-balon.webp',
+  rankingbotad1: 'assets/museo/d1-ranking-bota.webp',
+  rankingguanted1: 'assets/museo/d1-ranking-guante.webp',
+  rankingbalond2: 'assets/museo/d2-ranking-balon.webp',
+  rankingbotad2: 'assets/museo/d2-ranking-bota.webp',
+  rankingguanted2: 'assets/museo/d2-ranking-guante.webp',
+  mejorclubd1: 'assets/museo/d1-mejor-club.webp',
+  mejorclubd2: 'assets/museo/d2-mejor-club.webp'
+};
+
+/* Imagen local del museo segun el titulo/categoria (respaldo sin BD). */
+function imagenMuseoLocal(m) {
+  if (!m) return '';
+  const titulo = slug(m.titulo);
+  if (MUSEO_IMGS[titulo]) return MUSEO_IMGS[titulo];
+  const clave = titulo + slug(m.categoria);
+  for (const k in MUSEO_IMGS) { if (clave.indexOf(k) >= 0) return MUSEO_IMGS[k]; }
+  return '';
+}
+
+/* Imagen del museo: la de la BD o una local de respaldo. */
+function imagenMuseo(m) {
+  return (m && m.imagen) ? m.imagen : imagenMuseoLocal(m);
+}
+
+/* Si una imagen del museo no carga, se reemplaza por la local. */
+function museoImgError(img) {
+  const fb = img && img.dataset ? img.dataset.fb : '';
+  if (fb && img.src.indexOf(fb) < 0) {
+    img.src = '/static/' + fb;
+    img.removeAttribute('data-fb');
+  } else {
+    const caja = img.parentNode;
+    img.remove();
+    if (caja) caja.classList.add('museo-img-vacia');
+  }
+}
+
 function toast(texto) {
   const t = $('#toast');
   if (!t) return;
@@ -127,8 +174,11 @@ function pintarNav() {
     const enlaces = Array.from(nav.querySelectorAll('a'))
       .map((a) => {
         const href = a.getAttribute('href') || '#';
-        const cls = a.dataset.nav === 'donacion' ? ' class="nav-donar"'
-          : a.dataset.nav === 'shop' ? ' class="nav-shop"' : '';
+        const clases = [];
+        if (a.dataset.nav === 'donacion') clases.push('nav-donar');
+        if (a.dataset.nav === 'shop') clases.push('nav-shop');
+        if (a.dataset.nav === pagina) clases.push('mm-activo');
+        const cls = clases.length ? ` class="${clases.join(' ')}"` : '';
         const ext = /^https?:/i.test(href) ? ' target="_blank" rel="noopener"' : '';
         return `<a href="${esc(href)}"${cls}${ext}>${esc(a.textContent)}</a>`;
       })
@@ -722,10 +772,14 @@ function pintarMuseoFiltrado(filtro) {
     ? `${items.length} ${items.length === 1 ? 'pieza' : 'piezas'} en exhibicion` : '';
   if (!items.length) { caja.innerHTML = vacio('No hay elementos en el museo.'); return; }
   caja.innerHTML = items.map((i) => {
-    let img = i.imagen || '';
+    let img = imagenMuseo(i) || '';
     if (img && !img.startsWith('assets/') && !img.startsWith('http')) img = 'assets/' + img;
+    const respaldo = imagenMuseoLocal(i);
     const imagenHtml = img
-      ? `<div class="museo-img"><img src="/static/${esc(img)}" alt="${esc(i.titulo || '')}" loading="lazy" decoding="async"></div>`
+      ? `<div class="museo-img"><img src="/static/${esc(img)}" alt="${esc(i.titulo || '')}"`
+        + ` loading="lazy" decoding="async"`
+        + (respaldo ? ` data-fb="${esc(respaldo)}" onerror="museoImgError(this)"` : '')
+        + `></div>`
       : '';
     const tag = i.dato_extra ? `<span class="museo-tag">${esc(i.dato_extra)}</span>` : '';
     const sub = i.subtitulo ? `<p class="museo-sub">${esc(i.subtitulo)}</p>` : '';

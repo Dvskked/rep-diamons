@@ -235,7 +235,7 @@ body.carga-activa { overflow: hidden; }
   background: linear-gradient(90deg, transparent, var(--cian), transparent);
   opacity: .55;
 }
-.top-inner { display: flex; align-items: center; gap: 16px; min-height: var(--alto-top); }
+.top-inner { display: flex; align-items: center; gap: 14px; min-height: var(--alto-top); }
 
 .brand { display: flex; align-items: center; gap: 11px; flex-shrink: 0; min-width: 0; }
 .brand-logo {
@@ -261,8 +261,8 @@ body.carga-activa { overflow: hidden; }
 .nav::-webkit-scrollbar { display: none; }
 .nav a {
   position: relative; flex-shrink: 0; white-space: nowrap;
-  padding: 9px 13px; border-radius: 999px;
-  font-size: .74rem; font-weight: 700; letter-spacing: .04em;
+  padding: 8px 10px; border-radius: 999px;
+  font-size: .71rem; font-weight: 700; letter-spacing: .02em;
   color: var(--texto-suave); transition: background .25s, color .25s;
 }
 .nav a:hover { background: var(--cian-suave); color: var(--blanco); }
@@ -313,6 +313,10 @@ body.carga-activa { overflow: hidden; }
   border-bottom: 1px solid rgba(255,255,255,.06);
 }
 .mobile-menu a:hover { background: var(--cian-suave); color: var(--blanco); }
+.mobile-menu a.mm-activo {
+  color: var(--blanco); background: var(--cian-suave);
+  box-shadow: inset 3px 0 0 var(--cian);
+}
 
 /* ---------------------------------------------------------------- HERO */
 .hero {
@@ -893,6 +897,7 @@ body.carga-activa { overflow: hidden; }
   transition: transform .5s ease;
 }
 .museo-card.con-imagen:hover .museo-img img { transform: scale(1.04); }
+.museo-img.museo-img-vacia { aspect-ratio: auto; min-height: 84px; }
 @media (max-width: 560px) {
   .museo-img { aspect-ratio: auto; }
   .museo-img img { height: auto; max-height: 62vh; object-fit: contain; }
@@ -1210,7 +1215,7 @@ body.carga-activa { overflow: hidden; }
 }
 
 /* -------------------------------------------------------- RESPONSIVE */
-@media (max-width: 1120px) {
+@media (max-width: 1200px) {
   .nav { display: none; }
   .menu-toggle { display: flex; }
 }
