@@ -64,7 +64,7 @@ CREATE TABLE IF NOT EXISTS `jugadores` (
   `asistencias` INT NOT NULL DEFAULT 0,
   `autogoles` INT NOT NULL DEFAULT 0,      -- goles en propia puerta
   `cs`        INT NOT NULL DEFAULT 0,      -- clean sheets
-  `minutos_cs` INT NOT NULL DEFAULT 0,
+  `minutos_cs` DECIMAL(7,2) NOT NULL DEFAULT 0,  -- clean sheet en minutos (con segundos)
   `creado`    TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   CONSTRAINT fk_jug_equipo FOREIGN KEY (`equipo_id`)
     REFERENCES `equipos`(`id`) ON DELETE CASCADE
@@ -105,9 +105,9 @@ CREATE TABLE IF NOT EXISTS `resultados` (
   `portero_b`      VARCHAR(80) DEFAULT '',
   `cs_a`           TINYINT(1) NOT NULL DEFAULT 0,
   `cs_b`           TINYINT(1) NOT NULL DEFAULT 0,
-  `minutos_cs`     INT NOT NULL DEFAULT 0,   -- compat: max(minutos_cs_a, minutos_cs_b)
-  `minutos_cs_a`   INT NOT NULL DEFAULT 0,   -- minutos de porteria en cero del arquero A
-  `minutos_cs_b`   INT NOT NULL DEFAULT 0,   -- minutos de porteria en cero del arquero B
+  `minutos_cs`     DECIMAL(7,2) NOT NULL DEFAULT 0,  -- compat: max(minutos_cs_a, minutos_cs_b)
+  `minutos_cs_a`   DECIMAL(7,2) NOT NULL DEFAULT 0,  -- minutos de porteria en cero del arquero A
+  `minutos_cs_b`   DECIMAL(7,2) NOT NULL DEFAULT 0,  -- minutos de porteria en cero del arquero B
   `actualizado`    TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
                     ON UPDATE CURRENT_TIMESTAMP,
   CONSTRAINT fk_res_fecha FOREIGN KEY (`fecha_id`)

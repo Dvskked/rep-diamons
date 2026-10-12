@@ -624,6 +624,7 @@ function pintarX5Cancha() {
 
 /* ------------------------------------------------------------- PAGINA LIGA */
 function mostrarVista(vista) {
+  if (!vista || !['posiciones','calendario','resultados','x5','equipos'].includes(vista)) return;
   LIGA.vista = vista;
   $$('#ligaVista .chip').forEach((b) => b.classList.toggle('activa', b.dataset.vista === vista));
   $$('.panel-panel').forEach((p) => p.classList.toggle('activo', p.dataset.panel === vista));
