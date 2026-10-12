@@ -9,8 +9,8 @@ const $$ = (sel, ctx = document) => Array.from(ctx.querySelectorAll(sel));
 
 const DATOS = { modulos: [], contenidos: {}, equipos: [], fechas: [], ideales: [], foro: [] };
 
-/* Estado de la seccion LIGA (division seleccionada + vista activa + jornada) */
-const LIGA = { division: 'D1', vista: 'posiciones', jornada: '' };
+/* Estado de la seccion LIGA (division seleccionada + vista activa + jornadas) */
+const LIGA = { division: 'D1', vista: 'posiciones', jornada: '', jornadaRes: '' };
 
 /* Estado de INICIO (ranking lateral) */
 const INICIO = { ranking: 'goles' };
@@ -113,6 +113,15 @@ function imagenMuseoLocal(m) {
 /* Imagen del museo: la de la BD o una local de respaldo. */
 function imagenMuseo(m) {
   return (m && m.imagen) ? m.imagen : imagenMuseoLocal(m);
+}
+
+/* Ruta final (URL) de la imagen del museo lista para usar en <img src>. */
+function rutaMuseo(m) {
+  let img = imagenMuseo(m) || '';
+  if (!img) return '';
+  if (img.startsWith('http') || img.startsWith('/')) return img;
+  if (!img.startsWith('assets/')) img = 'assets/' + img;
+  return '/static/' + img;
 }
 
 /* Si una imagen del museo no carga, se reemplaza por la local. */
@@ -247,15 +256,81 @@ function pintarCalendario() {
   }
 
   const partidos = grupos.get(actual) || [];
-  const jugados = partidos.filter((f) => f.jugado).length;
   const nota = $('#calNota');
   if (nota) {
-    nota.textContent = `${partidos.length} partidos · ${jugados} jugados · Division ${LIGA.division}`;
+    nota.textContent = `${partidos.length} partidos · Division ${LIGA.division}`;
   }
 
   caja.innerHTML = `<section class="jornada-grupo reveal">
-      <div class="jornada-partidos">${partidos.map((f) => filaPartido(f)).join('')}</div>
+      <div class="jornada-partidos">${partidos.map((f) => filaCalendario(f)).join('')}</div>
     </section>`;
+  revelar();
+}
+
+/* Fila del calendario: solo dia, hora y equipos (sin marcador). */
+function filaCalendario(f) {
+  const a = porId(f.equipo_a_id) || { nombre: f.equipo_a, sigla: f.sigla_a, color: f.color_a };
+  const b = porId(f.equipo_b_id) || { nombre: f.equipo_b, sigla: f.sigla_b, color: f.color_b };
+  const d = new Date(String(f.fecha).replace(' ', 'T') + 'T00:00:00');
+  const dia = isNaN(d) ? '' : d.toLocaleDateString('es', { weekday: 'short' }).replace('.', '').toUpperCase();
+  const fechaTxt = isNaN(d) ? esc(String(f.fecha || '')) :
+    d.toLocaleDateString('es', { day: '2-digit', month: 'short' }).replace('.', '');
+  return `
+    <article class="cal-partido reveal">
+      <div class="cal-cuando">
+        <strong>${esc(dia)}</strong>
+        <span>${esc(fechaTxt)}</span>
+      </div>
+      <div class="cal-choque">
+        ${equipoLado(a, 'cal-eq a')}
+        <span class="cal-vs">VS</span>
+        ${equipoLado(b, 'cal-eq b')}
+      </div>
+      <span class="cal-hora">${esc(horaCorta(f.hora) || '--:--')}</span>
+    </article>`;
+}
+
+/* Resultados de la liga: por jornada, con marcador y estadisticas. */
+function pintarResultadosLiga() {
+  const caja = $('#ligaResultados');
+  const chipsBox = $('#ligaResJornadas');
+  if (!caja) return;
+
+  const fechas = fechasDivision(LIGA.division)
+    .filter((f) => f.jugado)
+    .sort((a, b) => fechaHora(b) - fechaHora(a));
+
+  const nota = $('#resLigaNota');
+  if (!fechas.length) {
+    if (chipsBox) { chipsBox.innerHTML = ''; chipsBox.hidden = true; }
+    if (nota) nota.textContent = '';
+    caja.innerHTML = vacio(`Todavia no hay resultados en la Division ${LIGA.division}.`);
+    return;
+  }
+
+  const grupos = new Map();
+  fechas.forEach((f) => {
+    const clave = (f.jornada || 'SIN JORNADA').trim();
+    if (!grupos.has(clave)) grupos.set(clave, []);
+    grupos.get(clave).push(f);
+  });
+
+  const jornadas = Array.from(grupos.keys())
+    .sort((a, b) => a.localeCompare(b, 'es', { numeric: true }));
+
+  const actual = jornadas.includes(LIGA.jornadaRes) ? LIGA.jornadaRes : jornadas[jornadas.length - 1];
+  LIGA.jornadaRes = actual;
+
+  if (chipsBox) {
+    chipsBox.innerHTML = jornadas
+      .map((j) => `<button class="chip${j === actual ? ' activa' : ''}" type="button" data-jornada-res="${esc(j)}">${esc(j)}</button>`)
+      .join('');
+    chipsBox.hidden = jornadas.length <= 1;
+  }
+
+  const partidos = grupos.get(actual) || [];
+  if (nota) nota.textContent = `${partidos.length} partidos jugados · Division ${LIGA.division}`;
+  caja.innerHTML = partidos.map((f) => filaPartido(f)).join('');
   revelar();
 }
 
@@ -532,10 +607,19 @@ function pintarStrip() {
   const ultimos = jugadosOrdenados('all').slice(0, 10);
   if (!ultimos.length) { strip.hidden = true; return; }
 
+  const escudoChip = (eq) => {
+    const src = escudoDe(eq);
+    if (src) return `<span class="rc-esc"><img src="/static/${esc(src)}" alt="" loading="lazy" decoding="async"></span>`;
+    return `<span class="rc-esc" style="--eq:${esc(eq.color || 'var(--cian)')}">${esc(iniciales(eq.sigla || eq.nombre))}</span>`;
+  };
   const chip = (f) => {
-    const a = porId(f.equipo_a_id) || { sigla: f.sigla_a, nombre: f.equipo_a };
-    const b = porId(f.equipo_b_id) || { sigla: f.sigla_b, nombre: f.equipo_b };
-    return `<span class="result-chip"><span class="sig">${esc(a.sigla || a.nombre)}</span> <b>${num(f.goles_a)} - ${num(f.goles_b)}</b> <span class="sig">${esc(b.sigla || b.nombre)}</span></span>`;
+    const a = porId(f.equipo_a_id) || { sigla: f.sigla_a, nombre: f.equipo_a, color: f.color_a };
+    const b = porId(f.equipo_b_id) || { sigla: f.sigla_b, nombre: f.equipo_b, color: f.color_b };
+    return `<span class="result-chip">
+      ${escudoChip(a)}<span class="rc-sig">${esc(a.sigla || a.nombre)}</span>
+      <b class="rc-score">${num(f.goles_a)} - ${num(f.goles_b)}</b>
+      <span class="rc-sig">${esc(b.sigla || b.nombre)}</span>${escudoChip(b)}
+    </span>`;
   };
   const contenido = ultimos.map(chip).join('');
   track.innerHTML = contenido + contenido; /* duplicado para bucle */
@@ -576,55 +660,9 @@ function pintarLigas() {
   }).join('');
 }
 
-/* ---------------------------------------------------------- X5 IDEAL */
-function jornadasIdeal(div = LIGA.division) {
-  const lista = DATOS.ideales.filter((i) => i.division === div);
-  return Array.from(new Set(lista.map((i) => i.jornada)));
-}
-
-function pintarX5() {
-  const sel = $('#x5Jornada');
-  const caja = $('#x5Cancha');
-  if (!sel || !caja) return;
-
-  const jornadas = jornadasIdeal(LIGA.division);
-  const actual = jornadas.includes(sel.value) ? sel.value : (jornadas[0] || '');
-  sel.innerHTML = jornadas.length
-    ? jornadas.map((j) => `<option value="${esc(j)}"${j === actual ? ' selected' : ''}>${esc(j)}</option>`).join('')
-    : '<option value="">SIN JORNADAS</option>';
-  sel.disabled = !jornadas.length;
-  pintarX5Cancha();
-}
-
-function pintarX5Cancha() {
-  const caja = $('#x5Cancha');
-  const sel = $('#x5Jornada');
-  if (!caja || !sel) return;
-  const jornada = sel.value;
-  const slots = DATOS.ideales
-    .filter((i) => i.division === LIGA.division && i.jornada === jornada)
-    .sort((a, b) => a.orden - b.orden);
-
-  if (!slots.length) {
-    caja.innerHTML = vacio(`El staff todavia no eligio el cinco ideal de ${LIGA.division}.`);
-    return;
-  }
-
-  caja.innerHTML = slots.map((s) => `
-    <div class="x5-slot reveal" style="--eq:${esc(s.equipo_color || 'var(--cian)')}">
-      <span class="x5-pos">${esc(s.posicion || '')}</span>
-      <span class="x5-avatar">${iniciales(s.jugador)}</span>
-      <span class="x5-datos">
-        <strong>${esc(s.jugador)}</strong>
-        <small><i class="equipo-punto" style="background:${esc(s.equipo_color || 'var(--cian)')}"></i>${esc(s.equipo || '')} · ${esc(s.dorsal || '--')}</small>
-      </span>
-      <span class="x5-orden">${s.orden}</span>
-    </div>`).join('');
-}
-
 /* ------------------------------------------------------------- PAGINA LIGA */
 function mostrarVista(vista) {
-  if (!vista || !['posiciones','calendario','resultados','x5','equipos'].includes(vista)) return;
+  if (!vista || !['posiciones','calendario','resultados','equipos'].includes(vista)) return;
   LIGA.vista = vista;
   $$('#ligaVista .chip').forEach((b) => b.classList.toggle('activa', b.dataset.vista === vista));
   $$('.panel-panel').forEach((p) => p.classList.toggle('activo', p.dataset.panel === vista));
@@ -636,6 +674,7 @@ function pintarLiga() {
 
   pintarTablaPosiciones();
   pintarCalendario();
+  pintarResultadosLiga();
 
   const grid = $('#equiposGrid');
   if (grid) {
@@ -643,7 +682,6 @@ function pintarLiga() {
     grid.innerHTML = lista.map(tarjetaEquipo).join('') || vacio(`Sin equipos en Division ${LIGA.division}.`);
   }
 
-  pintarX5();
   revelar();
 }
 
@@ -759,6 +797,8 @@ function pintarMuseo() {
   pintarMuseoFiltrado('TODO');
 }
 
+let MUSEO_ACTUAL = {};
+
 function pintarMuseoFiltrado(filtro) {
   const caja = $('#museoGrid');
   if (!caja) return;
@@ -772,12 +812,15 @@ function pintarMuseoFiltrado(filtro) {
   if (nota) nota.textContent = items.length
     ? `${items.length} ${items.length === 1 ? 'pieza' : 'piezas'} en exhibicion` : '';
   if (!items.length) { caja.innerHTML = vacio('No hay elementos en el museo.'); return; }
+
+  MUSEO_ACTUAL = {};
+  items.forEach((i) => { MUSEO_ACTUAL[String(i.id)] = i; });
+
   caja.innerHTML = items.map((i) => {
-    let img = imagenMuseo(i) || '';
-    if (img && !img.startsWith('assets/') && !img.startsWith('http')) img = 'assets/' + img;
+    const src = rutaMuseo(i);
     const respaldo = imagenMuseoLocal(i);
-    const imagenHtml = img
-      ? `<div class="museo-img"><img src="/static/${esc(img)}" alt="${esc(i.titulo || '')}"`
+    const imagenHtml = src
+      ? `<div class="museo-img"><img src="${esc(src)}" alt="${esc(i.titulo || '')}"`
         + ` loading="lazy" decoding="async"`
         + (respaldo ? ` data-fb="${esc(respaldo)}" onerror="museoImgError(this)"` : '')
         + `></div>`
@@ -785,12 +828,64 @@ function pintarMuseoFiltrado(filtro) {
     const tag = i.dato_extra ? `<span class="museo-tag">${esc(i.dato_extra)}</span>` : '';
     const sub = i.subtitulo ? `<p class="museo-sub">${esc(i.subtitulo)}</p>` : '';
     const txt = i.texto ? `<p class="museo-txt">${esc(i.texto)}</p>` : '';
-    return `<article class="museo-card reveal ${img ? 'con-imagen' : ''}">
+    return `<button type="button" class="museo-card reveal ${src ? 'con-imagen' : ''}" data-museo="${esc(i.id)}" aria-label="Ver detalle de ${esc(i.titulo || 'pieza')}">
       ${imagenHtml}
       <div class="museo-cuerpo">${tag}<h4>${esc(i.titulo || '')}</h4>${sub}${txt}</div>
-    </article>`;
+      <span class="museo-ver">Ver detalle</span>
+    </button>`;
   }).join('');
   revelar();
+}
+
+function abrirMuseo(id) {
+  const item = MUSEO_ACTUAL[String(id)];
+  const modal = $('#museoModal');
+  if (!item || !modal) return;
+  const img = $('#museoModalImg');
+  const src = rutaMuseo(item);
+  if (img) {
+    if (src) { img.src = src; img.removeAttribute('data-fb'); img.hidden = false; }
+    else { img.removeAttribute('src'); img.hidden = true; }
+  }
+  const tag = $('#museoModalTag');
+  if (tag) { tag.textContent = item.dato_extra || item.categoria || ''; tag.hidden = !(item.dato_extra || item.categoria); }
+  const titulo = $('#museoModalTitulo');
+  if (titulo) titulo.textContent = item.titulo || '';
+  const sub = $('#museoModalSub');
+  if (sub) { sub.textContent = item.subtitulo || ''; sub.hidden = !item.subtitulo; }
+  const txt = $('#museoModalTexto');
+  if (txt) {
+    txt.textContent = item.texto || 'Pieza de la historia de The Diamonds League.';
+  }
+  modal.hidden = false;
+  document.body.classList.add('modal-abierto');
+  const cerrar = modal.querySelector('.museo-modal-x');
+  if (cerrar) cerrar.focus();
+}
+
+function cerrarMuseo() {
+  const modal = $('#museoModal');
+  if (!modal || modal.hidden) return;
+  modal.hidden = true;
+  document.body.classList.remove('modal-abierto');
+}
+
+function configMuseoModal() {
+  const modal = $('#museoModal');
+  const grid = $('#museoGrid');
+  if (!modal) return;
+  if (grid) {
+    grid.addEventListener('click', (ev) => {
+      const card = ev.target.closest('[data-museo]');
+      if (card) abrirMuseo(card.dataset.museo);
+    });
+  }
+  modal.addEventListener('click', (ev) => {
+    if (ev.target.closest('[data-cerrar-museo]')) cerrarMuseo();
+  });
+  document.addEventListener('keydown', (ev) => {
+    if (ev.key === 'Escape') cerrarMuseo();
+  });
 }
 
 function pintarNoticias() {
@@ -1112,6 +1207,7 @@ function eventosLiga() {
       if (!btn) return;
       LIGA.division = btn.dataset.division;
       LIGA.jornada = '';
+      LIGA.jornadaRes = '';
       pintarLiga();
     });
   }
@@ -1124,6 +1220,15 @@ function eventosLiga() {
       pintarCalendario();
     });
   }
+  const jornadasRes = $('#ligaResJornadas');
+  if (jornadasRes) {
+    jornadasRes.addEventListener('click', (ev) => {
+      const btn = ev.target.closest('[data-jornada-res]');
+      if (!btn) return;
+      LIGA.jornadaRes = btn.dataset.jornadaRes;
+      pintarResultadosLiga();
+    });
+  }
   const vista = $('#ligaVista');
   if (vista) {
     vista.addEventListener('click', (ev) => {
@@ -1131,8 +1236,6 @@ function eventosLiga() {
       if (btn) mostrarVista(btn.dataset.vista);
     });
   }
-  const sel = $('#x5Jornada');
-  if (sel) sel.addEventListener('change', pintarX5Cancha);
 }
 
 /* ------------------------------------------------------- EVENTOS INICIO */
@@ -1173,6 +1276,7 @@ function renderPagina(pagina) {
       break;
     case 'museo':
       pintarMuseo();
+      configMuseoModal();
       break;
     case 'redes':
       pintarRedes();

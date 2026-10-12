@@ -71,7 +71,6 @@ const TABS = {
   equipos:    ['Equipos', 'Agrega equipos, colores, escudos, entrenadores y jugadores.'],
   fechas:     ['Fechas', 'Programa los partidos y el calendario.'],
   resultados: ['Resultados', 'Goles, asistencias y clean sheets por equipo.'],
-  ideal:      ['X5 Ideal', 'El cinco ideal de cada jornada, por division.'],
   anuncios:   ['Anuncios', 'Gestiona anuncios, noticias, premios y enlaces.'],
   contenido:  ['Contenido', 'Todos los modulos de la pagina en un solo lugar.'],
   modulos:    ['Modulos', 'Los botones del header y sus titulos.'],
@@ -105,7 +104,6 @@ function irATab(tab) {
   $('#tabTexto').textContent = TABS[tab][1];
   if (tab === 'resumen') cargarResumen();
   if (tab === 'fechas' || tab === 'resultados') cargarFechas();
-  if (tab === 'ideal') cargarIdeales();
   if (tab === 'anuncios') cargarContenidos();
   if (tab === 'contenido') cargarContenidoTodo();
   if (tab === 'modulos') cargarModulos();
@@ -622,112 +620,6 @@ function f_reiniciarResultado() {
   $('#listaAsistencias').innerHTML = '';
   $('#listaAutogoles').innerHTML = '';
 }
-
-/* --------------------------------------------------------- X5 IDEAL */
-const FORMACION = ['GK', 'Dfwd', 'Mid', 'Mid', 'Fwd'];
-
-function todosJugadores() {
-  return ESTADO.equipos.flatMap((e) =>
-    (e.jugadores || []).map((j) => ({
-      ...j, equipo: e.nombre, sigla: e.sigla, color: e.color
-    })));
-}
-
-function opcionesJugadores(sel) {
-  return '<option value="">-- Sin jugador --</option>' + todosJugadores().map((j) => `
-    <option value="${j.id}" ${String(sel) === String(j.id) ? 'selected' : ''}>${esc(j.equipo)} · ${esc(j.nombre)}${j.dorsal ? ' (#' + esc(j.dorsal) + ')' : ''}</option>`
-  ).join('');
-}
-
-function pintarSlots(items = []) {
-  const actuales = [...items].sort((a, b) => a.orden - b.orden);
-  $('#idealSlots').innerHTML = FORMACION.map((base, i) => {
-    const slot = actuales[i];
-    return `
-      <div class="ideal-slot">
-        <span>POSICION ${i + 1}</span>
-        <select data-slot-pos aria-label="Posicion ${i + 1}">${opcionesPosicion(slot ? slot.posicion : base)}</select>
-        <select data-slot-jug aria-label="Jugador ${i + 1}">${opcionesJugadores(slot && slot.jugador_id)}</select>
-      </div>`;
-  }).join('');
-}
-
-function prefillIdeal() {
-  const f = $('#formIdeal');
-  const jornada = (f.elements.jornada.value || '').trim().toUpperCase();
-  const division = f.elements.division.value;
-  pintarSlots(ESTADO.ideales.filter((i) =>
-    i.jornada === jornada && i.division === division));
-}
-
-async function cargarIdeales() {
-  if (!ESTADO.equipos.length) {
-    try { await cargarEquipos(); } catch (e) { console.error(e); }
-  }
-  const r = await get('/api/admin/ideales');
-  ESTADO.ideales = r.ideales || [];
-  ESTADO.jornadas = (r.jornadas || []).map((j) => j.jornada);
-  $('#listaJornadas').innerHTML = ESTADO.jornadas
-    .map((j) => `<option value="${esc(j)}">`).join('');
-  prefillIdeal();
-  pintarIdeales();
-}
-
-function pintarIdeales() {
-  const caja = $('#listaIdeales');
-  if (!ESTADO.ideales.length) {
-    caja.innerHTML = '<div class="vacio-mini">Todavia no hay cinco ideal guardado.</div>';
-    return;
-  }
-  const jornadas = [...new Set(ESTADO.ideales.map((i) => i.jornada))];
-  caja.innerHTML = jornadas.map((j) => `
-    <div class="grupo-ideal">
-      <h4 class="sub">${esc(j)}</h4>
-      ${ESTADO.ideales.filter((i) => i.jornada === j).map((i) => `
-        <div class="ideal-fila">
-          <span class="pos">${esc(i.posicion)}</span>
-          <div class="quien">
-            <strong>${esc(i.jugador)}${i.dorsal ? ' <small>#' + esc(i.dorsal) + '</small>' : ''}</strong>
-            <small>${esc(i.equipo)} · ${esc(i.equipo_sigla || '')}</small>
-          </div>
-          <span class="fila-dato">${esc(i.division)}</span>
-        </div>`).join('')}
-    </div>`).join('');
-}
-
-$('#idealJornada').addEventListener('change', prefillIdeal);
-$('#idealDivision').addEventListener('change', prefillIdeal);
-
-$('#formIdeal').addEventListener('submit', async (ev) => {
-  ev.preventDefault();
-  const f = ev.target;
-  const slots = $$('#idealSlots .ideal-slot').map((s, i) => ({
-    orden: i + 1,
-    posicion: s.querySelector('[data-slot-pos]').value,
-    jugador_id: s.querySelector('[data-slot-jug]').value
-  })).filter((s) => s.jugador_id);
-
-  try {
-    const r = await post('/api/admin/ideales', {
-      jornada: f.elements.jornada.value,
-      division: f.elements.division.value,
-      slots
-    });
-    await cargarIdeales();
-    toast(r.guardados ? `Cinco ideal guardado con ${r.guardados} jugador(es)` : 'Jornada guardada vacia');
-  } catch (e) { toast(e.message); }
-});
-
-$('#btnBorrarIdeal').addEventListener('click', () => {
-  const f = $('#formIdeal');
-  const jornada = (f.elements.jornada.value || '').trim();
-  if (!jornada) return toast('Escribe la jornada');
-  confirmar('Se borrara el cinco ideal de esta jornada y division.', async () => {
-    await del(`/api/admin/ideales?jornada=${encodeURIComponent(jornada)}&division=${f.elements.division.value}`);
-    await cargarIdeales();
-    toast('Cinco ideal borrado');
-  });
-});
 
 /* --------------------------------------------------------- CONTENIDOS */
 const MODULOS_TODOS = ['anuncios', 'noticias', 'pubs', 'museo', 'alianzas', 'redes', 'equipo', 'donacion'];
