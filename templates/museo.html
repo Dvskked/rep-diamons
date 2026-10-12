@@ -22,4 +22,18 @@
   <div class="filtros reveal" id="museoFiltros" role="group" aria-label="Filtrar premios"></div>
   <div class="museo-grid reveal" id="museoGrid"></div>
 </div>
+
+<div class="museo-modal" id="museoModal" hidden>
+  <div class="museo-modal-fondo" data-cerrar-museo></div>
+  <div class="museo-modal-card" role="dialog" aria-modal="true" aria-labelledby="museoModalTitulo">
+    <button class="museo-modal-x" type="button" data-cerrar-museo aria-label="Cerrar">&times;</button>
+    <div class="museo-modal-img"><img id="museoModalImg" alt="" decoding="async"></div>
+    <div class="museo-modal-info">
+      <span class="museo-tag" id="museoModalTag"></span>
+      <h3 id="museoModalTitulo"></h3>
+      <p class="museo-sub" id="museoModalSub"></p>
+      <p class="museo-modal-txt" id="museoModalTexto"></p>
+    </div>
+  </div>
+</div>
 {% endblock %}
