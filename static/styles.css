@@ -1721,7 +1721,7 @@ a.match-team:hover .nm { color: var(--cian); }
 }
 .sponsor-card {
   display: flex; flex-direction: column; align-items: center; text-align: center;
-  gap: 18px; padding: 32px 24px; border-radius: var(--radio); position: relative; overflow: hidden;
+  gap: 18px; padding: 34px 26px 28px; border-radius: var(--radio); position: relative; overflow: hidden;
   background: radial-gradient(120% 90% at 50% 0%, rgba(10,255,214,.14), rgba(0,56,112,.35));
   border: 1px solid var(--linea-fuerte); box-shadow: var(--sombra);
   transition: transform .3s, box-shadow .3s, border-color .3s;
@@ -1734,18 +1734,41 @@ a.match-team:hover .nm { color: var(--cian); }
   transform: translateY(-6px); border-color: rgba(10,255,214,.6);
   box-shadow: var(--sombra-alta), 0 0 44px rgba(10,255,214,.2);
 }
+.sponsor-tag {
+  position: absolute; top: 14px; left: 14px; z-index: 2;
+  font-size: .6rem; font-weight: 700; letter-spacing: .2em; text-transform: uppercase;
+  color: var(--blanco); opacity: .85;
+  background: rgba(8,18,38,.55); border: 1px solid var(--linea-fuerte);
+  padding: 5px 11px; border-radius: 999px;
+}
+.sponsor-card--mica { --marca: #F0C030; }
+.sponsor-card--shop { --marca: #F5C546; }
+.sponsor-card--eden { --marca: #A44CE8; }
 .sponsor-logo {
-  width: 124px; height: 124px; border-radius: 24px; flex-shrink: 0; position: relative; z-index: 1;
+  width: 150px; height: 150px; border-radius: 26px; flex-shrink: 0; position: relative; z-index: 1;
   display: grid; place-items: center; overflow: hidden; padding: 12px;
-  background: rgba(255,255,255,.96); border: 1px solid rgba(255,255,255,.5);
-  box-shadow: 0 0 60px -20px rgba(245,197,70,.9), 0 18px 40px -22px rgba(0,0,0,.7);
+  background: rgba(255,255,255,.97); border: 1px solid rgba(255,255,255,.5);
+  box-shadow: 0 0 60px -20px var(--marca), 0 18px 40px -22px rgba(0,0,0,.7);
   transition: transform .35s cubic-bezier(.3,1.4,.5,1);
 }
 .sponsor-card:hover .sponsor-logo { transform: scale(1.06) rotate(-2deg); }
 .sponsor-logo img { width: 100%; height: 100%; object-fit: contain; }
+.sponsor-card--eden .sponsor-logo {
+  background: transparent; border: none; box-shadow: none; padding: 6px;
+  z-index: auto; mix-blend-mode: multiply;
+}
+.sponsor-card--eden .sponsor-logo img { filter: saturate(1.08); }
+.sponsor-card--eden:hover .sponsor-logo { transform: none; }
 .sponsor-info { position: relative; z-index: 1; display: flex; flex-direction: column; gap: 4px; }
-.sponsor-info strong { font-size: 1.2rem; color: var(--blanco); letter-spacing: .02em; }
+.sponsor-info strong { font-size: 1.25rem; color: var(--blanco); letter-spacing: .02em; }
 .sponsor-info span { color: var(--texto-suave); font-size: .92rem; }
+.sponsor-accion {
+  position: relative; z-index: 1; margin-top: 4px;
+  font-size: .78rem; font-weight: 700; letter-spacing: .06em;
+  color: var(--marca); text-transform: uppercase;
+  transition: color .2s, letter-spacing .3s;
+}
+.sponsor-card:hover .sponsor-accion { letter-spacing: .12em; }
 .sponsor-gracias {
   margin-top: 2.2rem; padding: 30px 24px; border-radius: var(--radio); text-align: center;
   background: linear-gradient(135deg, rgba(10,255,214,.16), rgba(255,77,157,.14));
