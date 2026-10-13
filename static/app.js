@@ -1014,12 +1014,23 @@ function pintarRedes() {
 let DONACION_ACTUAL = {};
 let DONACION_SEL = null;
 
-/* Determina como funciona un metodo: enlace, numero o proximamente. */
+/* Determina como funciona un metodo: enlace, datos, ticket o proximamente. */
 function infoDonacion(d) {
   if (/^https?:/i.test(d.enlace || '')) return { modo: 'link', valor: d.enlace };
-  const num = String(d.dato_extra || '').trim();
-  if (num) return { modo: 'numero', valor: num };
+  if (d.ticket) return { modo: 'ticket', valor: 'https://discord.gg/6K7nezXhx6' };
+  const copiar = String(d.copiar || '').trim();
+  if (copiar) return { modo: 'datos', valor: copiar, datos: Array.isArray(d.datos) ? d.datos : [] };
   return { modo: 'proximamente', valor: '' };
+}
+
+/* Dibuja la lista de datos (etiqueta/valor) de un metodo. */
+function bloqueDatos(datos) {
+  return '<div class="donacion-detalle-lista">' + datos.map((x) => (
+    '<div class="donacion-det-item">'
+    + `<span class="donacion-det-label">${esc(x.etiqueta || '')}</span>`
+    + `<span class="donacion-det-valor">${esc(x.valor || '')}</span>`
+    + '</div>'
+  )).join('') + '</div>';
 }
 
 function copiarTexto(txt) {
@@ -1088,12 +1099,19 @@ function abrirDonacion(id) {
       + `<span class="donacion-det-valor">${esc(DONACION_SEL.valor)}</span>`;
     if (btn) { btn.href = DONACION_SEL.valor; btn.classList.remove('is-off'); }
     if (btnTxt) btnTxt.textContent = 'DONAR AHORA';
-  } else if (DONACION_SEL.modo === 'numero') {
-    if (detalle) detalle.innerHTML = '<span class="donacion-det-label">Numero para donar</span>'
-      + `<span class="donacion-det-valor numero">${esc(DONACION_SEL.valor)}</span>`
-      + `<button class="donacion-copiar" type="button" data-copiar="${esc(DONACION_SEL.valor)}">COPIAR NUMERO</button>`;
+  } else if (DONACION_SEL.modo === 'datos') {
+    const datos = DONACION_SEL.datos.length
+      ? DONACION_SEL.datos
+      : [{ etiqueta: 'Dato para donar', valor: DONACION_SEL.valor }];
+    if (detalle) detalle.innerHTML = bloqueDatos(datos)
+      + `<button class="donacion-copiar" type="button" data-copiar="${esc(DONACION_SEL.valor)}">COPIAR DATOS</button>`;
     if (btn) { btn.href = '#'; btn.classList.remove('is-off'); }
-    if (btnTxt) btnTxt.textContent = 'DONAR (COPIAR NUMERO)';
+    if (btnTxt) btnTxt.textContent = 'DONAR (COPIAR DATOS)';
+  } else if (DONACION_SEL.modo === 'ticket') {
+    if (detalle) detalle.innerHTML = '<span class="donacion-det-label">Como donar</span>'
+      + '<span class="donacion-det-valor">Abre un ticket en nuestro Discord y envia la captura de tu donacion.</span>';
+    if (btn) { btn.href = DONACION_SEL.valor; btn.classList.remove('is-off'); }
+    if (btnTxt) btnTxt.textContent = 'ABRIR DISCORD Y CREAR TICKET';
   } else {
     if (detalle) detalle.innerHTML = '<span class="donacion-det-label">Informacion</span>'
       + '<span class="donacion-det-valor">Este metodo estara disponible muy pronto.</span>';
@@ -1148,7 +1166,7 @@ function configDonacion() {
       if (copiar) {
         copiarTexto(copiar.dataset.copiar);
         copiar.textContent = 'COPIADO';
-        setTimeout(() => { copiar.textContent = 'COPIAR NUMERO'; }, 1700);
+        setTimeout(() => { copiar.textContent = 'COPIAR DATOS'; }, 1700);
         return;
       }
       const cab = ev.target.closest('.donacion-acordeon-cab');
@@ -1165,11 +1183,13 @@ function configDonacion() {
         if (!DONACION_SEL) return;
         if (DONACION_SEL.modo === 'link') {
           revelarDiscordDonacion();
-        } else if (DONACION_SEL.modo === 'numero') {
+        } else if (DONACION_SEL.modo === 'datos') {
           ev.preventDefault();
           copiarTexto(DONACION_SEL.valor);
-          toast('Numero copiado: ' + DONACION_SEL.valor);
+          toast('Datos copiados. Envia la captura al Discord.');
           revelarDiscordDonacion();
+        } else if (DONACION_SEL.modo === 'ticket') {
+          /* el enlace abre Discord directamente */
         } else {
           ev.preventDefault();
         }
