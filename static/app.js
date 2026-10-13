@@ -7,7 +7,7 @@
 const $  = (sel, ctx = document) => ctx.querySelector(sel);
 const $$ = (sel, ctx = document) => Array.from(ctx.querySelectorAll(sel));
 
-const DATOS = { modulos: [], contenidos: {}, equipos: [], fechas: [], ideales: [], foro: [] };
+const DATOS = { modulos: [], contenidos: {}, equipos: [], fechas: [], ideales: [] };
 
 /* Estado de la seccion LIGA (division seleccionada + vista activa + jornadas) */
 const LIGA = { division: 'D1', vista: 'posiciones', jornada: '', jornadaRes: '' };
@@ -17,6 +17,9 @@ const INICIO = { ranking: 'goles' };
 
 /* Estado de ESTADISTICAS (filtro + busqueda + orden) */
 const STATS = { division: 'all', buscar: '', orden: 'goles', dir: 'desc' };
+
+/* Estado del MUSEO (filtros por temporada y division) */
+const MUSEO = { temporada: 'TODO', division: 'TODO' };
 
 /* ------------------------------------------------------------ UTILIDADES */
 function ocultarPreloader() {
@@ -146,14 +149,6 @@ function toast(texto) {
   t._timer = setTimeout(() => t.classList.remove('ver'), 3600);
 }
 
-async function pedir(url, opciones = {}) {
-  const r = await fetch(url, { credentials: 'same-origin', ...opciones });
-  let json = {};
-  try { json = await r.json(); } catch (e) { /* respuesta sin cuerpo */ }
-  if (!r.ok) throw new Error(json.error || 'Error ' + r.status);
-  return json;
-}
-
 const cont = (modulo) => DATOS.contenidos[modulo] || [];
 
 const porId = (id) => DATOS.equipos.find((e) => e.id === id) || null;
@@ -192,7 +187,7 @@ function pintarNav() {
         return `<a href="${esc(href)}"${cls}${ext}>${esc(a.textContent)}</a>`;
       })
       .join('');
-    mm.innerHTML = enlaces + '<a href="/admin">Administrar</a>';
+    mm.innerHTML = enlaces;
   }
 }
 
@@ -353,7 +348,7 @@ function fechaHora(f) {
 function equipoLado(eq, clase) {
   const inner = `${escudoMini(eq)}<span class="nm">${esc(eq.nombre)}</span>`;
   return eq && eq.id
-    ? `<a class="${clase}" href="/equipos/${eq.id}">${inner}</a>`
+    ? `<a class="${clase}" href="/equipo-detalle?id=${eq.id}">${inner}</a>`
     : `<span class="${clase}">${inner}</span>`;
 }
 
@@ -460,7 +455,7 @@ function tarjetaEquipo(eq) {
 
   return `
     <article class="equipo-card reveal" style="--eq:${esc(color)}">
-      <a class="equipo-topo" href="/equipos/${eq.id}">
+      <a class="equipo-topo" href="/equipo-detalle?id=${eq.id}">
         <div class="${escudoClase}">${escudo}</div>
         <div class="equipo-nombre">
           <h4>${esc(eq.nombre)}</h4>
@@ -469,7 +464,7 @@ function tarjetaEquipo(eq) {
       </a>
       <div class="equipo-meta">${meta}</div>
       ${jugadores}
-      <a class="link-btn" href="/equipos/${eq.id}">VER EQUIPO</a>
+      <a class="link-btn" href="/equipo-detalle?id=${eq.id}">VER EQUIPO</a>
     </article>`;
 }
 
@@ -506,7 +501,7 @@ function pintarTablaPosiciones() {
   cuerpo.innerHTML = filas.map((f, i) => `
     <tr>
       <td class="pos${medalla(i)}">${i + 1}</td>
-      <td><a class="eq" href="/equipos/${f.eq.id}">${escudoMini(f.eq)}${esc(f.eq.nombre)}</a></td>
+      <td><a class="eq" href="/equipo-detalle?id=${f.eq.id}">${escudoMini(f.eq)}${esc(f.eq.nombre)}</a></td>
       <td>${f.pj}</td><td>${f.g}</td><td>${f.emp}</td><td>${f.p}</td>
       <td>${f.gf}</td><td>${f.gc}</td><td>${f.gf - f.gc}</td>
       <td class="pos">${f.pts}</td>
@@ -643,7 +638,7 @@ function pintarLigas() {
   grid.innerHTML = ['D1', 'D2'].map((div) => {
     const tabla = standings(div);
     const top = tabla.slice(0, 3).map((f) => `
-      <a class="mini-team" href="/equipos/${f.eq.id}">
+      <a class="mini-team" href="/equipo-detalle?id=${f.eq.id}">
         ${escudoMini(f.eq)}
         <b>${esc(f.eq.nombre)}</b>
         <span class="pts">${f.pts} PTS</span>
@@ -767,51 +762,80 @@ function pintarPubs() {
 }
 
 /* ------------------------------------------------------------ MUSEO */
+/* Temporada de una pieza: parsea "Temporada 2" -> "SS2". */
+function temporadaMuseo(m) {
+  const txt = `${m.dato_extra || ''} ${m.categoria || ''} ${m.subtitulo || ''} ${m.texto || ''}`;
+  const match = txt.match(/temporada\s*(\d+)/i) || txt.match(/\bss\s*(\d+)/i);
+  return match ? `SS${match[1]}` : '';
+}
+
+/* Division de una pieza del museo: busca D1/D2 en sus campos. */
+function divisionMuseo(m) {
+  const txt = `${m.categoria || ''} ${m.titulo || ''} ${m.subtitulo || ''}`;
+  if (/\bD1\b/i.test(txt)) return 'D1';
+  if (/\bD2\b/i.test(txt)) return 'D2';
+  return '';
+}
+
 function pintarMuseo() {
   const caja = $('#museoGrid');
   if (!caja) return;
-  const items = cont('museo');
-  const filtrosBox = $('#museoFiltros');
-  if (filtrosBox) {
-    const cats = new Set(['TODO']);
-    items.forEach((m) => { if (m.categoria) cats.add(m.categoria); });
-    const orden = ['TODO', 'PREMIOS D1', 'PREMIOS D2', 'RANKINGS D1', 'RANKINGS D2', 'CAMPEONES'];
-    filtrosBox.innerHTML = Array.from(cats)
-      .sort((a, b) => {
-        const ia = orden.indexOf(a), ib = orden.indexOf(b);
-        if (ia < 0 && ib < 0) return a.localeCompare(b);
-        if (ia < 0) return 1;
-        if (ib < 0) return -1;
-        return ia - ib;
-      })
-      .map((c) => `<button type="button" class="chip filtro${c === 'TODO' ? ' activa activo' : ''}" data-cat="${esc(c)}">${esc(c)}</button>`)
-      .join('');
-    filtrosBox.onclick = (ev) => {
-      const btn = ev.target.closest('[data-cat]');
+
+  const grupoTemp = $('#museoTemporada');
+  if (grupoTemp && !grupoTemp.dataset.listo) {
+    grupoTemp.dataset.listo = '1';
+    grupoTemp.addEventListener('click', (ev) => {
+      const btn = ev.target.closest('[data-temporada]');
       if (!btn) return;
-      filtrosBox.querySelectorAll('.filtro').forEach((x) => x.classList.remove('activa', 'activo'));
-      btn.classList.add('activa', 'activo');
-      pintarMuseoFiltrado(btn.dataset.cat);
-    };
+      MUSEO.temporada = btn.dataset.temporada;
+      pintarMuseoFiltrado();
+    });
   }
-  pintarMuseoFiltrado('TODO');
+
+  const grupoDiv = $('#museoDivision');
+  if (grupoDiv && !grupoDiv.dataset.listo) {
+    grupoDiv.dataset.listo = '1';
+    grupoDiv.addEventListener('click', (ev) => {
+      const btn = ev.target.closest('[data-division]');
+      if (!btn) return;
+      MUSEO.division = btn.dataset.division;
+      pintarMuseoFiltrado();
+    });
+  }
+
+  pintarMuseoFiltrado();
 }
 
 let MUSEO_ACTUAL = {};
 
-function pintarMuseoFiltrado(filtro) {
+function pintarMuseoFiltrado() {
   const caja = $('#museoGrid');
   if (!caja) return;
+
+  $$('#museoTemporada [data-temporada]').forEach((b) =>
+    b.classList.toggle('activa', b.dataset.temporada === MUSEO.temporada));
+  $$('#museoDivision [data-division]').forEach((b) =>
+    b.classList.toggle('activa', b.dataset.division === MUSEO.division));
+
   let items = cont('museo');
-  if (filtro && filtro !== 'TODO') {
-    items = items.filter((m) => (m.categoria || '') === filtro);
+  if (MUSEO.temporada !== 'TODO') {
+    items = items.filter((m) => temporadaMuseo(m) === MUSEO.temporada);
+  }
+  if (MUSEO.division !== 'TODO') {
+    items = items.filter((m) => divisionMuseo(m) === MUSEO.division);
   }
   items = items.slice().sort((a, b) =>
     (num(a.orden) - num(b.orden)) || (a.titulo || '').localeCompare(b.titulo || ''));
   const nota = $('#museoNota');
   if (nota) nota.textContent = items.length
     ? `${items.length} ${items.length === 1 ? 'pieza' : 'piezas'} en exhibicion` : '';
-  if (!items.length) { caja.innerHTML = vacio('No hay elementos en el museo.'); return; }
+  if (!items.length) {
+    caja.innerHTML = `<div class="museo-vacio">
+      <strong>Sin piezas para este filtro</strong>
+      <span>Todavia no hay premios registrados en esta combinacion de temporada y division.</span>
+    </div>`;
+    return;
+  }
 
   MUSEO_ACTUAL = {};
   items.forEach((i) => { MUSEO_ACTUAL[String(i.id)] = i; });
@@ -916,25 +940,6 @@ function pintarAnuncios() {
     </article>`).join('') || vacio('No hay anuncios publicados.');
 }
 
-/* --------------------------------------------------------- ALIANZAS */
-function pintarAlianzas() {
-  const caja = $('#alianzasGrid');
-  if (!caja) return;
-  caja.innerHTML = cont('alianzas').map((a) => {
-    const pendiente = (a.dato_extra || '').toUpperCase().includes('NEGOCIACION');
-    const inner = `
-      <div class="alianza-icon">${pendiente ? '⏳' : '🤝'}</div>
-      <div>
-        <strong>${esc(a.titulo)}</strong>
-        <small>${esc(a.subtitulo || '')}</small>
-        ${a.texto ? `<small style="display:block;margin-top:4px">${esc(a.texto)}</small>` : ''}
-      </div>`;
-    return a.enlace
-      ? `<a class="alianza-card reveal" href="${esc(a.enlace)}" target="_blank" rel="noopener">${inner}</a>`
-      : `<div class="alianza-card reveal ${pendiente ? 'pendiente' : ''}">${inner}</div>`;
-  }).join('') || vacio('No hay alianzas registradas.');
-}
-
 /* ----------------------------------------------------------- EQUIPO */
 const ROLES_INFO = {
   'OWNER': { grupo: 'owners', etiqueta: "OWNER'S" },
@@ -1028,7 +1033,7 @@ function pintarDonacion() {
 
 /* ------------------------------------------------ EQUIPO (DETALLE) */
 function pintarEquipoDetalle() {
-  const id = num(document.body.dataset.equipo);
+  const id = num(new URLSearchParams(location.search).get('id') || document.body.dataset.equipo);
   const eq = porId(id);
   if (!eq) {
     const nombre = $('#eqNombre');
@@ -1108,59 +1113,6 @@ function pintarEquipoDetalle() {
   }
   const nota = $('#eqPlantillaNota');
   if (nota) nota.textContent = `${(eq.jugadores || []).length} jugadores`;
-}
-
-/* -------------------------------------------------------------- FORO */
-function pintarForo() {
-  const caja = $('#foroLista');
-  if (!caja) return;
-  caja.innerHTML = DATOS.foro.length
-    ? DATOS.foro.map((m) => `
-      <article class="mensaje">
-        <div class="mensaje-avatar">${iniciales(m.nombre)}</div>
-        <div>
-          <div class="mensaje-cab">
-            <strong>${esc(m.nombre)}</strong>
-            <time>${esc(fechaLarga(m.fecha))}</time>
-          </div>
-          <p>${esc(m.mensaje)}</p>
-        </div>
-      </article>`).join('')
-    : vacio('Aun no hay mensajes. Se el primero en publicar.');
-}
-
-function configForo() {
-  const form = $('#foroForm');
-  if (!form) return;
-  form.addEventListener('submit', async (ev) => {
-    ev.preventDefault();
-    const nombre = $('#foroNombre').value.trim();
-    const mensaje = $('#foroMensaje').value.trim();
-    const msg = $('#foroMsg');
-    msg.textContent = ''; msg.classList.remove('error');
-
-    if (!nombre || !mensaje) {
-      msg.textContent = 'Completa tu nombre y el mensaje.';
-      msg.classList.add('error');
-      return;
-    }
-    try {
-      const r = await pedir('/api/foro', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ nombre, mensaje })
-      });
-      DATOS.foro.unshift(r.mensaje);
-      pintarForo();
-      $('#foroNombre').value = '';
-      $('#foroMensaje').value = '';
-      msg.textContent = 'Mensaje publicado. Gracias!';
-      toast('Mensaje publicado en el foro');
-    } catch (err) {
-      msg.textContent = err.message;
-      msg.classList.add('error');
-    }
-  });
 }
 
 /* ---------------------------------------------------------- UI GENERAL */
@@ -1306,73 +1258,29 @@ function renderPagina(pagina) {
       pintarLideres();
       pintarNoticias();
       pintarAnuncios();
-      pintarAlianzas();
-      pintarForo();
-      configForo();
       break;
   }
   revelar();
 }
 
 /* --------------------------------------------------------------- INICIO */
-async function iniciar() {
+function iniciar() {
   configBotonSubir();
   configMenu();
   pintarNav();
 
-  try {
-    const r = await pedir('/api/sitio');
-    Object.assign(DATOS, {
-      modulos: r.modulos || [], contenidos: r.contenidos || {},
-      equipos: r.equipos || [], fechas: r.fechas || [],
-      ideales: r.ideales || [], foro: r.foro || []
-    });
+  const fuente = window.SITIO || {};
+  Object.assign(DATOS, {
+    modulos: fuente.modulos || [], contenidos: fuente.contenidos || {},
+    equipos: fuente.equipos || [], fechas: fuente.fechas || [],
+    ideales: fuente.ideales || []
+  });
 
-    pintarModulos();
-    renderPagina(document.body.dataset.pagina || 'inicio');
+  pintarModulos();
+  renderPagina(document.body.dataset.pagina || 'inicio');
 
-    const s = await pedir('/api/sesion');
-    const btn = $('#btnAdmin');
-    if (s.autenticado && btn) {
-      btn.textContent = 'IR AL PANEL';
-    }
-  } catch (err) {
-    console.error(err);
-    mostrarErrorBaseDatos();
-  } finally {
-    revelar();
-    requestAnimationFrame(ocultarPreloader);
-  }
-}
-
-/* ------------------------------------------- ERROR DE BASE DE DATOS */
-function mostrarErrorBaseDatos() {
-  if ($('#falloPantalla')) return;
-  const caja = document.createElement('div');
-  caja.id = 'falloPantalla';
-  caja.className = 'fallo-pantalla';
-  caja.setAttribute('role', 'alert');
-  caja.innerHTML = `
-    <span class="fallo-cancha" aria-hidden="true"></span>
-    <div class="fallo-card reveal visible">
-      <span class="fallo-logo">
-        <img src="/static/assets/logo-128.webp" width="84" height="84" alt="">
-        <span class="fallo-anillo"></span>
-      </span>
-      <span class="fallo-tag">SIN SERVICIO</span>
-      <h1>La pagina esta caida</h1>
-      <p>No se pudo conectar con la base de datos. Podemos estar de mantenimiento o el servidor tuvo un
-        problema temporal.</p>
-      <div class="fallo-acciones">
-        <button class="btn btn-primary big" type="button" data-fallo-reintentar>REINTENTAR</button>
-        <button class="btn btn-soft big" type="button" data-fallo-puede>ENTENDIDO</button>
-      </div>
-      <small>Si seguis viendo este mensaje, recarga con <b>Ctrl + R</b> o avisanos por el Discord.</small>
-    </div>`;
-  document.body.appendChild(caja);
-
-  caja.querySelector('[data-fallo-reintentar]').addEventListener('click', () => location.reload());
-  caja.querySelector('[data-fallo-puede]').addEventListener('click', () => caja.remove());
+  revelar();
+  requestAnimationFrame(ocultarPreloader);
 }
 
 document.addEventListener('DOMContentLoaded', iniciar);

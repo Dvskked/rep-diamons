@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Pubs - Salas de HaxBall | The Diamonds League</title>
+<meta name="description" content="Salas publicas de HaxBall de The Diamonds League: entra directo a los pubs de la Division 1 y Division 2.">
+<meta name="author" content="Neptunzinho">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<link rel="canonical" href="https://diamonds-league.vercel.app/pubs">
+<meta name="theme-color" content="#003870">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="The Diamonds League">
+<meta property="og:locale" content="es_ES">
+<meta property="og:title" content="Pubs de HaxBall | The Diamonds League">
+<meta property="og:description" content="Entra directo a las salas publicas de la liga.">
+<meta property="og:url" content="https://diamonds-league.vercel.app/pubs">
+<meta property="og:image" content="/static/assets/logo-mark.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="/static/assets/logo-mark.png">
+<link rel="icon" type="image/png" href="/static/assets/favicon-64.png">
+<link rel="apple-touch-icon" href="/static/assets/logo-mark.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Barlow:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="/static/styles.css">
+<noscript><style>.preloader{display:none}body.carga-activa{overflow:auto}</style></noscript>
+</head>
+<body class="carga-activa" data-pagina="pubs">
+
+<div class="preloader" id="preloader" role="status" aria-live="polite">
+  <div class="preloader-caja">
+    <div class="preloader-logo">
+      <img src="/static/assets/logo-128.webp" width="116" height="116" alt="">
+      <span class="preloader-anillo"></span>
+    </div>
+    <strong>The Diamonds League</strong>
+    <small>CARGANDO</small>
+    <div class="preloader-barra"><i></i></div>
+  </div>
+</div>
+
+<header class="top" id="topbar">
+  <div class="wrap top-inner">
+    <a class="brand" href="/" aria-label="The Diamonds League, inicio">
+      <img class="brand-logo" src="/static/assets/logo-128.webp" width="42" height="42" alt="Escudo The Diamonds League">
+      <span class="brand-txt">
+        <strong class="marca">THE DIAMONDS <b>LEAGUE</b></strong>
+        <small>HAXBALL X5</small>
+      </span>
+    </a>
+    <nav class="nav" id="navPrincipal" aria-label="Navegacion principal">
+      <a href="/" data-nav="inicio">Inicio</a>
+      <a href="/liga" data-nav="liga">Diamonds League</a>
+      <a href="/museo" data-nav="museo">Museo</a>
+      <a href="/estadisticas" data-nav="estadisticas">Estadisticas</a>
+      <a href="/pubs" data-nav="pubs">Pubs</a>
+      <a href="/redes" data-nav="redes">Redes sociales</a>
+      <a href="/equipo" data-nav="equipo">Equipo administracion</a>
+      <a href="/sponsors" data-nav="sponsors">Sponsors</a>
+      <a class="nav-shop" href="https://diamondshop-lovat.vercel.app/" target="_blank" rel="noopener" data-nav="shop">Shop</a>
+      <a class="nav-donar" href="/donacion" data-nav="donacion">Donar</a>
+    </nav>
+    <div class="top-right">
+      <button class="menu-toggle" type="button" id="menuToggle" aria-label="Abrir menu" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </div>
+  <div class="mobile-menu" id="mobileMenu"></div>
+</header>
+
+<main class="main" id="main">
+<section class="page-hero pubs-hero">
+  <span class="pubs-bola" aria-hidden="true"></span>
+  <span class="pubs-bola pasa" aria-hidden="true"></span>
+  <div class="wrap">
+    <span class="etiqueta" data-etiqueta="pubs">PUBS</span>
+    <h1 class="display" data-titulo="pubs">Salas de HaxBall</h1>
+    <p data-subtitulo="pubs" class="pubs-lead">Entra directo a las salas publicas de la liga, conocenos y unite a la comunidad.</p>
+  </div>
+</section>
+
+<div class="wrap page">
+
+  <div class="pubs-feat">
+    <article class="pubs-step reveal">
+      <span class="pubs-num">01</span>
+      <h3>Elegi tu sala</h3>
+      <p>Aqui abajo encontras las salas de HaxBall abiertas del dia. Cada una tiene su nombre y su metodo.</p>
+    </article>
+    <article class="pubs-step reveal">
+      <span class="pubs-num">02</span>
+      <h3>Entra y juega</h3>
+      <p>Haz clic en "Abrir sala" y entra con tu nombre de jugador. Los partidos randoms arrancan en los minutos.</p>
+    </article>
+    <article class="pubs-step reveal">
+      <span class="pubs-num">03</span>
+      <h3>Sumate a la liga</h3>
+      <p>Si queres competir en divisiones, pasa por el Discord, presenta tu escuadra y espera la confirmacion del staff.</p>
+    </article>
+  </div>
+
+  <section class="block" aria-labelledby="h-salitas">
+    <div class="sec-head">
+      <div>
+        <span class="etiqueta">SALAS EN VIVO</span>
+        <h2 id="h-salitas">Salas publicas ahora</h2>
+        <p class="sec-sub">Tocamos una sala y jugamos. Las salas se renuevan con los partidos de la jornada.</p>
+      </div>
+    </div>
+    <div class="salas-grid" id="salasGrid"></div>
+  </section>
+
+  <div class="pubs-tips">
+    <div class="pubs-tip reveal">
+      <h3>Reglas HaxBall</h3>
+      <ol style="padding-left:1.2rem;display:flex;flex-direction:column;gap:.5rem;margin:.75rem 0 0">
+        <li><strong>1. BUS</strong> Deben haber 5 jugadores en area grande o 3 en area chica.</li>
+        <li><strong>2. LAG TEST</strong> El test es de 30 segundos.</li>
+        <li><strong>3. JUGADOR NO FICHADO</strong> Si juega sin estar fichado: No cuentan goles/asistencias. Amarilla para el DT o sub-DT.</li>
+        <li><strong>4. TIEMPO DE FICHAJE</strong> Maximo 30 min antes del partido. Si ficha despues, no puede jugar ese partido.</li>
+        <li><strong>5. MINIMO Y MAXIMO DE JUGADORES</strong> Minimo 4 y maximo 5 jugadores en cancha.</li>
+        <li><strong>6. PAUSAS</strong> Solo en zona segura o cuando la pelota este detenida.</li>
+        <li><strong>7. PAUSAS SIN AVISO</strong> Si no se avisa, queda a decision del arbitro.</li>
+        <li><strong>8. LIMITE DE PAUSAS</strong> Maximo 3 pausas por equipo en partido completo.</li>
+        <li><strong>9. DURACION DE PAUSAS</strong> La duracion de una pausa es de 1min como maximo.</li>
+        <li><strong>10. 3 BUSES</strong> Si un equipo hace 3 buses &rarr; penal al final del partido.</li>
+        <li><strong>11. POSPONER PARTIDO</strong> Debe avisarse con minimo 2 horas.</li>
+        <li><strong>12. MERCY RULE</strong> Mercy a dif de 7 goles.</li>
+        <li><strong>13. DURACION DEL PARTIDO</strong> 2 tiempos de 10:00 min + ultima.</li>
+        <li><strong>14. FAIR PLAY (FP)</strong> Si un jugador acumula FP, puede perder el gol si el arbitro lo decide.</li>
+      </ol>
+      <h4 style="margin-top:1rem">SISTEMA DE SANCIONES</h4>
+      <p><strong>Tarjeta Amarilla</strong>: Conductas antideportivas, pausas incorrectas, reclamaciones excesivas. 2 amarillas = 1 roja.</p>
+      <p><strong>Tarjeta Roja</strong>: Insultos graves, falta de respeto, conducta antideportiva grave. Sancion + posible suspension.</p>
+    </div>
+
+    <div class="pubs-tip reveal">
+      <h3>Queres jugar en la liga?</h3>
+      <p>La liga se juega en la Division 1 y la Division 2. Forma tu equipo, inscribite por el Discord y espera la
+        confirmacion del staff. Las vacantes se comunican por los canales oficiales.</p>
+      <a class="btn btn-primary big" href="/redes">IR A REDES Y COMUNIDAD</a>
+    </div>
+  </div>
+
+  <div class="pubs-tips">
+    <div class="pubs-tip reveal" style="grid-column:1/-1">
+      <h3>REGLAMENTO DE PUBLICAS DIAMONDS LEAGUE</h3>
+      <div style="color:var(--texto-suave);display:flex;flex-direction:column;gap:.85rem;margin-top:.75rem">
+        <p><strong>1. PRINCIPIOS GENERALES</strong></p>
+        <ul><li>Esta es una liga competitiva.</li><li>El respeto, la seriedad y el orden son fundamentales.</li><li>Todo jugador debe respetar estas reglas.</li><li>No hay excepciones.</li></ul>
+        <p><strong>2. CONDUCTA Y CONVIVENCIA</strong></p>
+        <ul><li>Queda prohibido cualquier tipo de insulto personal, acoso, provocacion directa o lenguaje discriminatorio.</li><li>El racismo, xenofobia u odio implican sancion grave, incluso si se expresa "en broma".</li><li>Las discusiones deben resolverse con argumentos y pruebas, no con ataques personales.</li></ul>
+        <p><strong>3. USO DE CALL ADMIN</strong></p>
+        <ul><li>El uso de !calladmin debe tener un motivo razonable y valido.</li><li>El uso por troleo o motivo falso resultara en ban de 1 dia por mal call.</li></ul>
+        <p><strong>4. TROLEOS, FALSO NICKNAME Y SPAM</strong></p>
+        <ul><li>Un jugador troll recibira ban de 2 dias por perjudicar a otros jugadores o danar el juego.</li><li>Difamar nombres, spamear barbaridades o realizar troleos dara ban de 3 dias.</li><li>Spam de copy paste dara ban de 1 dia.</li></ul>
+        <p><strong>5. RESPETO AL STAFF Y A LOS USUARIOS</strong></p>
+        <ul><li>El Staff tiene prohibido insultar personalmente a un usuario, al igual que el usuario al Staff, para mantener una comunicacion limpia y respetuosa.</li><li>Para recibir atencion dentro de la pub, solo esta permitido utilizar !calladmin.</li></ul>
+        <p><strong>6. DENUNCIAS</strong></p>
+        <ul><li>El usuario puede denunciar a otros abriendo ticket (desconocido) si es necesario.</li><li>Si el reporte no tiene que ver con Discord, se debe utilizar !calladmin.</li></ul>
+        <p><strong>El incumplimiento de estas reglas implicara sanciones segun la gravedad del caso.</strong></p>
+      </div>
+    </div>
+  </div>
+</div>
+</main>
+
+<footer class="foot">
+  <div class="wrap foot-inner">
+    <a class="brand foot-brand" href="/" aria-label="The Diamonds League, inicio">
+      <img class="brand-logo" src="/static/assets/logo-128.webp" width="42" height="42" alt="">
+      <span class="brand-txt">
+        <strong class="marca">THE DIAMONDS <b>LEAGUE</b></strong>
+        <small>HAXBALL X5</small>
+      </span>
+    </a>
+    <nav class="foot-nav" aria-label="Secciones del sitio">
+      <div class="foot-col">
+        <h4>Liga</h4>
+        <a href="/">Inicio</a>
+        <a href="/liga">Diamonds League</a>
+        <a href="/estadisticas">Estadisticas</a>
+      </div>
+      <div class="foot-col">
+        <h4>Comunidad</h4>
+        <a href="/redes">Redes sociales</a>
+        <a href="/equipo">Equipo administracion</a>
+        <a href="/pubs">Pubs y salas</a>
+        <a href="/sponsors">Sponsors</a>
+        <a href="https://diamondshop-lovat.vercel.app/" target="_blank" rel="noopener">Shop</a>
+        <a href="/donacion">Donar</a>
+      </div>
+      <div class="foot-col">
+        <h4>Mas de la liga</h4>
+        <a href="/museo">Museo</a>
+        <a href="/#noticias">Noticias</a>
+        <a href="/#anuncios">Anuncios</a>
+      </div>
+    </nav>
+  </div>
+  <div class="wrap foot-base">
+    <span>Compitiendo en HaxBall X5. Los resultados se confirman con el staff de la liga.</span>
+    <span>The Diamonds League &middot; &copy; 2026 Neptunzinho</span>
+  </div>
+</footer>
+
+<button class="btn-top" type="button" id="btnTop" aria-label="Volver arriba">&uarr;</button>
+<div class="toast" id="toast" role="status" aria-live="polite"><span></span><p></p></div>
+
+<script src="/static/data.js"></script>
+<script src="/static/app.js" defer></script>
+</body>
+</html>
