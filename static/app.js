@@ -325,7 +325,7 @@ function pintarResultadosLiga() {
 
   const partidos = grupos.get(actual) || [];
   if (nota) nota.textContent = `${partidos.length} partidos jugados · Division ${LIGA.division}`;
-  caja.innerHTML = partidos.map((f) => filaPartido(f)).join('');
+  caja.innerHTML = partidos.map((f) => filaPartido(f, { detalle: false })).join('');
   revelar();
 }
 
@@ -1011,24 +1011,173 @@ function pintarRedes() {
 }
 
 /* -------------------------------------------------------- DONACION */
+let DONACION_ACTUAL = {};
+let DONACION_SEL = null;
+
+/* Determina como funciona un metodo: enlace, numero o proximamente. */
+function infoDonacion(d) {
+  if (/^https?:/i.test(d.enlace || '')) return { modo: 'link', valor: d.enlace };
+  const num = String(d.dato_extra || '').trim();
+  if (num) return { modo: 'numero', valor: num };
+  return { modo: 'proximamente', valor: '' };
+}
+
+function copiarTexto(txt) {
+  const t = String(txt || '');
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(t).catch(() => {});
+  } else {
+    const ta = document.createElement('textarea');
+    ta.value = t; document.body.appendChild(ta); ta.select();
+    try { document.execCommand('copy'); } catch (e) {}
+    ta.remove();
+  }
+}
+
 function pintarDonacion() {
   const caja = $('#donacionGrid');
   if (!caja) return;
-  const iconos = { PAYPAL: '🅿️', NEQUI: '📱', BTC: '₿', DISCORD: '💜' };
-  caja.innerHTML = cont('donacion').map((d) => {
-    const tipo = (d.subtitulo || '').toUpperCase();
+  const items = cont('donacion');
+  DONACION_ACTUAL = {};
+  caja.innerHTML = items.map((d) => {
+    DONACION_ACTUAL[String(d.id)] = d;
+    const info = infoDonacion(d);
     const logo = d.imagen
-      ? `<img src="/static/${esc(d.imagen)}" alt="${esc(tipo)}" loading="lazy" decoding="async">`
-      : (iconos[tipo] || '💛');
-    const inner = `
+      ? `<img src="/static/${esc(d.imagen)}" alt="${esc(d.subtitulo || d.titulo)}" loading="lazy" decoding="async">`
+      : `<span class="donacion-emoji" aria-hidden="true">&#128176;</span>`;
+    const estado = info.modo === 'proximamente'
+      ? '<span class="donacion-estado off">Proximamente</span>'
+      : '<span class="donacion-estado on">Disponible</span>';
+    return `<button type="button" class="donacion-card reveal" data-donacion="${esc(d.id)}" aria-label="Donar con ${esc(d.titulo)}">
+      ${estado}
       <div class="donacion-icon">${logo}</div>
       <small>${esc(d.subtitulo || 'METODO')}</small>
       <strong>${esc(d.titulo)}</strong>
-      <p>${esc(d.texto || '')}</p>`;
-    return d.enlace
-      ? `<a class="donacion-card reveal" href="${esc(d.enlace)}" target="_blank" rel="noopener">${inner}</a>`
-      : `<div class="donacion-card reveal">${inner}</div>`;
+      <p>${esc(d.texto || '')}</p>
+      <span class="donacion-abrir">Ver detalle &#8594;</span>
+    </button>`;
   }).join('') || vacio('No hay metodos de donacion.');
+
+  configDonacion();
+}
+
+function abrirDonacion(id) {
+  const d = DONACION_ACTUAL[String(id)];
+  const modal = $('#donacionModal');
+  if (!d || !modal) return;
+  DONACION_SEL = infoDonacion(d);
+
+  const logo = $('#donacionModalLogo');
+  if (logo) logo.innerHTML = d.imagen
+    ? `<img src="/static/${esc(d.imagen)}" alt="${esc(d.subtitulo || d.titulo)}">` : '';
+  const tag = $('#donacionModalTag');
+  if (tag) tag.textContent = d.subtitulo || 'METODO';
+  const tit = $('#donacionModalTitulo');
+  if (tit) tit.textContent = d.titulo;
+  const txt = $('#donacionModalTexto');
+  if (txt) txt.textContent = d.texto || '';
+
+  const detalle = $('#donacionModalDetalle');
+  const btn = $('#donacionModalBtn');
+  const btnTxt = $('#donacionModalBtnTxt');
+  const disc = $('#donacionModalDiscord');
+  if (disc) disc.hidden = true;
+
+  if (DONACION_SEL.modo === 'link') {
+    if (detalle) detalle.innerHTML = '<span class="donacion-det-label">Enlace de donacion</span>'
+      + `<span class="donacion-det-valor">${esc(DONACION_SEL.valor)}</span>`;
+    if (btn) { btn.href = DONACION_SEL.valor; btn.classList.remove('is-off'); }
+    if (btnTxt) btnTxt.textContent = 'DONAR AHORA';
+  } else if (DONACION_SEL.modo === 'numero') {
+    if (detalle) detalle.innerHTML = '<span class="donacion-det-label">Numero para donar</span>'
+      + `<span class="donacion-det-valor numero">${esc(DONACION_SEL.valor)}</span>`
+      + `<button class="donacion-copiar" type="button" data-copiar="${esc(DONACION_SEL.valor)}">COPIAR NUMERO</button>`;
+    if (btn) { btn.href = '#'; btn.classList.remove('is-off'); }
+    if (btnTxt) btnTxt.textContent = 'DONAR (COPIAR NUMERO)';
+  } else {
+    if (detalle) detalle.innerHTML = '<span class="donacion-det-label">Informacion</span>'
+      + '<span class="donacion-det-valor">Este metodo estara disponible muy pronto.</span>';
+    if (btn) { btn.href = '#'; btn.classList.add('is-off'); }
+    if (btnTxt) btnTxt.textContent = 'PROXIMAMENTE';
+  }
+
+  const aco = $('#donacionModalAcordeon');
+  if (aco) {
+    aco.classList.remove('abierto');
+    const cab = aco.querySelector('.donacion-acordeon-cab');
+    if (cab) cab.setAttribute('aria-expanded', 'false');
+  }
+
+  modal.hidden = false;
+  document.body.classList.add('modal-abierto');
+  const x = modal.querySelector('.donacion-modal-x');
+  if (x) x.focus();
+}
+
+function revelarDiscordDonacion() {
+  const disc = $('#donacionModalDiscord');
+  if (!disc) return;
+  disc.hidden = false;
+  disc.classList.add('ver');
+}
+
+function cerrarDonacion() {
+  const modal = $('#donacionModal');
+  if (!modal || modal.hidden) return;
+  modal.hidden = true;
+  document.body.classList.remove('modal-abierto');
+}
+
+function configDonacion() {
+  const grid = $('#donacionGrid');
+  if (grid && !grid.dataset.config) {
+    grid.dataset.config = '1';
+    grid.addEventListener('click', (ev) => {
+      const card = ev.target.closest('[data-donacion]');
+      if (card) abrirDonacion(card.dataset.donacion);
+    });
+  }
+
+  const modal = $('#donacionModal');
+  if (modal && !modal.dataset.config) {
+    modal.dataset.config = '1';
+
+    modal.addEventListener('click', (ev) => {
+      if (ev.target.closest('[data-cerrar-donacion]')) { cerrarDonacion(); return; }
+      const copiar = ev.target.closest('[data-copiar]');
+      if (copiar) {
+        copiarTexto(copiar.dataset.copiar);
+        copiar.textContent = 'COPIADO';
+        setTimeout(() => { copiar.textContent = 'COPIAR NUMERO'; }, 1700);
+        return;
+      }
+      const cab = ev.target.closest('.donacion-acordeon-cab');
+      if (cab) {
+        const aco = cab.closest('.donacion-acordeon');
+        const abierto = aco.classList.toggle('abierto');
+        cab.setAttribute('aria-expanded', abierto ? 'true' : 'false');
+      }
+    });
+
+    const btn = $('#donacionModalBtn');
+    if (btn) {
+      btn.addEventListener('click', (ev) => {
+        if (!DONACION_SEL) return;
+        if (DONACION_SEL.modo === 'link') {
+          revelarDiscordDonacion();
+        } else if (DONACION_SEL.modo === 'numero') {
+          ev.preventDefault();
+          copiarTexto(DONACION_SEL.valor);
+          toast('Numero copiado: ' + DONACION_SEL.valor);
+          revelarDiscordDonacion();
+        } else {
+          ev.preventDefault();
+        }
+      });
+    }
+
+    document.addEventListener('keydown', (ev) => { if (ev.key === 'Escape') cerrarDonacion(); });
+  }
 }
 
 /* ------------------------------------------------ EQUIPO (DETALLE) */
