@@ -575,7 +575,7 @@ function jugadosOrdenados(div) {
 
 function pendientesOrdenados(div) {
   return DATOS.fechas.filter((f) => !f.jugado && filtrarPorDivision(f, div))
-    .sort((a, b) => fechaHora(a) - fechaHora(b));
+    .sort((a, b) => (fechaHora(a) || Infinity) - (fechaHora(b) || Infinity));
 }
 
 function pintarResultadosInicio() {
