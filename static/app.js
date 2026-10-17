@@ -1378,11 +1378,22 @@ function cartaDe(j) {
 const tierDe = (ovr) => (ovr >= 82 ? 'oro' : ovr >= 72 ? 'plata' : 'bronce');
 const TIER_TXT = { oro: 'ORO', plata: 'PLATA', bronce: 'BRONCE' };
 
+let _cartasActuales = [];
+
+const tierCss = (ovr) => {
+  if (ovr >= 82) return { bg: 'linear-gradient(170deg,#FFFDF3 0%,#FDF3D2 55%,#FBE9B0 100%)', bd: '#E0A800', tierCol: '#B8860B' };
+  if (ovr >= 72) return { bg: 'linear-gradient(170deg,#FFFFFF 0%,#EEF1F6 55%,#DDE3EC 100%)', bd: '#9AA9BE', tierCol: '#5B6B83' };
+  return { bg: 'linear-gradient(170deg,#FFFCF8 0%,#FBEDE0 55%,#F3DCC6 100%)', bd: '#C0703A', tierCol: '#8A4B1E' };
+};
+
+const TIER_DATA = { oro: 'ORO', plata: 'PLATA', bronce: 'BRONCE' };
+
 /* Markup de una carta de jugador. */
 function tarjetaCarta(j) {
   const c = j._carta;
   const tier = tierDe(c.ovr);
   const color = j.color || '#5DA4B6';
+  const tc = tierCss(c.ovr);
   const escudoHtml = j.escudo
     ? `<span class="fc-crest logo-img"><img src="/static/${esc(j.escudo)}" alt="" loading="lazy"></span>`
     : `<span class="fc-crest">${esc(j.sigla || inicialesJugador(j.equipo))}</span>`;
@@ -1390,22 +1401,24 @@ function tarjetaCarta(j) {
     `<div class="fc-stat"><b>${val}</b><span>${lbl}</span><i style="--v:${val}%"></i></div>`;
 
   return `
-    <article class="fc-card fc-${tier} reveal" style="--eq:${esc(color)};--eq-txt:${textoLegible(color)}">
-      <div class="fc-head">
-        <div class="fc-rating"><strong>${c.ovr}</strong><span>${c.pos}</span></div>
-        <span class="fc-tier">${TIER_TXT[tier]}</span>
-      </div>
-      <div class="fc-ball-wrap">
-        <div class="fc-ball"><span class="fc-ini">${esc(c.ini)}</span></div>
+    <button type="button" class="fc-card fc-${tier} reveal" data-id="${esc(String(j.id))}"
+      style="--eq:${esc(color)};--eq-txt:${textoLegible(color)};--tier-bg:${tc.bg};--tier-bd:${tc.bd};--tier:${tc.tierCol}">
+      <span class="fc-head">
+        <span class="fc-rating"><strong>${c.ovr}</strong><span>${c.pos}</span></span>
+        <span class="fc-tier">${TIER_DATA[tier]}</span>
+      </span>
+      <span class="fc-ball-wrap">
+        <span class="fc-ball"><span class="fc-ini">${esc(c.ini)}</span></span>
         ${escudoHtml}
-      </div>
-      <h3 class="fc-name">${esc(j.nombre)}</h3>
+      </span>
+      <span class="fc-name">${esc(j.nombre)}</span>
       <span class="fc-team">${esc(j.equipo)}</span>
-      <div class="fc-stats">
+      <span class="fc-stats">
         ${stat('PAC', c.pac)}${stat('SHO', c.sho)}${stat('PAS', c.pas)}
         ${stat('DRI', c.dri)}${stat('DEF', c.def)}${stat('PHY', c.phy)}
-      </div>
-    </article>`;
+      </span>
+      <span class="fc-hint">Click para detalle</span>
+    </button>`;
 }
 
 /* Lista de jugadores (con metadata de equipo) segun los filtros activos. */
@@ -1455,6 +1468,8 @@ function pintarCartas() {
   const lista = cartasLista().sort((a, b) =>
     b._carta.ovr - a._carta.ovr || a.nombre.localeCompare(b.nombre, 'es'));
 
+  _cartasActuales = lista;
+
   if (nota) nota.textContent = `${lista.length} ${lista.length === 1 ? 'carta' : 'cartas'}`;
 
   if (destacados) {
@@ -1468,6 +1483,104 @@ function pintarCartas() {
       : vacio('No hay jugadores que coincidan con tu busqueda.');
   }
   revelar();
+  _configurarCartasClickeables();
+}
+
+function _configurarCartasClickeables() {
+  document.querySelectorAll('.fc-card[data-id]').forEach((btn) => {
+    if (btn.dataset.cartabind === '1') return;
+    btn.dataset.cartabind = '1';
+    btn.addEventListener('click', (ev) => {
+      ev.preventDefault();
+      const id = btn.getAttribute('data-id');
+      const j = _cartasActuales.find((x) => String(x.id) === String(id));
+      if (j) abrirCartaModal(j);
+    });
+  });
+}
+
+function abrirCartaModal(j) {
+  const modal = $('#cartaModal');
+  if (!modal) return;
+  modal.innerHTML = cartaModalHTML(j);
+  modal.removeAttribute('hidden');
+  document.body.classList.add('carta-modal-abierto');
+  modal.dataset.open = '1';
+
+  const fondo = modal.querySelector('.carta-modal-fondo');
+  const cerrar = modal.querySelector('.carta-modal-x');
+  const onClose = () => {
+    modal.setAttribute('hidden', '');
+    document.body.classList.remove('carta-modal-abierto');
+    delete modal.dataset.open;
+    if (fondo) fondo.removeEventListener('click', onClose);
+    if (cerrar) cerrar.removeEventListener('click', onClose);
+    document.removeEventListener('keydown', onKey);
+  };
+  const onKey = (e) => { if (e.key === 'Escape') onClose(); };
+  if (fondo) fondo.addEventListener('click', onClose);
+  if (cerrar) cerrar.addEventListener('click', onClose);
+  document.addEventListener('keydown', onKey);
+}
+
+function cartaModalHTML(j) {
+  const c = j._carta;
+  const tier = tierDe(c.ovr);
+  const color = j.color || '#5DA4B6';
+  const tc = tierCss(c.ovr);
+  const escudoHtml = j.escudo
+    ? `<div class="cm-crest-grande logo-img"><img src="/static/${esc(j.escudo)}" alt=""></div>`
+    : `<div class="cm-crest-grande">${esc(j.sigla || inicialesJugador(j.equipo))}</div>`;
+  const statF = (lbl, val) => `<div class="cm-fs"><b>${val}</b><span>${lbl}</span></div>`;
+
+  const f = fuerzaEquipos().get(j.equipoId) || { pj: 0, gf: 0, gc: 0, w: 0 };
+  const wr = f.pj ? Math.round((f.w / f.pj) * 100) : 0;
+  const tierText = TIER_DATA[tier];
+
+  return `
+  <div class="carta-modal-fondo" aria-hidden="true"></div>
+  <div class="carta-modal-card" role="document" style="--eq:${esc(color)};--eq-txt:${textoLegible(color)};--tier:${tc.tierCol};--tier-bd:${tc.bd}">
+    <button type="button" class="carta-modal-x" aria-label="Cerrar">×</button>
+    <div class="cm-izq">
+      <div class="cm-ball-grande">
+        <span class="cm-ini-grande">${esc(c.ini)}</span>
+        ${escudoHtml}
+      </div>
+      <div style="display:flex;flex-direction:column;gap:4px;align-items:center">
+        <span class="cm-nombre">${esc(j.nombre)}</span>
+        <span class="cm-equipo-l">${esc(j.equipo)} · ${esc(j.division || '-')} · ${c.pos}</span>
+      </div>
+      <div class="cm-fifa">
+        <div class="cm-fifa-head">
+          <small>STATS FIFA</small>
+          <span class="cm-fifa-t">${tierText} ${c.ovr}</span>
+        </div>
+        <div class="cm-fifa-grid">
+          ${statF('PAC', c.pac)}${statF('SHO', c.sho)}${statF('PAS', c.pas)}${statF('DRI', c.dri)}${statF('DEF', c.def)}${statF('PHY', c.phy)}
+        </div>
+      </div>
+    </div>
+    <div class="cm-der">
+      <div class="cm-datos">
+        <h4>DATOS DE LA TEMPORADA</h4>
+        <div class="cm-lista">
+          <div class="cm-item"><small>Partidos jugados (equipo)</small><strong>${f.pj}</strong></div>
+          <div class="cm-item"><small>Goles</small><strong>${num(j.goles)}</strong></div>
+          <div class="cm-item"><small>Asistencias</small><strong>${num(j.asistencias)}</strong></div>
+          <div class="cm-item"><small>Autogoles</small><strong>${num(j.autogoles)}</strong></div>
+          <div class="cm-item"><small>Clean Sheets</small><strong>${num(j.cs)}</strong></div>
+          <div class="cm-item"><small>Victorias (equipo)</small><strong>${f.w}</strong></div>
+          <div class="cm-item"><small>Win Rate</small><strong>${wr}%</strong></div>
+          <div class="cm-item"><small>GF / GC</small><strong>${f.gf} / ${f.gc}</strong></div>
+          <div class="cm-item full"><small>Equipo · División</small><strong>${esc(j.equipo)} (${esc(j.division || '-').toUpperCase()})</strong></div>
+          <div class="cm-item"><small>Posición</small><strong>${c.pos}</strong></div>
+          <div class="cm-item"><small>Rating / Tier</small><strong>${c.ovr} · ${tierText}</strong></div>
+        </div>
+      </div>
+      <span class="cm-tier-badge">TIER ${tierText}</span>
+    </div>
+  </div>
+  `;
 }
 
 function eventosCartas() {
