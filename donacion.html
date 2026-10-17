@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Donaciones | The Diamonds League</title>
-<meta name="description" content="Metodos para apoyar a The Diamonds League, la liga de HaxBall X5: PayPal, Nequi, BTC y mas.">
-<meta name="keywords" content="The Diamonds League, donaciones, HaxBall, PayPal, Nequi, BTC, apoyar la liga">
+<meta name="description" content="Apoya a The Diamonds League, la liga de HaxBall X5. Dona por PayPal, Nequi, Bancamiga o Western Union y ayuda a mantener la liga.">
+<meta name="keywords" content="The Diamonds League, donaciones, HaxBall, PayPal, Nequi, Bancamiga, Western Union, apoyar la liga">
 <meta name="author" content="Neptunzinho">
 <meta name="robots" content="index, follow, max-image-preview:large">
 <link rel="canonical" href="https://diamonds-league.vercel.app/donacion">
@@ -55,12 +55,13 @@
       <a href="/liga" data-nav="liga">Diamonds League</a>
       <a href="/museo" data-nav="museo">Museo</a>
       <a href="/estadisticas" data-nav="estadisticas">Estadisticas</a>
+      <a href="/cartas" data-nav="cartas">Cartas</a>
       <a href="/pubs" data-nav="pubs">Pubs</a>
       <a href="/redes" data-nav="redes">Redes sociales</a>
       <a href="/equipo" data-nav="equipo">Equipo administracion</a>
       <a href="/sponsors" data-nav="sponsors">Sponsors</a>
-      <a class="nav-shop" href="https://diamondshop-lovat.vercel.app/" target="_blank" rel="noopener" data-nav="shop">Shop</a>
-      <a class="nav-donar" href="/donacion" data-nav="donacion">Donar</a>
+      <a class="nav-shop" href="https://diamondshop-lovat.vercel.app/" target="_blank" rel="noopener" data-nav="shop"><i class="nav-ic">&#128717;</i>Shop</a>
+      <a class="nav-donar" href="/donacion" data-nav="donacion"><i class="nav-ic">&#9829;</i>Donar</a>
     </nav>
     <div class="top-right">
       <button class="menu-toggle" type="button" id="menuToggle" aria-label="Abrir menu" aria-expanded="false">
@@ -72,7 +73,7 @@
 </header>
 
 <main class="main" id="main">
-<section class="page-hero">
+<section class="page-hero donacion-hero">
   <div class="wrap">
     <span class="etiqueta" data-etiqueta="donacion">DONACION</span>
     <h1 class="display" data-titulo="donacion">Donaciones</h1>
@@ -81,8 +82,9 @@
 </section>
 
 <div class="wrap page">
+  <p class="sec-sub centro donacion-intro">Elige un metodo, realiza tu aporte y ayudanos a mantener la liga, los servidores y los premios. Cada grano de arena cuenta.</p>
+
   <div class="donacion-grid" id="donacionGrid"></div>
-  <p class="sec-sub centro">Cada aporte se destina a mantener los servidores y los premios de la liga.</p>
 
   <div class="donar-cta reveal">
     <h2>&iquest;Quieres apoyar de otra forma?</h2>
@@ -90,6 +92,48 @@
     <a class="btn-donar-cta" href="https://discord.gg/6K7nezXhx6" target="_blank" rel="noopener">
       ENTRA AL DISCORD &#183; CREA TU TICKET Y APOYANOS :)
     </a>
+  </div>
+</div>
+
+<!-- ===== MODAL DE DONACION ===== -->
+<div class="donacion-modal" id="donacionModal" hidden>
+  <div class="donacion-modal-fondo" data-cerrar-donacion></div>
+  <div class="donacion-modal-card" role="dialog" aria-modal="true" aria-labelledby="donacionModalTitulo">
+    <button class="donacion-modal-x" type="button" data-cerrar-donacion aria-label="Cerrar">&times;</button>
+
+    <div class="donacion-modal-top">
+      <span class="donacion-modal-logo" id="donacionModalLogo"></span>
+      <div class="donacion-modal-head">
+        <span class="donacion-tag" id="donacionModalTag"></span>
+        <h3 id="donacionModalTitulo"></h3>
+        <p class="donacion-modal-txt" id="donacionModalTexto"></p>
+      </div>
+    </div>
+
+    <div class="donacion-modal-detalle" id="donacionModalDetalle"></div>
+
+    <a class="donacion-modal-btn" id="donacionModalBtn" href="#" target="_blank" rel="noopener">
+      <span id="donacionModalBtnTxt">DONAR</span>
+    </a>
+
+    <div class="donacion-modal-discord" id="donacionModalDiscord" hidden>
+      <span class="donacion-discord-ic" aria-hidden="true">&#128172;</span>
+      <div>
+        <strong>Ya casi esta. Envia tu captura de donacion</strong>
+        <p>Entra a nuestro Discord, abre un <b>ticket</b> y adjunta la captura de tu donacion para confirmar tu aporte y ayudar a la causa. &#128153;</p>
+        <a class="donacion-discord-btn" href="https://discord.gg/6K7nezXhx6" target="_blank" rel="noopener">ABRIR DISCORD Y ENVIAR CAPTURA</a>
+      </div>
+    </div>
+
+    <div class="donacion-acordeon" id="donacionModalAcordeon">
+      <button class="donacion-acordeon-cab" type="button" aria-expanded="false">
+        <span>&iquest;A que se destinan las donaciones?</span>
+        <i aria-hidden="true">+</i>
+      </button>
+      <div class="donacion-acordeon-cuerpo">
+        <p>[VACIO por el momento]</p>
+      </div>
+    </div>
   </div>
 </div>
 </main>
