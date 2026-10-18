@@ -953,7 +953,7 @@ const ROLES_INFO = {
 };
 const GRUPOS_EQUIPO = [
   { clave: 'owners', titulo: "Owner's", color: '#FFD86B' },
-  { clave: 'staff', titulo: 'Staff', color: '#0AFFD6' },
+  { clave: 'staff', titulo: 'Staff', color: '#E8B23E' },
   { clave: 'dev', titulo: 'Desarrollador', color: '#FF4D9D' }
 ];
 function infoRol(rol) {
@@ -1113,6 +1113,327 @@ function pintarEquipoDetalle() {
   }
   const nota = $('#eqPlantillaNota');
   if (nota) nota.textContent = `${(eq.jugadores || []).length} jugadores`;
+}
+
+/* ---------------------------------------------------------------- CARTAS */
+/* Cartas estilo FIFA (Haxball) calculadas a partir de las estadisticas
+   reales de cada jugador y de la fuerza de su equipo. */
+let _fuerzaCache = null;
+let _porterosCache = null;
+
+/* Resumen de rendimiento por equipo (partidos, goles a favor/en contra, victorias). */
+function fuerzaEquipos() {
+  if (_fuerzaCache) return _fuerzaCache;
+  const m = new Map();
+  DATOS.equipos.forEach((e) => m.set(e.id, { pj: 0, gf: 0, gc: 0, w: 0 }));
+  DATOS.fechas.filter((f) => f.jugado).forEach((f) => {
+    const a = m.get(f.equipo_a_id), b = m.get(f.equipo_b_id);
+    if (!a || !b) return;
+    const ga = num(f.goles_a), gb = num(f.goles_b);
+    a.pj++; b.pj++; a.gf += ga; a.gc += gb; b.gf += gb; b.gc += ga;
+    if (ga > gb) a.w++; else if (gb > ga) b.w++;
+  });
+  _fuerzaCache = m;
+  return m;
+}
+
+/* Ids de jugadores que alguna vez atajaron (para detectar arqueros). */
+function porteroIds() {
+  if (_porterosCache) return _porterosCache;
+  const s = new Set();
+  DATOS.fechas.forEach((f) => {
+    if (f.portero_a) s.add(String(f.portero_a));
+    if (f.portero_b) s.add(String(f.portero_b));
+  });
+  _porterosCache = s;
+  return s;
+}
+
+/* Variacion determinista (0..1) a partir del nombre: da vida a PAC/DRI/PHY
+   sin dejar de ser estable entre cargas. */
+function variacion(str, semilla) {
+  let h = 2166136261 ^ (semilla || 0);
+  const s = String(str || '');
+  for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); }
+  return ((h >>> 0) % 1000) / 1000;
+}
+
+/* Posicion de carta derivada de su rol y sus numeros. */
+function posicionCarta(j) {
+  if (porteroIds().has(String(j.id))) return 'GK';
+  if (num(j.goles) > num(j.asistencias) && num(j.goles) > 0) return 'DEL';
+  if (num(j.asistencias) > 0) return 'MED';
+  return 'DEF';
+}
+
+/* Iniciales tipo Haxball (hasta 2 letras) para el avatar de la bola. */
+function inicialesJugador(nombre) {
+  const partes = String(nombre || '').split(/[^A-Za-z0-9]+/).filter(Boolean);
+  if (partes.length >= 2) return (partes[0].charAt(0) + partes[1].charAt(0)).toUpperCase();
+  const una = partes[0] || '?';
+  return una.slice(0, 2).toUpperCase();
+}
+
+/* Color de texto legible sobre un color de equipo (claro u oscuro). */
+function textoLegible(color) {
+  const h = String(color || '').replace('#', '');
+  if (h.length !== 6) return '#ffffff';
+  const r = parseInt(h.slice(0, 2), 16), g = parseInt(h.slice(2, 4), 16), b = parseInt(h.slice(4, 6), 16);
+  const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  return lum > 0.62 ? '#0a1024' : '#ffffff';
+}
+
+const _corta = (v, lo, hi) => Math.max(lo, Math.min(hi, Math.round(v)));
+
+/* Calcula las 6 stats estilo FIFA + el rating global (OVR). */
+function cartaDe(j) {
+  const f = fuerzaEquipos().get(j.equipoId) || { pj: 0, gf: 0, gc: 0, w: 0 };
+  const g = num(j.goles), a = num(j.asistencias), ag = num(j.autogoles), cs = num(j.cs);
+  const wr = f.pj ? f.w / f.pj : 0;
+  const dif = f.pj ? (f.gf - f.gc) / f.pj : 0;
+
+  const sho = _corta(58 + (g / 6) * 41 - ag * 8, 45, 99);
+  const pas = _corta(58 + (a / 4) * 41, 45, 99);
+  const dri = _corta(58 + ((g + a) / 8) * 31 + variacion(j.nombre, 3) * 8 - 4, 45, 99);
+  const def = _corta(58 + wr * 8 + dif * 3 - ag * 8 + cs * 12, 45, 99);
+  const pac = _corta(58 + wr * 10 + variacion(j.nombre, 1) * 14 - 7, 45, 99);
+  const phy = _corta(58 + Math.min(f.pj, 20) * 0.7 + variacion(j.nombre, 2) * 10 - 5 - ag * 5, 45, 99);
+  const ovr = _corta(sho * 0.26 + pas * 0.2 + dri * 0.19 + def * 0.13 + pac * 0.12 + phy * 0.1 + (g + a) * 1.3, 45, 95);
+
+  return { ovr, sho, pas, dri, def, pac, phy, pos: posicionCarta(j), ini: inicialesJugador(j.nombre) };
+}
+
+const tierDe = (ovr) => (ovr >= 82 ? 'oro' : ovr >= 72 ? 'plata' : 'bronce');
+const TIER_TXT = { oro: 'ORO', plata: 'PLATA', bronce: 'BRONCE' };
+
+let _cartasActuales = [];
+
+const tierCss = (ovr) => {
+  if (ovr >= 82) return { bg: 'linear-gradient(170deg,#FFFDF3 0%,#FDF3D2 55%,#FBE9B0 100%)', bd: '#E0A800', tierCol: '#B8860B' };
+  if (ovr >= 72) return { bg: 'linear-gradient(170deg,#FFFFFF 0%,#EEF1F6 55%,#DDE3EC 100%)', bd: '#9AA9BE', tierCol: '#5B6B83' };
+  return { bg: 'linear-gradient(170deg,#FFFCF8 0%,#FBEDE0 55%,#F3DCC6 100%)', bd: '#C0703A', tierCol: '#8A4B1E' };
+};
+
+const TIER_DATA = { oro: 'ORO', plata: 'PLATA', bronce: 'BRONCE' };
+
+/* Markup de una carta de jugador. */
+function tarjetaCarta(j) {
+  const c = j._carta;
+  const tier = tierDe(c.ovr);
+  const color = j.color || '#5DA4B6';
+  const tc = tierCss(c.ovr);
+  const escudoHtml = j.escudo
+    ? `<span class="fc-crest logo-img"><img src="/static/${esc(j.escudo)}" alt="" loading="lazy"></span>`
+    : `<span class="fc-crest">${esc(j.sigla || inicialesJugador(j.equipo))}</span>`;
+  const stat = (lbl, val) =>
+    `<div class="fc-stat"><b>${val}</b><span>${lbl}</span><i style="--v:${val}%"></i></div>`;
+
+  return `
+    <button type="button" class="fc-card fc-${tier} reveal" data-id="${esc(String(j.id))}"
+      style="--eq:${esc(color)};--eq-txt:${textoLegible(color)};--tier-bg:${tc.bg};--tier-bd:${tc.bd};--tier:${tc.tierCol}">
+      <span class="fc-head">
+        <span class="fc-rating"><strong>${c.ovr}</strong><span>${c.pos}</span></span>
+        <span class="fc-tier">${TIER_DATA[tier]}</span>
+      </span>
+      <span class="fc-ball-wrap">
+        <span class="fc-ball"><span class="fc-ini">${esc(c.ini)}</span></span>
+        ${escudoHtml}
+      </span>
+      <span class="fc-name">${esc(j.nombre)}</span>
+      <span class="fc-team">${esc(j.equipo)}</span>
+      <span class="fc-stats">
+        ${stat('PAC', c.pac)}${stat('SHO', c.sho)}${stat('PAS', c.pas)}
+        ${stat('DRI', c.dri)}${stat('DEF', c.def)}${stat('PHY', c.phy)}
+      </span>
+      <span class="fc-hint">Click para detalle</span>
+    </button>`;
+}
+
+/* Lista de jugadores (con metadata de equipo) segun los filtros activos. */
+function cartasLista() {
+  const porEquipo = new Set(
+    DATOS.equipos.filter((e) => CARTAS.division === 'all' || e.division === CARTAS.division).map((e) => e.id)
+  );
+  const q = CARTAS.buscar.trim().toLowerCase();
+  const lista = [];
+  DATOS.equipos.forEach((e) => {
+    if (!porEquipo.has(e.id)) return;
+    if (CARTAS.equipo !== 'all' && String(e.id) !== String(CARTAS.equipo)) return;
+    (e.jugadores || []).forEach((p) => {
+      if (q && !(String(p.nombre).toLowerCase().includes(q) || e.nombre.toLowerCase().includes(q))) return;
+      const j = {
+        id: p.id, nombre: p.nombre, goles: num(p.goles), asistencias: num(p.asistencias),
+        autogoles: num(p.autogoles), cs: num(p.cs), equipoId: e.id, equipo: e.nombre,
+        sigla: e.sigla, color: e.color, escudo: escudoDe(e), division: e.division
+      };
+      j._carta = cartaDe(j);
+      lista.push(j);
+    });
+  });
+  return lista;
+}
+
+/* Rellena el selector de equipos segun la division activa. */
+function cargarEquipoSelect() {
+  const sel = $('#cartasEquipo');
+  if (!sel) return;
+  const eqs = DATOS.equipos
+    .filter((e) => CARTAS.division === 'all' || e.division === CARTAS.division)
+    .sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'));
+  sel.innerHTML = `<option value="all">Todos los equipos</option>`
+    + eqs.map((e) => `<option value="${e.id}">${esc(e.nombre)}</option>`).join('');
+  sel.value = CARTAS.equipo;
+}
+
+function pintarCartas() {
+  const grid = $('#cartasGrid');
+  const destacados = $('#cartasDestacados');
+  const nota = $('#cartasNota');
+  if (!grid && !destacados) return;
+
+  $$('#cartasDivision .chip').forEach((b) => b.classList.toggle('activa', b.dataset.division === CARTAS.division));
+
+  const lista = cartasLista().sort((a, b) =>
+    b._carta.ovr - a._carta.ovr || a.nombre.localeCompare(b.nombre, 'es'));
+
+  _cartasActuales = lista;
+
+  if (nota) nota.textContent = `${lista.length} ${lista.length === 1 ? 'carta' : 'cartas'}`;
+
+  if (destacados) {
+    destacados.innerHTML = lista.length
+      ? lista.slice(0, 3).map(tarjetaCarta).join('')
+      : vacio('Sin jugadores para mostrar.');
+  }
+  if (grid) {
+    grid.innerHTML = lista.length
+      ? lista.map(tarjetaCarta).join('')
+      : vacio('No hay jugadores que coincidan con tu busqueda.');
+  }
+  revelar();
+  _configurarCartasClickeables();
+}
+
+function _configurarCartasClickeables() {
+  document.querySelectorAll('.fc-card[data-id]').forEach((btn) => {
+    if (btn.dataset.cartabind === '1') return;
+    btn.dataset.cartabind = '1';
+    btn.addEventListener('click', (ev) => {
+      ev.preventDefault();
+      const id = btn.getAttribute('data-id');
+      const j = _cartasActuales.find((x) => String(x.id) === String(id));
+      if (j) abrirCartaModal(j);
+    });
+  });
+}
+
+function abrirCartaModal(j) {
+  const modal = $('#cartaModal');
+  if (!modal) return;
+  modal.innerHTML = cartaModalHTML(j);
+  modal.removeAttribute('hidden');
+  document.body.classList.add('carta-modal-abierto');
+  modal.dataset.open = '1';
+
+  const fondo = modal.querySelector('.carta-modal-fondo');
+  const cerrar = modal.querySelector('.carta-modal-x');
+  const onClose = () => {
+    modal.setAttribute('hidden', '');
+    document.body.classList.remove('carta-modal-abierto');
+    delete modal.dataset.open;
+    if (fondo) fondo.removeEventListener('click', onClose);
+    if (cerrar) cerrar.removeEventListener('click', onClose);
+    document.removeEventListener('keydown', onKey);
+  };
+  const onKey = (e) => { if (e.key === 'Escape') onClose(); };
+  if (fondo) fondo.addEventListener('click', onClose);
+  if (cerrar) cerrar.addEventListener('click', onClose);
+  document.addEventListener('keydown', onKey);
+}
+
+function cartaModalHTML(j) {
+  const c = j._carta;
+  const tier = tierDe(c.ovr);
+  const color = j.color || '#5DA4B6';
+  const tc = tierCss(c.ovr);
+  const escudoHtml = j.escudo
+    ? `<div class="cm-crest-grande logo-img"><img src="/static/${esc(j.escudo)}" alt=""></div>`
+    : `<div class="cm-crest-grande">${esc(j.sigla || inicialesJugador(j.equipo))}</div>`;
+  const statF = (lbl, val) => `<div class="cm-fs"><b>${val}</b><span>${lbl}</span></div>`;
+
+  const f = fuerzaEquipos().get(j.equipoId) || { pj: 0, gf: 0, gc: 0, w: 0 };
+  const wr = f.pj ? Math.round((f.w / f.pj) * 100) : 0;
+  const tierText = TIER_DATA[tier];
+
+  return `
+  <div class="carta-modal-fondo" aria-hidden="true"></div>
+  <div class="carta-modal-card" role="document" style="--eq:${esc(color)};--eq-txt:${textoLegible(color)};--tier:${tc.tierCol};--tier-bd:${tc.bd}">
+    <button type="button" class="carta-modal-x" aria-label="Cerrar">×</button>
+    <div class="cm-izq">
+      <div class="cm-ball-grande">
+        <span class="cm-ini-grande">${esc(c.ini)}</span>
+        ${escudoHtml}
+      </div>
+      <div style="display:flex;flex-direction:column;gap:4px;align-items:center">
+        <span class="cm-nombre">${esc(j.nombre)}</span>
+        <span class="cm-equipo-l">${esc(j.equipo)} · ${esc(j.division || '-')} · ${c.pos}</span>
+      </div>
+      <div class="cm-fifa">
+        <div class="cm-fifa-head">
+          <small>STATS FIFA</small>
+          <span class="cm-fifa-t">${tierText} ${c.ovr}</span>
+        </div>
+        <div class="cm-fifa-grid">
+          ${statF('PAC', c.pac)}${statF('SHO', c.sho)}${statF('PAS', c.pas)}${statF('DRI', c.dri)}${statF('DEF', c.def)}${statF('PHY', c.phy)}
+        </div>
+      </div>
+    </div>
+    <div class="cm-der">
+      <div class="cm-datos">
+        <h4>DATOS DE LA TEMPORADA</h4>
+        <div class="cm-lista">
+          <div class="cm-item"><small>Partidos jugados (equipo)</small><strong>${f.pj}</strong></div>
+          <div class="cm-item"><small>Goles</small><strong>${num(j.goles)}</strong></div>
+          <div class="cm-item"><small>Asistencias</small><strong>${num(j.asistencias)}</strong></div>
+          <div class="cm-item"><small>Autogoles</small><strong>${num(j.autogoles)}</strong></div>
+          <div class="cm-item"><small>Clean Sheets</small><strong>${num(j.cs)}</strong></div>
+          <div class="cm-item"><small>Victorias (equipo)</small><strong>${f.w}</strong></div>
+          <div class="cm-item"><small>Win Rate</small><strong>${wr}%</strong></div>
+          <div class="cm-item"><small>GF / GC</small><strong>${f.gf} / ${f.gc}</strong></div>
+          <div class="cm-item full"><small>Equipo · División</small><strong>${esc(j.equipo)} (${esc(j.division || '-').toUpperCase()})</strong></div>
+          <div class="cm-item"><small>Posición</small><strong>${c.pos}</strong></div>
+          <div class="cm-item"><small>Rating / Tier</small><strong>${c.ovr} · ${tierText}</strong></div>
+        </div>
+      </div>
+      <span class="cm-tier-badge">TIER ${tierText}</span>
+    </div>
+  </div>
+  `;
+}
+
+function eventosCartas() {
+  const div = $('#cartasDivision');
+  if (div && !div.dataset.config) {
+    div.dataset.config = '1';
+    div.addEventListener('click', (ev) => {
+      const btn = ev.target.closest('[data-division]');
+      if (!btn) return;
+      CARTAS.division = btn.dataset.division;
+      CARTAS.equipo = 'all';
+      cargarEquipoSelect();
+      pintarCartas();
+    });
+  }
+  const sel = $('#cartasEquipo');
+  if (sel && !sel.dataset.config) {
+    sel.dataset.config = '1';
+    sel.addEventListener('change', () => { CARTAS.equipo = sel.value; pintarCartas(); });
+  }
+  const buscar = $('#cartasBuscar');
+  if (buscar && !buscar.dataset.config) {
+    buscar.dataset.config = '1';
+    buscar.addEventListener('input', () => { CARTAS.buscar = buscar.value; pintarCartas(); });
+  }
 }
 
 /* ---------------------------------------------------------- UI GENERAL */

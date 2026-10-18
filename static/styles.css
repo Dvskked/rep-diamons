@@ -98,7 +98,7 @@ h1, h2, .display, .preloader strong, .marca,
   text-transform: uppercase;
 }
 
-::selection { background: var(--cian); color: var(--azul-fondo); }
+::selection { background: rgba(31,122,229,.24); color: var(--texto); }
 
 ::-webkit-scrollbar { width: 11px; height: 11px; }
 ::-webkit-scrollbar-track { background: #00101f; }
