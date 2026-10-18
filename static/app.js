@@ -1028,10 +1028,11 @@ function infoDonacion(d) {
 
 /* Dibuja la lista de datos (etiqueta/valor) de un metodo. */
 function bloqueDatos(datos) {
-  return '<div class="donacion-detalle-lista">' + datos.map((x) => (
+  return '<div class="donacion-detalle-lista">' + datos.map((x, idx) => (
     '<div class="donacion-det-item">'
     + `<span class="donacion-det-label">${esc(x.etiqueta || '')}</span>`
-    + `<span class="donacion-det-valor">${esc(x.valor || '')}</span>`
+    + `<div class="donacion-det-line"><span class="donacion-det-valor">${esc(x.valor || '')}</span>`
+    + `<button class="donacion-copiar-chico" type="button" data-copiar-valor="${esc(x.valor || '')}" aria-label="Copiar ${esc(x.etiqueta || '')}">COPIAR</button></div>`
     + '</div>'
   )).join('') + '</div>';
 }
@@ -1102,14 +1103,14 @@ function abrirDonacion(id) {
       + `<span class="donacion-det-valor">${esc(DONACION_SEL.valor)}</span>`;
     if (btn) { btn.href = DONACION_SEL.valor; btn.classList.remove('is-off'); }
     if (btnTxt) btnTxt.textContent = 'DONAR AHORA';
-  } else if (DONACION_SEL.modo === 'datos') {
+  } else   if (DONACION_SEL.modo === 'datos') {
     const datos = DONACION_SEL.datos.length
       ? DONACION_SEL.datos
       : [{ etiqueta: 'Dato para donar', valor: DONACION_SEL.valor }];
     if (detalle) detalle.innerHTML = bloqueDatos(datos)
-      + `<button class="donacion-copiar" type="button" data-copiar="${esc(DONACION_SEL.valor)}">COPIAR DATOS</button>`;
+      + `<button class="donacion-copiar" type="button" data-copiar="${esc(DONACION_SEL.valor)}">COPIAR TODO</button>`;
     if (btn) { btn.href = '#'; btn.classList.remove('is-off'); }
-    if (btnTxt) btnTxt.textContent = 'DONAR (COPIAR DATOS)';
+    if (btnTxt) btnTxt.textContent = 'DONAR (COPIAR TODO)';
   } else if (DONACION_SEL.modo === 'ticket') {
     if (detalle) detalle.innerHTML = '<span class="donacion-det-label">Como donar</span>'
       + '<span class="donacion-det-valor">Abre un ticket en nuestro Discord y envia la captura de tu donacion.</span>';
@@ -1165,13 +1166,22 @@ function configDonacion() {
 
     modal.addEventListener('click', (ev) => {
       if (ev.target.closest('[data-cerrar-donacion]')) { cerrarDonacion(); return; }
-      const copiar = ev.target.closest('[data-copiar]');
-      if (copiar) {
-        copiarTexto(copiar.dataset.copiar);
-        copiar.textContent = 'COPIADO';
-        setTimeout(() => { copiar.textContent = 'COPIAR DATOS'; }, 1700);
-        return;
-      }
+       const copiar = ev.target.closest('[data-copiar]');
+       if (copiar) {
+         copiarTexto(copiar.dataset.copiar);
+         const old = copiar.textContent;
+         copiar.textContent = 'COPIADO';
+         setTimeout(() => { copiar.textContent = old || 'COPIAR'; }, 1700);
+         return;
+       }
+       const copiarVal = ev.target.closest('[data-copiar-valor]');
+       if (copiarVal) {
+         copiarTexto(copiarVal.dataset.copiarValor);
+         const old = copiarVal.textContent;
+         copiarVal.textContent = 'COPIADO';
+         setTimeout(() => { copiarVal.textContent = old || 'COPIAR'; }, 1500);
+         return;
+       }
       const cab = ev.target.closest('.donacion-acordeon-cab');
       if (cab) {
         const aco = cab.closest('.donacion-acordeon');
