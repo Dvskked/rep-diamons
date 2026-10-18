@@ -21,9 +21,6 @@ const STATS = { division: 'all', buscar: '', orden: 'goles', dir: 'desc' };
 /* Estado del MUSEO (filtros por temporada y division) */
 const MUSEO = { temporada: 'TODO', division: 'TODO' };
 
-/* Estado de CARTAS (division + equipo + busqueda) */
-const CARTAS = { division: 'all', equipo: 'all', buscar: '' };
-
 /* ------------------------------------------------------------ UTILIDADES */
 function ocultarPreloader() {
   const p = document.getElementById('preloader');
@@ -328,7 +325,7 @@ function pintarResultadosLiga() {
 
   const partidos = grupos.get(actual) || [];
   if (nota) nota.textContent = `${partidos.length} partidos jugados · Division ${LIGA.division}`;
-  caja.innerHTML = partidos.map((f) => filaPartido(f, { detalle: false })).join('');
+  caja.innerHTML = partidos.map((f) => filaPartido(f)).join('');
   revelar();
 }
 
@@ -578,7 +575,7 @@ function jugadosOrdenados(div) {
 
 function pendientesOrdenados(div) {
   return DATOS.fechas.filter((f) => !f.jugado && filtrarPorDivision(f, div))
-    .sort((a, b) => (fechaHora(a) || Infinity) - (fechaHora(b) || Infinity));
+    .sort((a, b) => fechaHora(a) - fechaHora(b));
 }
 
 function pintarResultadosInicio() {
@@ -945,30 +942,19 @@ function pintarAnuncios() {
 
 /* ----------------------------------------------------------- EQUIPO */
 const ROLES_INFO = {
-  'OWNER': { grupo: 'fundadores', etiqueta: 'FUNDADORES' },
-  'FUNDADOR': { grupo: 'fundadores', etiqueta: 'FUNDADORES' },
-  'FUNDADORA': { grupo: 'fundadores', etiqueta: 'FUNDADORES' },
+  'OWNER': { grupo: 'owners', etiqueta: "OWNER'S" },
+  'FUNDADOR': { grupo: 'owners', etiqueta: "OWNER'S" },
+  'FUNDADORA': { grupo: 'owners', etiqueta: "OWNER'S" },
   'MASTER': { grupo: 'staff', etiqueta: 'STAFF' },
   'STAFF': { grupo: 'staff', etiqueta: 'STAFF' },
   'COACH': { grupo: 'staff', etiqueta: 'STAFF' },
   'MOD': { grupo: 'staff', etiqueta: 'STAFF' },
-  'ADMIN': { grupo: 'staff', etiqueta: 'STAFF' },
-  'ARBITRO': { grupo: 'arbitros', etiqueta: 'ÁRBITROS' },
-  'ÁRBITRO': { grupo: 'arbitros', etiqueta: 'ÁRBITROS' },
-  'ARBITROS': { grupo: 'arbitros', etiqueta: 'ÁRBITROS' },
-  'DISENADOR': { grupo: 'disenadores', etiqueta: 'DISEÑADORES' },
-  'DISEÑADOR': { grupo: 'disenadores', etiqueta: 'DISEÑADORES' },
-  'DISEÑADORES': { grupo: 'disenadores', etiqueta: 'DISEÑADORES' },
-  'DESARROLLADOR': { grupo: 'programadores', etiqueta: 'PROGRAMADORES' },
-  'PROGRAMADOR': { grupo: 'programadores', etiqueta: 'PROGRAMADORES' },
-  'PROGRAMADORES': { grupo: 'programadores', etiqueta: 'PROGRAMADORES' }
+  'DESARROLLADOR': { grupo: 'dev', etiqueta: 'DESARROLLADOR' }
 };
 const GRUPOS_EQUIPO = [
-  { clave: 'fundadores', titulo: 'Fundadores', color: '#FFD86B' },
-  { clave: 'staff', titulo: 'Staff', color: '#E8B23E' },
-  { clave: 'arbitros', titulo: 'Árbitros', color: '#5AA9F0' },
-  { clave: 'disenadores', titulo: 'Diseñadores', color: '#FF6FB0' },
-  { clave: 'programadores', titulo: 'Programadores', color: '#3B8FE6' }
+  { clave: 'owners', titulo: "Owner's", color: '#FFD86B' },
+  { clave: 'staff', titulo: 'Staff', color: '#0AFFD6' },
+  { clave: 'dev', titulo: 'Desarrollador', color: '#FF4D9D' }
 ];
 function infoRol(rol) {
   return ROLES_INFO[String(rol || 'STAFF').toUpperCase()] || { grupo: 'staff', etiqueta: 'STAFF' };
@@ -978,12 +964,8 @@ function pintarEquipo() {
   if (!caja) return;
   const items = cont('equipo');
   if (!items.length) { caja.innerHTML = vacio('Equipo no publicado.'); return; }
-  const porGrupo = { fundadores: [], staff: [], arbitros: [], disenadores: [], programadores: [] };
-  items.forEach((p) => {
-    const g = infoRol(p.dato_extra).grupo;
-    if (porGrupo[g]) porGrupo[g].push(p);
-    else porGrupo.staff.push(p);
-  });
+  const porGrupo = { owners: [], staff: [], dev: [] };
+  items.forEach((p) => { porGrupo[infoRol(p.dato_extra).grupo].push(p); });
   caja.innerHTML = GRUPOS_EQUIPO.filter((g) => porGrupo[g.clave].length).map((g) => {
     const tarjetas = porGrupo[g.clave].map(renderStaffHTML).join('');
     return `<section class="equipo-grupo ${g.clave}" style="--rol:${g.color}">
@@ -998,14 +980,12 @@ function renderStaffHTML(p) {
   const foto = p.imagen
     ? `<img src="/static/${esc(p.imagen)}" alt="Foto de ${esc(p.titulo)}" loading="lazy" decoding="async">`
     : iniciales(p.titulo);
-  const sub = p.subtitulo ? esc(p.subtitulo).replace(/^[A-Z]{3}\s*\|\s*/i, '') : '';
-  const user = sub ? `<p class="staff-user">Discord · ${sub}</p>` : '';
+  const user = p.subtitulo ? `<p class="staff-user">Discord &middot; @${esc(p.subtitulo)}</p>` : '';
   const texto = p.texto ? `<p class="staff-texto">${esc(p.texto)}</p>` : '';
-  const titulo = p.titulo ? esc(p.titulo).replace(/^[A-Z]{3}\s*\|\s*/i, '') : '';
   return `<article class="staff-card ${info.grupo} reveal">
     <div class="staff-avatar">${foto}</div>
     <span class="staff-rol">${esc(info.etiqueta)}</span>
-    <h4>${titulo}</h4>
+    <h4>${esc(p.titulo)}</h4>
     ${user}${texto}
   </article>`;
 }
@@ -1031,203 +1011,24 @@ function pintarRedes() {
 }
 
 /* -------------------------------------------------------- DONACION */
-let DONACION_ACTUAL = {};
-let DONACION_SEL = null;
-
-/* Determina como funciona un metodo: enlace, datos, ticket o proximamente. */
-function infoDonacion(d) {
-  if (/^https?:/i.test(d.enlace || '')) return { modo: 'link', valor: d.enlace };
-  if (d.ticket) return { modo: 'ticket', valor: 'https://discord.gg/6K7nezXhx6' };
-  const copiar = String(d.copiar || '').trim();
-  if (copiar) return { modo: 'datos', valor: copiar, datos: Array.isArray(d.datos) ? d.datos : [] };
-  return { modo: 'proximamente', valor: '' };
-}
-
-/* Dibuja la lista de datos (etiqueta/valor) de un metodo. */
-function bloqueDatos(datos) {
-  return '<div class="donacion-detalle-lista">' + datos.map((x, idx) => (
-    '<div class="donacion-det-item">'
-    + `<span class="donacion-det-label">${esc(x.etiqueta || '')}</span>`
-    + `<div class="donacion-det-line"><span class="donacion-det-valor">${esc(x.valor || '')}</span>`
-    + `<button class="donacion-copiar-chico" type="button" data-copiar-valor="${esc(x.valor || '')}" aria-label="Copiar ${esc(x.etiqueta || '')}">COPIAR</button></div>`
-    + '</div>'
-  )).join('') + '</div>';
-}
-
-function copiarTexto(txt) {
-  const t = String(txt || '');
-  if (navigator.clipboard && navigator.clipboard.writeText) {
-    navigator.clipboard.writeText(t).catch(() => {});
-  } else {
-    const ta = document.createElement('textarea');
-    ta.value = t; document.body.appendChild(ta); ta.select();
-    try { document.execCommand('copy'); } catch (e) {}
-    ta.remove();
-  }
-}
-
 function pintarDonacion() {
   const caja = $('#donacionGrid');
   if (!caja) return;
-  const items = cont('donacion');
-  DONACION_ACTUAL = {};
-  caja.innerHTML = items.map((d) => {
-    DONACION_ACTUAL[String(d.id)] = d;
-    const info = infoDonacion(d);
+  const iconos = { PAYPAL: '🅿️', NEQUI: '📱', BTC: '₿', DISCORD: '💜' };
+  caja.innerHTML = cont('donacion').map((d) => {
+    const tipo = (d.subtitulo || '').toUpperCase();
     const logo = d.imagen
-      ? `<img src="/static/${esc(d.imagen)}" alt="${esc(d.subtitulo || d.titulo)}" loading="lazy" decoding="async">`
-      : `<span class="donacion-emoji" aria-hidden="true">&#128176;</span>`;
-    const estado = info.modo === 'proximamente'
-      ? '<span class="donacion-estado off">Proximamente</span>'
-      : '<span class="donacion-estado on">Disponible</span>';
-    return `<button type="button" class="donacion-card reveal" data-donacion="${esc(d.id)}" aria-label="Donar con ${esc(d.titulo)}">
-      ${estado}
+      ? `<img src="/static/${esc(d.imagen)}" alt="${esc(tipo)}" loading="lazy" decoding="async">`
+      : (iconos[tipo] || '💛');
+    const inner = `
       <div class="donacion-icon">${logo}</div>
       <small>${esc(d.subtitulo || 'METODO')}</small>
       <strong>${esc(d.titulo)}</strong>
-      <p>${esc(d.texto || '')}</p>
-      <span class="donacion-abrir">Ver detalle &#8594;</span>
-    </button>`;
+      <p>${esc(d.texto || '')}</p>`;
+    return d.enlace
+      ? `<a class="donacion-card reveal" href="${esc(d.enlace)}" target="_blank" rel="noopener">${inner}</a>`
+      : `<div class="donacion-card reveal">${inner}</div>`;
   }).join('') || vacio('No hay metodos de donacion.');
-
-  configDonacion();
-}
-
-function abrirDonacion(id) {
-  const d = DONACION_ACTUAL[String(id)];
-  const modal = $('#donacionModal');
-  if (!d || !modal) return;
-  DONACION_SEL = infoDonacion(d);
-
-  const logo = $('#donacionModalLogo');
-  if (logo) logo.innerHTML = d.imagen
-    ? `<img src="/static/${esc(d.imagen)}" alt="${esc(d.subtitulo || d.titulo)}">` : '';
-  const tag = $('#donacionModalTag');
-  if (tag) tag.textContent = d.subtitulo || 'METODO';
-  const tit = $('#donacionModalTitulo');
-  if (tit) tit.textContent = d.titulo;
-  const txt = $('#donacionModalTexto');
-  if (txt) txt.textContent = d.texto || '';
-
-  const detalle = $('#donacionModalDetalle');
-  const btn = $('#donacionModalBtn');
-  const btnTxt = $('#donacionModalBtnTxt');
-  const disc = $('#donacionModalDiscord');
-  if (disc) disc.hidden = true;
-
-  if (DONACION_SEL.modo === 'link') {
-    if (detalle) detalle.innerHTML = '<span class="donacion-det-label">Enlace de donacion</span>'
-      + `<span class="donacion-det-valor">${esc(DONACION_SEL.valor)}</span>`;
-    if (btn) { btn.href = DONACION_SEL.valor; btn.classList.remove('is-off'); }
-    if (btnTxt) btnTxt.textContent = 'DONAR AHORA';
-  } else   if (DONACION_SEL.modo === 'datos') {
-    const datos = DONACION_SEL.datos.length
-      ? DONACION_SEL.datos
-      : [{ etiqueta: 'Dato para donar', valor: DONACION_SEL.valor }];
-    if (detalle) detalle.innerHTML = bloqueDatos(datos)
-      + `<button class="donacion-copiar" type="button" data-copiar="${esc(DONACION_SEL.valor)}">COPIAR TODO</button>`;
-    if (btn) { btn.href = '#'; btn.classList.remove('is-off'); }
-    if (btnTxt) btnTxt.textContent = 'DONAR (COPIAR TODO)';
-  } else if (DONACION_SEL.modo === 'ticket') {
-    if (detalle) detalle.innerHTML = '<span class="donacion-det-label">Como donar</span>'
-      + '<span class="donacion-det-valor">Abre un ticket en nuestro Discord y envia la captura de tu donacion.</span>';
-    if (btn) { btn.href = DONACION_SEL.valor; btn.classList.remove('is-off'); }
-    if (btnTxt) btnTxt.textContent = 'ABRIR DISCORD Y CREAR TICKET';
-  } else {
-    if (detalle) detalle.innerHTML = '<span class="donacion-det-label">Informacion</span>'
-      + '<span class="donacion-det-valor">Este metodo estara disponible muy pronto.</span>';
-    if (btn) { btn.href = '#'; btn.classList.add('is-off'); }
-    if (btnTxt) btnTxt.textContent = 'PROXIMAMENTE';
-  }
-
-  const aco = $('#donacionModalAcordeon');
-  if (aco) {
-    aco.classList.remove('abierto');
-    const cab = aco.querySelector('.donacion-acordeon-cab');
-    if (cab) cab.setAttribute('aria-expanded', 'false');
-  }
-
-  modal.hidden = false;
-  document.body.classList.add('modal-abierto');
-  const x = modal.querySelector('.donacion-modal-x');
-  if (x) x.focus();
-}
-
-function revelarDiscordDonacion() {
-  const disc = $('#donacionModalDiscord');
-  if (!disc) return;
-  disc.hidden = false;
-  disc.classList.add('ver');
-}
-
-function cerrarDonacion() {
-  const modal = $('#donacionModal');
-  if (!modal || modal.hidden) return;
-  modal.hidden = true;
-  document.body.classList.remove('modal-abierto');
-}
-
-function configDonacion() {
-  const grid = $('#donacionGrid');
-  if (grid && !grid.dataset.config) {
-    grid.dataset.config = '1';
-    grid.addEventListener('click', (ev) => {
-      const card = ev.target.closest('[data-donacion]');
-      if (card) abrirDonacion(card.dataset.donacion);
-    });
-  }
-
-  const modal = $('#donacionModal');
-  if (modal && !modal.dataset.config) {
-    modal.dataset.config = '1';
-
-    modal.addEventListener('click', (ev) => {
-      if (ev.target.closest('[data-cerrar-donacion]')) { cerrarDonacion(); return; }
-       const copiar = ev.target.closest('[data-copiar]');
-       if (copiar) {
-         copiarTexto(copiar.dataset.copiar);
-         const old = copiar.textContent;
-         copiar.textContent = 'COPIADO';
-         setTimeout(() => { copiar.textContent = old || 'COPIAR'; }, 1700);
-         return;
-       }
-       const copiarVal = ev.target.closest('[data-copiar-valor]');
-       if (copiarVal) {
-         copiarTexto(copiarVal.dataset.copiarValor);
-         const old = copiarVal.textContent;
-         copiarVal.textContent = 'COPIADO';
-         setTimeout(() => { copiarVal.textContent = old || 'COPIAR'; }, 1500);
-         return;
-       }
-      const cab = ev.target.closest('.donacion-acordeon-cab');
-      if (cab) {
-        const aco = cab.closest('.donacion-acordeon');
-        const abierto = aco.classList.toggle('abierto');
-        cab.setAttribute('aria-expanded', abierto ? 'true' : 'false');
-      }
-    });
-
-    const btn = $('#donacionModalBtn');
-    if (btn) {
-      btn.addEventListener('click', (ev) => {
-        if (!DONACION_SEL) return;
-        if (DONACION_SEL.modo === 'link') {
-          revelarDiscordDonacion();
-        } else if (DONACION_SEL.modo === 'datos') {
-          ev.preventDefault();
-          copiarTexto(DONACION_SEL.valor);
-          toast('Datos copiados. Envia la captura al Discord.');
-          revelarDiscordDonacion();
-        } else if (DONACION_SEL.modo === 'ticket') {
-          /* el enlace abre Discord directamente */
-        } else {
-          ev.preventDefault();
-        }
-      });
-    }
-
-    document.addEventListener('keydown', (ev) => { if (ev.key === 'Escape') cerrarDonacion(); });
-  }
 }
 
 /* ------------------------------------------------ EQUIPO (DETALLE) */
@@ -1312,327 +1113,6 @@ function pintarEquipoDetalle() {
   }
   const nota = $('#eqPlantillaNota');
   if (nota) nota.textContent = `${(eq.jugadores || []).length} jugadores`;
-}
-
-/* ---------------------------------------------------------------- CARTAS */
-/* Cartas estilo FIFA (Haxball) calculadas a partir de las estadisticas
-   reales de cada jugador y de la fuerza de su equipo. */
-let _fuerzaCache = null;
-let _porterosCache = null;
-
-/* Resumen de rendimiento por equipo (partidos, goles a favor/en contra, victorias). */
-function fuerzaEquipos() {
-  if (_fuerzaCache) return _fuerzaCache;
-  const m = new Map();
-  DATOS.equipos.forEach((e) => m.set(e.id, { pj: 0, gf: 0, gc: 0, w: 0 }));
-  DATOS.fechas.filter((f) => f.jugado).forEach((f) => {
-    const a = m.get(f.equipo_a_id), b = m.get(f.equipo_b_id);
-    if (!a || !b) return;
-    const ga = num(f.goles_a), gb = num(f.goles_b);
-    a.pj++; b.pj++; a.gf += ga; a.gc += gb; b.gf += gb; b.gc += ga;
-    if (ga > gb) a.w++; else if (gb > ga) b.w++;
-  });
-  _fuerzaCache = m;
-  return m;
-}
-
-/* Ids de jugadores que alguna vez atajaron (para detectar arqueros). */
-function porteroIds() {
-  if (_porterosCache) return _porterosCache;
-  const s = new Set();
-  DATOS.fechas.forEach((f) => {
-    if (f.portero_a) s.add(String(f.portero_a));
-    if (f.portero_b) s.add(String(f.portero_b));
-  });
-  _porterosCache = s;
-  return s;
-}
-
-/* Variacion determinista (0..1) a partir del nombre: da vida a PAC/DRI/PHY
-   sin dejar de ser estable entre cargas. */
-function variacion(str, semilla) {
-  let h = 2166136261 ^ (semilla || 0);
-  const s = String(str || '');
-  for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); }
-  return ((h >>> 0) % 1000) / 1000;
-}
-
-/* Posicion de carta derivada de su rol y sus numeros. */
-function posicionCarta(j) {
-  if (porteroIds().has(String(j.id))) return 'GK';
-  if (num(j.goles) > num(j.asistencias) && num(j.goles) > 0) return 'DEL';
-  if (num(j.asistencias) > 0) return 'MED';
-  return 'DEF';
-}
-
-/* Iniciales tipo Haxball (hasta 2 letras) para el avatar de la bola. */
-function inicialesJugador(nombre) {
-  const partes = String(nombre || '').split(/[^A-Za-z0-9]+/).filter(Boolean);
-  if (partes.length >= 2) return (partes[0].charAt(0) + partes[1].charAt(0)).toUpperCase();
-  const una = partes[0] || '?';
-  return una.slice(0, 2).toUpperCase();
-}
-
-/* Color de texto legible sobre un color de equipo (claro u oscuro). */
-function textoLegible(color) {
-  const h = String(color || '').replace('#', '');
-  if (h.length !== 6) return '#ffffff';
-  const r = parseInt(h.slice(0, 2), 16), g = parseInt(h.slice(2, 4), 16), b = parseInt(h.slice(4, 6), 16);
-  const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-  return lum > 0.62 ? '#0a1024' : '#ffffff';
-}
-
-const _corta = (v, lo, hi) => Math.max(lo, Math.min(hi, Math.round(v)));
-
-/* Calcula las 6 stats estilo FIFA + el rating global (OVR). */
-function cartaDe(j) {
-  const f = fuerzaEquipos().get(j.equipoId) || { pj: 0, gf: 0, gc: 0, w: 0 };
-  const g = num(j.goles), a = num(j.asistencias), ag = num(j.autogoles), cs = num(j.cs);
-  const wr = f.pj ? f.w / f.pj : 0;
-  const dif = f.pj ? (f.gf - f.gc) / f.pj : 0;
-
-  const sho = _corta(58 + (g / 6) * 41 - ag * 8, 45, 99);
-  const pas = _corta(58 + (a / 4) * 41, 45, 99);
-  const dri = _corta(58 + ((g + a) / 8) * 31 + variacion(j.nombre, 3) * 8 - 4, 45, 99);
-  const def = _corta(58 + wr * 8 + dif * 3 - ag * 8 + cs * 12, 45, 99);
-  const pac = _corta(58 + wr * 10 + variacion(j.nombre, 1) * 14 - 7, 45, 99);
-  const phy = _corta(58 + Math.min(f.pj, 20) * 0.7 + variacion(j.nombre, 2) * 10 - 5 - ag * 5, 45, 99);
-  const ovr = _corta(sho * 0.26 + pas * 0.2 + dri * 0.19 + def * 0.13 + pac * 0.12 + phy * 0.1 + (g + a) * 1.3, 45, 95);
-
-  return { ovr, sho, pas, dri, def, pac, phy, pos: posicionCarta(j), ini: inicialesJugador(j.nombre) };
-}
-
-const tierDe = (ovr) => (ovr >= 82 ? 'oro' : ovr >= 72 ? 'plata' : 'bronce');
-const TIER_TXT = { oro: 'ORO', plata: 'PLATA', bronce: 'BRONCE' };
-
-let _cartasActuales = [];
-
-const tierCss = (ovr) => {
-  if (ovr >= 82) return { bg: 'linear-gradient(170deg,#FFFDF3 0%,#FDF3D2 55%,#FBE9B0 100%)', bd: '#E0A800', tierCol: '#B8860B' };
-  if (ovr >= 72) return { bg: 'linear-gradient(170deg,#FFFFFF 0%,#EEF1F6 55%,#DDE3EC 100%)', bd: '#9AA9BE', tierCol: '#5B6B83' };
-  return { bg: 'linear-gradient(170deg,#FFFCF8 0%,#FBEDE0 55%,#F3DCC6 100%)', bd: '#C0703A', tierCol: '#8A4B1E' };
-};
-
-const TIER_DATA = { oro: 'ORO', plata: 'PLATA', bronce: 'BRONCE' };
-
-/* Markup de una carta de jugador. */
-function tarjetaCarta(j) {
-  const c = j._carta;
-  const tier = tierDe(c.ovr);
-  const color = j.color || '#5DA4B6';
-  const tc = tierCss(c.ovr);
-  const escudoHtml = j.escudo
-    ? `<span class="fc-crest logo-img"><img src="/static/${esc(j.escudo)}" alt="" loading="lazy"></span>`
-    : `<span class="fc-crest">${esc(j.sigla || inicialesJugador(j.equipo))}</span>`;
-  const stat = (lbl, val) =>
-    `<div class="fc-stat"><b>${val}</b><span>${lbl}</span><i style="--v:${val}%"></i></div>`;
-
-  return `
-    <button type="button" class="fc-card fc-${tier} reveal" data-id="${esc(String(j.id))}"
-      style="--eq:${esc(color)};--eq-txt:${textoLegible(color)};--tier-bg:${tc.bg};--tier-bd:${tc.bd};--tier:${tc.tierCol}">
-      <span class="fc-head">
-        <span class="fc-rating"><strong>${c.ovr}</strong><span>${c.pos}</span></span>
-        <span class="fc-tier">${TIER_DATA[tier]}</span>
-      </span>
-      <span class="fc-ball-wrap">
-        <span class="fc-ball"><span class="fc-ini">${esc(c.ini)}</span></span>
-        ${escudoHtml}
-      </span>
-      <span class="fc-name">${esc(j.nombre)}</span>
-      <span class="fc-team">${esc(j.equipo)}</span>
-      <span class="fc-stats">
-        ${stat('PAC', c.pac)}${stat('SHO', c.sho)}${stat('PAS', c.pas)}
-        ${stat('DRI', c.dri)}${stat('DEF', c.def)}${stat('PHY', c.phy)}
-      </span>
-      <span class="fc-hint">Click para detalle</span>
-    </button>`;
-}
-
-/* Lista de jugadores (con metadata de equipo) segun los filtros activos. */
-function cartasLista() {
-  const porEquipo = new Set(
-    DATOS.equipos.filter((e) => CARTAS.division === 'all' || e.division === CARTAS.division).map((e) => e.id)
-  );
-  const q = CARTAS.buscar.trim().toLowerCase();
-  const lista = [];
-  DATOS.equipos.forEach((e) => {
-    if (!porEquipo.has(e.id)) return;
-    if (CARTAS.equipo !== 'all' && String(e.id) !== String(CARTAS.equipo)) return;
-    (e.jugadores || []).forEach((p) => {
-      if (q && !(String(p.nombre).toLowerCase().includes(q) || e.nombre.toLowerCase().includes(q))) return;
-      const j = {
-        id: p.id, nombre: p.nombre, goles: num(p.goles), asistencias: num(p.asistencias),
-        autogoles: num(p.autogoles), cs: num(p.cs), equipoId: e.id, equipo: e.nombre,
-        sigla: e.sigla, color: e.color, escudo: escudoDe(e), division: e.division
-      };
-      j._carta = cartaDe(j);
-      lista.push(j);
-    });
-  });
-  return lista;
-}
-
-/* Rellena el selector de equipos segun la division activa. */
-function cargarEquipoSelect() {
-  const sel = $('#cartasEquipo');
-  if (!sel) return;
-  const eqs = DATOS.equipos
-    .filter((e) => CARTAS.division === 'all' || e.division === CARTAS.division)
-    .sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'));
-  sel.innerHTML = `<option value="all">Todos los equipos</option>`
-    + eqs.map((e) => `<option value="${e.id}">${esc(e.nombre)}</option>`).join('');
-  sel.value = CARTAS.equipo;
-}
-
-function pintarCartas() {
-  const grid = $('#cartasGrid');
-  const destacados = $('#cartasDestacados');
-  const nota = $('#cartasNota');
-  if (!grid && !destacados) return;
-
-  $$('#cartasDivision .chip').forEach((b) => b.classList.toggle('activa', b.dataset.division === CARTAS.division));
-
-  const lista = cartasLista().sort((a, b) =>
-    b._carta.ovr - a._carta.ovr || a.nombre.localeCompare(b.nombre, 'es'));
-
-  _cartasActuales = lista;
-
-  if (nota) nota.textContent = `${lista.length} ${lista.length === 1 ? 'carta' : 'cartas'}`;
-
-  if (destacados) {
-    destacados.innerHTML = lista.length
-      ? lista.slice(0, 3).map(tarjetaCarta).join('')
-      : vacio('Sin jugadores para mostrar.');
-  }
-  if (grid) {
-    grid.innerHTML = lista.length
-      ? lista.map(tarjetaCarta).join('')
-      : vacio('No hay jugadores que coincidan con tu busqueda.');
-  }
-  revelar();
-  _configurarCartasClickeables();
-}
-
-function _configurarCartasClickeables() {
-  document.querySelectorAll('.fc-card[data-id]').forEach((btn) => {
-    if (btn.dataset.cartabind === '1') return;
-    btn.dataset.cartabind = '1';
-    btn.addEventListener('click', (ev) => {
-      ev.preventDefault();
-      const id = btn.getAttribute('data-id');
-      const j = _cartasActuales.find((x) => String(x.id) === String(id));
-      if (j) abrirCartaModal(j);
-    });
-  });
-}
-
-function abrirCartaModal(j) {
-  const modal = $('#cartaModal');
-  if (!modal) return;
-  modal.innerHTML = cartaModalHTML(j);
-  modal.removeAttribute('hidden');
-  document.body.classList.add('carta-modal-abierto');
-  modal.dataset.open = '1';
-
-  const fondo = modal.querySelector('.carta-modal-fondo');
-  const cerrar = modal.querySelector('.carta-modal-x');
-  const onClose = () => {
-    modal.setAttribute('hidden', '');
-    document.body.classList.remove('carta-modal-abierto');
-    delete modal.dataset.open;
-    if (fondo) fondo.removeEventListener('click', onClose);
-    if (cerrar) cerrar.removeEventListener('click', onClose);
-    document.removeEventListener('keydown', onKey);
-  };
-  const onKey = (e) => { if (e.key === 'Escape') onClose(); };
-  if (fondo) fondo.addEventListener('click', onClose);
-  if (cerrar) cerrar.addEventListener('click', onClose);
-  document.addEventListener('keydown', onKey);
-}
-
-function cartaModalHTML(j) {
-  const c = j._carta;
-  const tier = tierDe(c.ovr);
-  const color = j.color || '#5DA4B6';
-  const tc = tierCss(c.ovr);
-  const escudoHtml = j.escudo
-    ? `<div class="cm-crest-grande logo-img"><img src="/static/${esc(j.escudo)}" alt=""></div>`
-    : `<div class="cm-crest-grande">${esc(j.sigla || inicialesJugador(j.equipo))}</div>`;
-  const statF = (lbl, val) => `<div class="cm-fs"><b>${val}</b><span>${lbl}</span></div>`;
-
-  const f = fuerzaEquipos().get(j.equipoId) || { pj: 0, gf: 0, gc: 0, w: 0 };
-  const wr = f.pj ? Math.round((f.w / f.pj) * 100) : 0;
-  const tierText = TIER_DATA[tier];
-
-  return `
-  <div class="carta-modal-fondo" aria-hidden="true"></div>
-  <div class="carta-modal-card" role="document" style="--eq:${esc(color)};--eq-txt:${textoLegible(color)};--tier:${tc.tierCol};--tier-bd:${tc.bd}">
-    <button type="button" class="carta-modal-x" aria-label="Cerrar">×</button>
-    <div class="cm-izq">
-      <div class="cm-ball-grande">
-        <span class="cm-ini-grande">${esc(c.ini)}</span>
-        ${escudoHtml}
-      </div>
-      <div style="display:flex;flex-direction:column;gap:4px;align-items:center">
-        <span class="cm-nombre">${esc(j.nombre)}</span>
-        <span class="cm-equipo-l">${esc(j.equipo)} · ${esc(j.division || '-')} · ${c.pos}</span>
-      </div>
-      <div class="cm-fifa">
-        <div class="cm-fifa-head">
-          <small>STATS FIFA</small>
-          <span class="cm-fifa-t">${tierText} ${c.ovr}</span>
-        </div>
-        <div class="cm-fifa-grid">
-          ${statF('PAC', c.pac)}${statF('SHO', c.sho)}${statF('PAS', c.pas)}${statF('DRI', c.dri)}${statF('DEF', c.def)}${statF('PHY', c.phy)}
-        </div>
-      </div>
-    </div>
-    <div class="cm-der">
-      <div class="cm-datos">
-        <h4>DATOS DE LA TEMPORADA</h4>
-        <div class="cm-lista">
-          <div class="cm-item"><small>Partidos jugados (equipo)</small><strong>${f.pj}</strong></div>
-          <div class="cm-item"><small>Goles</small><strong>${num(j.goles)}</strong></div>
-          <div class="cm-item"><small>Asistencias</small><strong>${num(j.asistencias)}</strong></div>
-          <div class="cm-item"><small>Autogoles</small><strong>${num(j.autogoles)}</strong></div>
-          <div class="cm-item"><small>Clean Sheets</small><strong>${num(j.cs)}</strong></div>
-          <div class="cm-item"><small>Victorias (equipo)</small><strong>${f.w}</strong></div>
-          <div class="cm-item"><small>Win Rate</small><strong>${wr}%</strong></div>
-          <div class="cm-item"><small>GF / GC</small><strong>${f.gf} / ${f.gc}</strong></div>
-          <div class="cm-item full"><small>Equipo · División</small><strong>${esc(j.equipo)} (${esc(j.division || '-').toUpperCase()})</strong></div>
-          <div class="cm-item"><small>Posición</small><strong>${c.pos}</strong></div>
-          <div class="cm-item"><small>Rating / Tier</small><strong>${c.ovr} · ${tierText}</strong></div>
-        </div>
-      </div>
-      <span class="cm-tier-badge">TIER ${tierText}</span>
-    </div>
-  </div>
-  `;
-}
-
-function eventosCartas() {
-  const div = $('#cartasDivision');
-  if (div && !div.dataset.config) {
-    div.dataset.config = '1';
-    div.addEventListener('click', (ev) => {
-      const btn = ev.target.closest('[data-division]');
-      if (!btn) return;
-      CARTAS.division = btn.dataset.division;
-      CARTAS.equipo = 'all';
-      cargarEquipoSelect();
-      pintarCartas();
-    });
-  }
-  const sel = $('#cartasEquipo');
-  if (sel && !sel.dataset.config) {
-    sel.dataset.config = '1';
-    sel.addEventListener('change', () => { CARTAS.equipo = sel.value; pintarCartas(); });
-  }
-  const buscar = $('#cartasBuscar');
-  if (buscar && !buscar.dataset.config) {
-    buscar.dataset.config = '1';
-    buscar.addEventListener('input', () => { CARTAS.buscar = buscar.value; pintarCartas(); });
-  }
 }
 
 /* ---------------------------------------------------------- UI GENERAL */
@@ -1745,11 +1225,6 @@ function renderPagina(pagina) {
     case 'estadisticas':
       eventosStats();
       pintarStats();
-      break;
-    case 'cartas':
-      eventosCartas();
-      cargarEquipoSelect();
-      pintarCartas();
       break;
     case 'museo':
       pintarMuseo();
