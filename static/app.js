@@ -945,19 +945,30 @@ function pintarAnuncios() {
 
 /* ----------------------------------------------------------- EQUIPO */
 const ROLES_INFO = {
-  'OWNER': { grupo: 'owners', etiqueta: "OWNER'S" },
-  'FUNDADOR': { grupo: 'owners', etiqueta: "OWNER'S" },
-  'FUNDADORA': { grupo: 'owners', etiqueta: "OWNER'S" },
+  'OWNER': { grupo: 'fundadores', etiqueta: 'FUNDADORES' },
+  'FUNDADOR': { grupo: 'fundadores', etiqueta: 'FUNDADORES' },
+  'FUNDADORA': { grupo: 'fundadores', etiqueta: 'FUNDADORES' },
   'MASTER': { grupo: 'staff', etiqueta: 'STAFF' },
   'STAFF': { grupo: 'staff', etiqueta: 'STAFF' },
   'COACH': { grupo: 'staff', etiqueta: 'STAFF' },
   'MOD': { grupo: 'staff', etiqueta: 'STAFF' },
-  'DESARROLLADOR': { grupo: 'dev', etiqueta: 'DESARROLLADOR' }
+  'ADMIN': { grupo: 'staff', etiqueta: 'STAFF' },
+  'ARBITRO': { grupo: 'arbitros', etiqueta: 'ÁRBITROS' },
+  'ÁRBITRO': { grupo: 'arbitros', etiqueta: 'ÁRBITROS' },
+  'ARBITROS': { grupo: 'arbitros', etiqueta: 'ÁRBITROS' },
+  'DISENADOR': { grupo: 'disenadores', etiqueta: 'DISEÑADORES' },
+  'DISEÑADOR': { grupo: 'disenadores', etiqueta: 'DISEÑADORES' },
+  'DISEÑADORES': { grupo: 'disenadores', etiqueta: 'DISEÑADORES' },
+  'DESARROLLADOR': { grupo: 'programadores', etiqueta: 'PROGRAMADORES' },
+  'PROGRAMADOR': { grupo: 'programadores', etiqueta: 'PROGRAMADORES' },
+  'PROGRAMADORES': { grupo: 'programadores', etiqueta: 'PROGRAMADORES' }
 };
 const GRUPOS_EQUIPO = [
-  { clave: 'owners', titulo: "Owner's", color: '#FFD86B' },
+  { clave: 'fundadores', titulo: 'Fundadores', color: '#FFD86B' },
   { clave: 'staff', titulo: 'Staff', color: '#E8B23E' },
-  { clave: 'dev', titulo: 'Desarrollador', color: '#FF4D9D' }
+  { clave: 'arbitros', titulo: 'Árbitros', color: '#5AA9F0' },
+  { clave: 'disenadores', titulo: 'Diseñadores', color: '#FF6FB0' },
+  { clave: 'programadores', titulo: 'Programadores', color: '#3B8FE6' }
 ];
 function infoRol(rol) {
   return ROLES_INFO[String(rol || 'STAFF').toUpperCase()] || { grupo: 'staff', etiqueta: 'STAFF' };
@@ -967,8 +978,12 @@ function pintarEquipo() {
   if (!caja) return;
   const items = cont('equipo');
   if (!items.length) { caja.innerHTML = vacio('Equipo no publicado.'); return; }
-  const porGrupo = { owners: [], staff: [], dev: [] };
-  items.forEach((p) => { porGrupo[infoRol(p.dato_extra).grupo].push(p); });
+  const porGrupo = { fundadores: [], staff: [], arbitros: [], disenadores: [], programadores: [] };
+  items.forEach((p) => {
+    const g = infoRol(p.dato_extra).grupo;
+    if (porGrupo[g]) porGrupo[g].push(p);
+    else porGrupo.staff.push(p);
+  });
   caja.innerHTML = GRUPOS_EQUIPO.filter((g) => porGrupo[g.clave].length).map((g) => {
     const tarjetas = porGrupo[g.clave].map(renderStaffHTML).join('');
     return `<section class="equipo-grupo ${g.clave}" style="--rol:${g.color}">
@@ -983,12 +998,14 @@ function renderStaffHTML(p) {
   const foto = p.imagen
     ? `<img src="/static/${esc(p.imagen)}" alt="Foto de ${esc(p.titulo)}" loading="lazy" decoding="async">`
     : iniciales(p.titulo);
-  const user = p.subtitulo ? `<p class="staff-user">Discord &middot; @${esc(p.subtitulo)}</p>` : '';
+  const sub = p.subtitulo ? esc(p.subtitulo).replace(/^[A-Z]{3}\s*\|\s*/i, '') : '';
+  const user = sub ? `<p class="staff-user">Discord · ${sub}</p>` : '';
   const texto = p.texto ? `<p class="staff-texto">${esc(p.texto)}</p>` : '';
+  const titulo = p.titulo ? esc(p.titulo).replace(/^[A-Z]{3}\s*\|\s*/i, '') : '';
   return `<article class="staff-card ${info.grupo} reveal">
     <div class="staff-avatar">${foto}</div>
     <span class="staff-rol">${esc(info.etiqueta)}</span>
-    <h4>${esc(p.titulo)}</h4>
+    <h4>${titulo}</h4>
     ${user}${texto}
   </article>`;
 }

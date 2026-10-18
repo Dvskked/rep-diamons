@@ -2445,21 +2445,21 @@ body.carta-modal-abierto { overflow: hidden; }
 .cartas-select select option { background: #0C1830; color: var(--texto); }
 
 .fc-card {
-  --tier-bg: linear-gradient(170deg, rgba(32,56,96,.85) 0%, rgba(18,34,60,.92) 55%, rgba(12,24,48,.95) 100%);
+  --tier-bg: linear-gradient(170deg, rgba(32,56,96,.92) 0%, rgba(18,34,60,.96) 55%, rgba(12,24,48,1) 100%) !important;
   background:
     radial-gradient(130% 90% at 50% -20%, color-mix(in srgb, var(--eq) 22%, transparent) 0%, transparent 60%),
     var(--tier-bg);
   box-shadow: 0 12px 26px -14px rgba(0,0,0,.5), var(--sombra);
 }
-.fc-card.fc-oro    { --tier-bg: linear-gradient(170deg, rgba(60,48,16,.85) 0%, rgba(40,32,12,.92) 55%, rgba(24,20,10,.95) 100%); }
-.fc-card.fc-plata  { --tier-bg: linear-gradient(170deg, rgba(40,50,68,.85) 0%, rgba(26,34,50,.92) 55%, rgba(18,24,36,.95) 100%); }
-.fc-card.fc-bronce { --tier-bg: linear-gradient(170deg, rgba(58,36,20,.85) 0%, rgba(40,26,14,.92) 55%, rgba(26,18,12,.95) 100%); }
+.fc-card.fc-oro    { --tier-bg: linear-gradient(170deg, rgba(70,56,18,.92) 0%, rgba(48,38,14,.96) 55%, rgba(28,24,12,1) 100%) !important; }
+.fc-card.fc-plata  { --tier-bg: linear-gradient(170deg, rgba(46,56,76,.92) 0%, rgba(30,38,56,.96) 55%, rgba(22,28,42,1) 100%) !important; }
+.fc-card.fc-bronce { --tier-bg: linear-gradient(170deg, rgba(66,42,22,.92) 0%, rgba(46,30,16,.96) 55%, rgba(30,22,14,1) 100%) !important; }
 .fc-card:hover { box-shadow: 0 22px 44px -18px color-mix(in srgb, var(--tier-bd) 70%, transparent), var(--sombra-alta); }
 .fc-name, .fc-stat b, .fc-rating strong { color: var(--texto); }
 .fc-team {
-  color: color-mix(in srgb, var(--eq) 45%, #ffffff);
-  background: color-mix(in srgb, var(--eq) 22%, transparent);
-  border: 1px solid color-mix(in srgb, var(--eq) 45%, transparent);
+  color: var(--texto);
+  background: rgba(255,255,255,.08);
+  border: 1px solid rgba(255,255,255,.18);
 }
 .fc-stats { border-top: 1px solid rgba(255,255,255,.10); }
 .fc-stat i { background: rgba(255,255,255,.12); }
@@ -2467,7 +2467,7 @@ body.carta-modal-abierto { overflow: hidden; }
 .carta-modal-card { background: var(--tarjeta-alta); box-shadow: 0 40px 90px -40px rgba(0,0,0,.75); }
 .carta-modal-x { background: rgba(255,255,255,.08); color: var(--texto); }
 .cm-nombre, .cm-item strong { color: var(--texto); }
-.cm-equipo-l { color: color-mix(in srgb, var(--eq) 45%, #ffffff); }
+.cm-equipo-l { color: var(--texto-suave); }
 .cm-fs { background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.10); }
 .cm-datos { background: linear-gradient(170deg, rgba(32,56,96,.7), rgba(18,34,60,.85)); border: 1px solid rgba(255,255,255,.10); }
 .cm-item { background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.08); }
@@ -2487,6 +2487,13 @@ body.carta-modal-abierto { overflow: hidden; }
 #equipoGrid:empty, #redesGrid:empty, #donacionGrid:empty, #foroLista:empty,
 #x5Cancha:empty, #listaGoles:empty, #listaAsistencias:empty, #listaCs:empty,
 #tablaJugadores tbody:empty {
-  background: linear-gradient(100deg, rgba(255,255,255,.04) 40%, rgba(242,194,78,.16) 50%, rgba(255,255,255,.04) 60%);
+  background: linear-gradient(100deg, rgba(255,255,255,.04) 25%, rgba(242,194,78,.14) 37%, rgba(255,255,255,.04) 63%);
   background-size: 220% 100%;
 }
+
+/* --- Equipo de administracion: colores por jerarquia --- */
+.staff-card.staff         { --rol: #E8B23E; }
+.staff-card.fundadores    { --rol: #FFD86B; }
+.staff-card.arbitros      { --rol: #5AA9F0; }
+.staff-card.disenadores   { --rol: #FF6FB0; }
+.staff-card.programadores { --rol: #3B8FE6; }
