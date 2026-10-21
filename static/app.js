@@ -21,6 +21,9 @@ const STATS = { division: 'all', buscar: '', orden: 'goles', dir: 'desc' };
 /* Estado del MUSEO (filtros por temporada y division) */
 const MUSEO = { temporada: 'TODO', division: 'TODO' };
 
+/* Estado de CARTAS (division + equipo + busqueda) */
+const CARTAS = { division: 'all', equipo: 'all', buscar: '' };
+
 /* ------------------------------------------------------------ UTILIDADES */
 function ocultarPreloader() {
   const p = document.getElementById('preloader');
@@ -325,7 +328,7 @@ function pintarResultadosLiga() {
 
   const partidos = grupos.get(actual) || [];
   if (nota) nota.textContent = `${partidos.length} partidos jugados · Division ${LIGA.division}`;
-  caja.innerHTML = partidos.map((f) => filaPartido(f)).join('');
+  caja.innerHTML = partidos.map((f) => filaPartido(f, { detalle: false })).join('');
   revelar();
 }
 
@@ -575,7 +578,7 @@ function jugadosOrdenados(div) {
 
 function pendientesOrdenados(div) {
   return DATOS.fechas.filter((f) => !f.jugado && filtrarPorDivision(f, div))
-    .sort((a, b) => fechaHora(a) - fechaHora(b));
+    .sort((a, b) => (fechaHora(a) || Infinity) - (fechaHora(b) || Infinity));
 }
 
 function pintarResultadosInicio() {
@@ -942,19 +945,30 @@ function pintarAnuncios() {
 
 /* ----------------------------------------------------------- EQUIPO */
 const ROLES_INFO = {
-  'OWNER': { grupo: 'owners', etiqueta: "OWNER'S" },
-  'FUNDADOR': { grupo: 'owners', etiqueta: "OWNER'S" },
-  'FUNDADORA': { grupo: 'owners', etiqueta: "OWNER'S" },
+  'OWNER': { grupo: 'fundadores', etiqueta: 'FUNDADORES' },
+  'FUNDADOR': { grupo: 'fundadores', etiqueta: 'FUNDADORES' },
+  'FUNDADORA': { grupo: 'fundadores', etiqueta: 'FUNDADORES' },
   'MASTER': { grupo: 'staff', etiqueta: 'STAFF' },
   'STAFF': { grupo: 'staff', etiqueta: 'STAFF' },
   'COACH': { grupo: 'staff', etiqueta: 'STAFF' },
   'MOD': { grupo: 'staff', etiqueta: 'STAFF' },
-  'DESARROLLADOR': { grupo: 'dev', etiqueta: 'DESARROLLADOR' }
+  'ADMIN': { grupo: 'staff', etiqueta: 'STAFF' },
+  'ARBITRO': { grupo: 'arbitros', etiqueta: 'ÁRBITROS' },
+  'ÁRBITRO': { grupo: 'arbitros', etiqueta: 'ÁRBITROS' },
+  'ARBITROS': { grupo: 'arbitros', etiqueta: 'ÁRBITROS' },
+  'DISENADOR': { grupo: 'disenadores', etiqueta: 'DISEÑADORES' },
+  'DISEÑADOR': { grupo: 'disenadores', etiqueta: 'DISEÑADORES' },
+  'DISEÑADORES': { grupo: 'disenadores', etiqueta: 'DISEÑADORES' },
+  'DESARROLLADOR': { grupo: 'programadores', etiqueta: 'PROGRAMADORES' },
+  'PROGRAMADOR': { grupo: 'programadores', etiqueta: 'PROGRAMADORES' },
+  'PROGRAMADORES': { grupo: 'programadores', etiqueta: 'PROGRAMADORES' }
 };
 const GRUPOS_EQUIPO = [
-  { clave: 'owners', titulo: "Owner's", color: '#FFD86B' },
+  { clave: 'fundadores', titulo: 'Fundadores', color: '#FFD86B' },
   { clave: 'staff', titulo: 'Staff', color: '#E8B23E' },
-  { clave: 'dev', titulo: 'Desarrollador', color: '#FF4D9D' }
+  { clave: 'arbitros', titulo: 'Árbitros', color: '#5AA9F0' },
+  { clave: 'disenadores', titulo: 'Diseñadores', color: '#FF6FB0' },
+  { clave: 'programadores', titulo: 'Programadores', color: '#3B8FE6' }
 ];
 function infoRol(rol) {
   return ROLES_INFO[String(rol || 'STAFF').toUpperCase()] || { grupo: 'staff', etiqueta: 'STAFF' };
@@ -964,8 +978,12 @@ function pintarEquipo() {
   if (!caja) return;
   const items = cont('equipo');
   if (!items.length) { caja.innerHTML = vacio('Equipo no publicado.'); return; }
-  const porGrupo = { owners: [], staff: [], dev: [] };
-  items.forEach((p) => { porGrupo[infoRol(p.dato_extra).grupo].push(p); });
+  const porGrupo = { fundadores: [], staff: [], arbitros: [], disenadores: [], programadores: [] };
+  items.forEach((p) => {
+    const g = infoRol(p.dato_extra).grupo;
+    if (porGrupo[g]) porGrupo[g].push(p);
+    else porGrupo.staff.push(p);
+  });
   caja.innerHTML = GRUPOS_EQUIPO.filter((g) => porGrupo[g.clave].length).map((g) => {
     const tarjetas = porGrupo[g.clave].map(renderStaffHTML).join('');
     return `<section class="equipo-grupo ${g.clave}" style="--rol:${g.color}">
@@ -980,12 +998,14 @@ function renderStaffHTML(p) {
   const foto = p.imagen
     ? `<img src="/static/${esc(p.imagen)}" alt="Foto de ${esc(p.titulo)}" loading="lazy" decoding="async">`
     : iniciales(p.titulo);
-  const user = p.subtitulo ? `<p class="staff-user">Discord &middot; @${esc(p.subtitulo)}</p>` : '';
+  const sub = p.subtitulo ? esc(p.subtitulo).replace(/^[A-Z]{3}\s*\|\s*/i, '') : '';
+  const user = sub ? `<p class="staff-user">Discord · ${sub}</p>` : '';
   const texto = p.texto ? `<p class="staff-texto">${esc(p.texto)}</p>` : '';
+  const titulo = p.titulo ? esc(p.titulo).replace(/^[A-Z]{3}\s*\|\s*/i, '') : '';
   return `<article class="staff-card ${info.grupo} reveal">
     <div class="staff-avatar">${foto}</div>
     <span class="staff-rol">${esc(info.etiqueta)}</span>
-    <h4>${esc(p.titulo)}</h4>
+    <h4>${titulo}</h4>
     ${user}${texto}
   </article>`;
 }
@@ -1011,24 +1031,203 @@ function pintarRedes() {
 }
 
 /* -------------------------------------------------------- DONACION */
+let DONACION_ACTUAL = {};
+let DONACION_SEL = null;
+
+/* Determina como funciona un metodo: enlace, datos, ticket o proximamente. */
+function infoDonacion(d) {
+  if (/^https?:/i.test(d.enlace || '')) return { modo: 'link', valor: d.enlace };
+  if (d.ticket) return { modo: 'ticket', valor: 'https://discord.gg/6K7nezXhx6' };
+  const copiar = String(d.copiar || '').trim();
+  if (copiar) return { modo: 'datos', valor: copiar, datos: Array.isArray(d.datos) ? d.datos : [] };
+  return { modo: 'proximamente', valor: '' };
+}
+
+/* Dibuja la lista de datos (etiqueta/valor) de un metodo. */
+function bloqueDatos(datos) {
+  return '<div class="donacion-detalle-lista">' + datos.map((x, idx) => (
+    '<div class="donacion-det-item">'
+    + `<span class="donacion-det-label">${esc(x.etiqueta || '')}</span>`
+    + `<div class="donacion-det-line"><span class="donacion-det-valor">${esc(x.valor || '')}</span>`
+    + `<button class="donacion-copiar-chico" type="button" data-copiar-valor="${esc(x.valor || '')}" aria-label="Copiar ${esc(x.etiqueta || '')}">COPIAR</button></div>`
+    + '</div>'
+  )).join('') + '</div>';
+}
+
+function copiarTexto(txt) {
+  const t = String(txt || '');
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(t).catch(() => {});
+  } else {
+    const ta = document.createElement('textarea');
+    ta.value = t; document.body.appendChild(ta); ta.select();
+    try { document.execCommand('copy'); } catch (e) {}
+    ta.remove();
+  }
+}
+
 function pintarDonacion() {
   const caja = $('#donacionGrid');
   if (!caja) return;
-  const iconos = { PAYPAL: '🅿️', NEQUI: '📱', BTC: '₿', DISCORD: '💜' };
-  caja.innerHTML = cont('donacion').map((d) => {
-    const tipo = (d.subtitulo || '').toUpperCase();
+  const items = cont('donacion');
+  DONACION_ACTUAL = {};
+  caja.innerHTML = items.map((d) => {
+    DONACION_ACTUAL[String(d.id)] = d;
+    const info = infoDonacion(d);
     const logo = d.imagen
-      ? `<img src="/static/${esc(d.imagen)}" alt="${esc(tipo)}" loading="lazy" decoding="async">`
-      : (iconos[tipo] || '💛');
-    const inner = `
+      ? `<img src="/static/${esc(d.imagen)}" alt="${esc(d.subtitulo || d.titulo)}" loading="lazy" decoding="async">`
+      : `<span class="donacion-emoji" aria-hidden="true">&#128176;</span>`;
+    const estado = info.modo === 'proximamente'
+      ? '<span class="donacion-estado off">Proximamente</span>'
+      : '<span class="donacion-estado on">Disponible</span>';
+    return `<button type="button" class="donacion-card reveal" data-donacion="${esc(d.id)}" aria-label="Donar con ${esc(d.titulo)}">
+      ${estado}
       <div class="donacion-icon">${logo}</div>
       <small>${esc(d.subtitulo || 'METODO')}</small>
       <strong>${esc(d.titulo)}</strong>
-      <p>${esc(d.texto || '')}</p>`;
-    return d.enlace
-      ? `<a class="donacion-card reveal" href="${esc(d.enlace)}" target="_blank" rel="noopener">${inner}</a>`
-      : `<div class="donacion-card reveal">${inner}</div>`;
+      <p>${esc(d.texto || '')}</p>
+      <span class="donacion-abrir">Ver detalle &#8594;</span>
+    </button>`;
   }).join('') || vacio('No hay metodos de donacion.');
+
+  configDonacion();
+}
+
+function abrirDonacion(id) {
+  const d = DONACION_ACTUAL[String(id)];
+  const modal = $('#donacionModal');
+  if (!d || !modal) return;
+  DONACION_SEL = infoDonacion(d);
+
+  const logo = $('#donacionModalLogo');
+  if (logo) logo.innerHTML = d.imagen
+    ? `<img src="/static/${esc(d.imagen)}" alt="${esc(d.subtitulo || d.titulo)}">` : '';
+  const tag = $('#donacionModalTag');
+  if (tag) tag.textContent = d.subtitulo || 'METODO';
+  const tit = $('#donacionModalTitulo');
+  if (tit) tit.textContent = d.titulo;
+  const txt = $('#donacionModalTexto');
+  if (txt) txt.textContent = d.texto || '';
+
+  const detalle = $('#donacionModalDetalle');
+  const btn = $('#donacionModalBtn');
+  const btnTxt = $('#donacionModalBtnTxt');
+  const disc = $('#donacionModalDiscord');
+  if (disc) disc.hidden = true;
+
+  if (DONACION_SEL.modo === 'link') {
+    if (detalle) detalle.innerHTML = '<span class="donacion-det-label">Enlace de donacion</span>'
+      + `<span class="donacion-det-valor">${esc(DONACION_SEL.valor)}</span>`;
+    if (btn) { btn.href = DONACION_SEL.valor; btn.classList.remove('is-off'); }
+    if (btnTxt) btnTxt.textContent = 'DONAR AHORA';
+  } else   if (DONACION_SEL.modo === 'datos') {
+    const datos = DONACION_SEL.datos.length
+      ? DONACION_SEL.datos
+      : [{ etiqueta: 'Dato para donar', valor: DONACION_SEL.valor }];
+    if (detalle) detalle.innerHTML = bloqueDatos(datos)
+      + `<button class="donacion-copiar" type="button" data-copiar="${esc(DONACION_SEL.valor)}">COPIAR TODO</button>`;
+    if (btn) { btn.href = '#'; btn.classList.remove('is-off'); }
+    if (btnTxt) btnTxt.textContent = 'DONAR (COPIAR TODO)';
+  } else if (DONACION_SEL.modo === 'ticket') {
+    if (detalle) detalle.innerHTML = '<span class="donacion-det-label">Como donar</span>'
+      + '<span class="donacion-det-valor">Abre un ticket en nuestro Discord y envia la captura de tu donacion.</span>';
+    if (btn) { btn.href = DONACION_SEL.valor; btn.classList.remove('is-off'); }
+    if (btnTxt) btnTxt.textContent = 'ABRIR DISCORD Y CREAR TICKET';
+  } else {
+    if (detalle) detalle.innerHTML = '<span class="donacion-det-label">Informacion</span>'
+      + '<span class="donacion-det-valor">Este metodo estara disponible muy pronto.</span>';
+    if (btn) { btn.href = '#'; btn.classList.add('is-off'); }
+    if (btnTxt) btnTxt.textContent = 'PROXIMAMENTE';
+  }
+
+  const aco = $('#donacionModalAcordeon');
+  if (aco) {
+    aco.classList.remove('abierto');
+    const cab = aco.querySelector('.donacion-acordeon-cab');
+    if (cab) cab.setAttribute('aria-expanded', 'false');
+  }
+
+  modal.hidden = false;
+  document.body.classList.add('modal-abierto');
+  const x = modal.querySelector('.donacion-modal-x');
+  if (x) x.focus();
+}
+
+function revelarDiscordDonacion() {
+  const disc = $('#donacionModalDiscord');
+  if (!disc) return;
+  disc.hidden = false;
+  disc.classList.add('ver');
+}
+
+function cerrarDonacion() {
+  const modal = $('#donacionModal');
+  if (!modal || modal.hidden) return;
+  modal.hidden = true;
+  document.body.classList.remove('modal-abierto');
+}
+
+function configDonacion() {
+  const grid = $('#donacionGrid');
+  if (grid && !grid.dataset.config) {
+    grid.dataset.config = '1';
+    grid.addEventListener('click', (ev) => {
+      const card = ev.target.closest('[data-donacion]');
+      if (card) abrirDonacion(card.dataset.donacion);
+    });
+  }
+
+  const modal = $('#donacionModal');
+  if (modal && !modal.dataset.config) {
+    modal.dataset.config = '1';
+
+    modal.addEventListener('click', (ev) => {
+      if (ev.target.closest('[data-cerrar-donacion]')) { cerrarDonacion(); return; }
+       const copiar = ev.target.closest('[data-copiar]');
+       if (copiar) {
+         copiarTexto(copiar.dataset.copiar);
+         const old = copiar.textContent;
+         copiar.textContent = 'COPIADO';
+         setTimeout(() => { copiar.textContent = old || 'COPIAR'; }, 1700);
+         return;
+       }
+       const copiarVal = ev.target.closest('[data-copiar-valor]');
+       if (copiarVal) {
+         copiarTexto(copiarVal.dataset.copiarValor);
+         const old = copiarVal.textContent;
+         copiarVal.textContent = 'COPIADO';
+         setTimeout(() => { copiarVal.textContent = old || 'COPIAR'; }, 1500);
+         return;
+       }
+      const cab = ev.target.closest('.donacion-acordeon-cab');
+      if (cab) {
+        const aco = cab.closest('.donacion-acordeon');
+        const abierto = aco.classList.toggle('abierto');
+        cab.setAttribute('aria-expanded', abierto ? 'true' : 'false');
+      }
+    });
+
+    const btn = $('#donacionModalBtn');
+    if (btn) {
+      btn.addEventListener('click', (ev) => {
+        if (!DONACION_SEL) return;
+        if (DONACION_SEL.modo === 'link') {
+          revelarDiscordDonacion();
+        } else if (DONACION_SEL.modo === 'datos') {
+          ev.preventDefault();
+          copiarTexto(DONACION_SEL.valor);
+          toast('Datos copiados. Envia la captura al Discord.');
+          revelarDiscordDonacion();
+        } else if (DONACION_SEL.modo === 'ticket') {
+          /* el enlace abre Discord directamente */
+        } else {
+          ev.preventDefault();
+        }
+      });
+    }
+
+    document.addEventListener('keydown', (ev) => { if (ev.key === 'Escape') cerrarDonacion(); });
+  }
 }
 
 /* ------------------------------------------------ EQUIPO (DETALLE) */
@@ -1546,6 +1745,11 @@ function renderPagina(pagina) {
     case 'estadisticas':
       eventosStats();
       pintarStats();
+      break;
+    case 'cartas':
+      eventosCartas();
+      cargarEquipoSelect();
+      pintarCartas();
       break;
     case 'museo':
       pintarMuseo();
