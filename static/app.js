@@ -24,6 +24,12 @@ const MUSEO = { temporada: 'TODO', division: 'TODO' };
 /* Estado de CARTAS (division + equipo + busqueda) */
 const CARTAS = { division: 'all', equipo: 'all', buscar: '' };
 
+/* Estado del CALENDARIO (mes visible en la vista de calendario) */
+const CAL = { mes: '' };
+
+/* Discord oficial de la liga (comunidad, donacion y tickets). */
+const DISCORD_LEAGUE = 'https://discord.gg/kVAjgkeRsC';
+
 /* ------------------------------------------------------------ UTILIDADES */
 function ocultarPreloader() {
   const p = document.getElementById('preloader');
@@ -166,6 +172,14 @@ const nombreJugador = (id) => {
   return '';
 };
 
+/* Nombre de jugador clickeable: abre su ficha con los datos de la temporada. */
+function jugLink(id, nombre, clase = '') {
+  const txt = esc(nombre || '');
+  if (id == null || id === '') return `<span class="${clase}">${txt}</span>`;
+  return `<button type="button" class="jug-link ${clase}" data-jugador="${esc(String(id))}"
+    title="Ver ficha de ${txt}">${txt}</button>`;
+}
+
 function vacio(txt) {
   return `<p style="grid-column:1/-1;padding:44px;text-align:center;color:var(--texto-suave)">${esc(txt)}</p>`;
 }
@@ -217,15 +231,52 @@ function fechasDivision(div = LIGA.division) {
   });
 }
 
+/* ---------------------------------------------------------- CALENDARIO */
+const DIAS_SEMANA = ['LUN', 'MAR', 'MIE', 'JUE', 'VIE', 'SAB', 'DOM'];
+const NOMBRES_MES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+  'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+
+/* Fecha del partido en formato YYYY-MM-DD. */
+function fechaISO(f) {
+  const s = String(f || '').trim();
+  if (!s) return '';
+  const m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (m) return `${m[1]}-${m[2]}-${m[3]}`;
+  const d = new Date(s.replace(' ', 'T'));
+  if (isNaN(d)) return '';
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+/* Mes del partido en formato YYYY-MM. */
+function mesDe(f) {
+  const iso = fechaISO(f);
+  return iso ? iso.slice(0, 7) : '';
+}
+
+/* Etiqueta larga del mes (ej. "Octubre 2026"). */
+function etiquetaMes(ym) {
+  const [y, m] = String(ym || '').split('-').map(Number);
+  if (!y || !m) return '';
+  return `${NOMBRES_MES[m - 1]} ${y}`;
+}
+
+/* Suma o resta meses a una clave YYYY-MM. */
+function moverMes(ym, delta) {
+  const [y, m] = String(ym || '').split('-').map(Number);
+  if (!y || !m) return '';
+  const d = new Date(y, m - 1 + delta, 1);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+}
+
 function pintarCalendario() {
   const caja = $('#ligaCalendario');
   const chipsBox = $('#ligaJornadas');
   if (!caja) return;
 
-  const fechas = fechasDivision(LIGA.division)
+  const todas = fechasDivision(LIGA.division)
     .slice()
     .sort((a, b) => fechaHora(a) - fechaHora(b));
-  if (!fechas.length) {
+  if (!todas.length) {
     if (chipsBox) chipsBox.innerHTML = '';
     const nota = $('#calNota');
     if (nota) nota.textContent = '';
@@ -233,8 +284,9 @@ function pintarCalendario() {
     return;
   }
 
+  /* grouping por jornada */
   const grupos = new Map();
-  fechas.forEach((f) => {
+  todas.forEach((f) => {
     const clave = (f.jornada || 'SIN JORNADA').trim();
     if (!grupos.has(clave)) grupos.set(clave, []);
     grupos.get(clave).push(f);
@@ -243,49 +295,87 @@ function pintarCalendario() {
   const jornadas = Array.from(grupos.keys())
     .sort((a, b) => a.localeCompare(b, 'es', { numeric: true }));
 
-  const actual = jornadas.includes(LIGA.jornada) ? LIGA.jornada : jornadas[0];
+  const opciones = ['TODAS'].concat(jornadas);
+  const actual = opciones.includes(LIGA.jornada) ? LIGA.jornada : 'TODAS';
   LIGA.jornada = actual;
 
   if (chipsBox) {
-    chipsBox.innerHTML = jornadas
+    chipsBox.innerHTML = opciones
       .map((j) => `<button class="chip${j === actual ? ' activa' : ''}" type="button" data-jornada="${esc(j)}">${esc(j)}</button>`)
       .join('');
-    chipsBox.hidden = jornadas.length <= 1;
+    chipsBox.hidden = opciones.length <= 1;
   }
 
-  const partidos = grupos.get(actual) || [];
+  const partidos = actual === 'TODAS' ? todas : (grupos.get(actual) || []);
+
+  /* Mes visible: el primero con partidos de la seleccion. */
+  const meses = Array.from(new Set(partidos.map((f) => mesDe(f)).filter(Boolean))).sort();
+  if (!meses.includes(CAL.mes)) CAL.mes = meses[0] || '';
+
   const nota = $('#calNota');
   if (nota) {
-    nota.textContent = `${partidos.length} partidos · Division ${LIGA.division}`;
+    nota.textContent = `${partidos.length} partidos · ${actual === 'TODAS' ? 'temporada completa' : actual} · Division ${LIGA.division}`;
   }
 
-  caja.innerHTML = `<section class="jornada-grupo reveal">
-      <div class="jornada-partidos">${partidos.map((f) => filaCalendario(f)).join('')}</div>
+  caja.innerHTML = `<section class="calendario reveal">
+      <div class="cal-nav">
+        <button type="button" class="cal-nav-btn" data-cal-move="-1" aria-label="Mes anterior">&lsaquo;</button>
+        <div class="cal-nav-txt">
+          <strong>${esc(etiquetaMes(CAL.mes))}</strong>
+          <small>${esc(actual === 'TODAS' ? 'Todas las jornadas' : actual)} · ${esc(etiquetaDivision())}</small>
+        </div>
+        <button type="button" class="cal-nav-btn" data-cal-move="1" aria-label="Mes siguiente">&rsaquo;</button>
+      </div>
+      <div class="cal-grid">
+        ${DIAS_SEMANA.map((d) => `<div class="cal-dow">${d}</div>`).join('')}
+        ${celdasCalendario(partidos, CAL.mes)}
+      </div>
+      <p class="cal-pie">Toca un partido para abrir su informe completo.</p>
     </section>`;
   revelar();
 }
 
-/* Fila del calendario: solo dia, hora y equipos (sin marcador). */
-function filaCalendario(f) {
-  const a = porId(f.equipo_a_id) || { nombre: f.equipo_a, sigla: f.sigla_a, color: f.color_a };
-  const b = porId(f.equipo_b_id) || { nombre: f.equipo_b, sigla: f.sigla_b, color: f.color_b };
-  const d = new Date(String(f.fecha).replace(' ', 'T') + 'T00:00:00');
-  const dia = isNaN(d) ? '' : d.toLocaleDateString('es', { weekday: 'short' }).replace('.', '').toUpperCase();
-  const fechaTxt = isNaN(d) ? esc(String(f.fecha || '')) :
-    d.toLocaleDateString('es', { day: '2-digit', month: 'short' }).replace('.', '');
-  return `
-    <article class="cal-partido reveal">
-      <div class="cal-cuando">
-        <strong>${esc(dia)}</strong>
-        <span>${esc(fechaTxt)}</span>
-      </div>
-      <div class="cal-choque">
-        ${equipoLado(a, 'cal-eq a')}
-        <span class="cal-vs">VS</span>
-        ${equipoLado(b, 'cal-eq b')}
-      </div>
-      <span class="cal-hora">${esc(horaCorta(f.hora) || '--:--')}</span>
-    </article>`;
+/* Nombre de la division activa (para las cabeceras). */
+function etiquetaDivision() {
+  return `Division ${String(LIGA.division || '').replace(/^D/, '')}`;
+}
+
+/* Celdas del mes: una por dia, con los partidos de ese dia. */
+function celdasCalendario(partidos, ym) {
+  const [y, m] = String(ym || '').split('-').map(Number);
+  if (!y || !m) return '';
+  const primero = new Date(y, m - 1, 1);
+  const total = new Date(y, m, 0).getDate();
+  const offset = (primero.getDay() + 6) % 7; /* la semana empieza en lunes */
+  const hoy = new Date();
+  const hoyISO = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}-${String(hoy.getDate()).padStart(2, '0')}`;
+
+  let html = '';
+  for (let i = 0; i < offset; i++) html += '<div class="cal-dia cal-vacia"></div>';
+
+  for (let d = 1; d <= total; d++) {
+    const iso = `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+    const delDia = partidos.filter((f) => fechaISO(f.fecha) === iso);
+    const esHoy = iso === hoyISO;
+    const items = delDia.map((f) => {
+      const a = porId(f.equipo_a_id) || { sigla: f.sigla_a, nombre: f.equipo_a, color: f.color_a };
+      const b = porId(f.equipo_b_id) || { sigla: f.sigla_b, nombre: f.equipo_b, color: f.color_b };
+      const res = f.jugado
+        ? `<b class="cp-marcador">${num(f.goles_a)} - ${num(f.goles_b)}</b>`
+        : `<b class="cp-marcador pend">${esc(horaCorta(f.hora) || '--:--')}</b>`;
+      return `<button type="button" class="cal-part${f.jugado ? ' jugado' : ''}" data-fecha="${esc(String(f.id))}"
+          title="${esc(f.equipo_a)} vs ${esc(f.equipo_b)}">
+          <span class="cp-sig" style="--eq:${esc(a.color || '#5AA9F0')}">${esc(a.sigla || a.nombre)}</span>
+          ${res}
+          <span class="cp-sig" style="--eq:${esc(b.color || '#5AA9F0')}">${esc(b.sigla || b.nombre)}</span>
+        </button>`;
+    }).join('');
+    html += `<div class="cal-dia${esHoy ? ' hoy' : ''}${delDia.length ? ' con-partidos' : ''}">
+        <span class="cal-num">${d}</span>
+        <div class="cal-parts">${items}</div>
+      </div>`;
+  }
+  return html;
 }
 
 /* Resultados de la liga: por jornada, con marcador y estadisticas. */
@@ -379,19 +469,19 @@ function filaPartido(f, opciones = {}) {
     const blocDe = (lado) => {
       const goles = (f.goleadores || [])
         .filter((g) => (g.equipo || 'a') === lado)
-        .map((g) => `<span class="stat-line"><i class="ic-gol" title="Goles">⚽</i>${esc(g.nombre || g.jugador)}<strong>x${num(g.goles) || 1}</strong></span>`);
+        .map((g) => `<span class="stat-line"><i class="ic-gol" title="Goles">⚽</i>${jugLink(g.jugador_id, g.nombre || g.jugador)}<strong>x${num(g.goles) || 1}</strong></span>`);
       const asis = (f.asistencias || [])
         .filter((x) => (x.equipo || 'a') === lado)
-        .map((x) => `<span class="stat-line"><i class="ic-asis" title="Asistencias">👟</i>${esc(x.nombre || x.jugador)}<strong>x${num(x.asistencias) || 1}</strong></span>`);
+        .map((x) => `<span class="stat-line"><i class="ic-asis" title="Asistencias">👟</i>${jugLink(x.jugador_id, x.nombre || x.jugador)}<strong>x${num(x.asistencias) || 1}</strong></span>`);
       const opuesto = lado === 'b' ? 'a' : 'b';
       const auto = (f.autogoles || [])
         .filter((x) => (x.equipo || 'a') === opuesto)
-        .map((x) => `<span class="stat-line"><i class="ic-autogol" title="Autogol">🥅</i>${esc(x.nombre || x.jugador)} <em>(AG)</em></span>`);
+        .map((x) => `<span class="stat-line"><i class="ic-autogol" title="Autogol">🥅</i>${jugLink(x.jugador_id, x.nombre || x.jugador)} <em>(AG)</em></span>`);
       const esB = lado === 'b';
       const conCs = num(esB ? f.cs_b : f.cs_a) > 0;
       const portero = esB ? f.portero_b : f.portero_a;
       const csLine = conCs && portero
-        ? `<span class="stat-line"><i class="ic-cs" title="Clean sheet">🧤</i>${esc(nombreJugador(portero) || portero)}<strong>${fmtMin(esB ? f.minutos_cs_b : f.minutos_cs_a)} MIN</strong></span>`
+        ? `<span class="stat-line"><i class="ic-cs" title="Clean sheet">🧤</i>${jugLink(portero, nombreJugador(portero) || portero)}<strong>${fmtMin(esB ? f.minutos_cs_b : f.minutos_cs_a)} MIN</strong></span>`
         : '';
       return goles.concat(asis, auto, csLine ? [csLine] : []).join('');
     };
@@ -409,12 +499,16 @@ function filaPartido(f, opciones = {}) {
     ? `<a class="link-btn" href="${esc(f.sala)}" target="_blank" rel="noopener">ABRIR SALA</a>`
     : '';
 
+  const pista = jugado
+    ? '<span class="match-pista">Ver informe del partido</span>'
+    : '<span class="match-pista">Ver ficha del partido</span>';
+
   return `
-    <article class="match reveal">
+    <article class="match reveal match-click" data-fecha="${esc(String(f.id))}">
       ${equipoLado(a, 'match-team a')}
       ${marcador}
       ${equipoLado(b, 'match-team b')}
-      <div class="match-meta">${meta}${enlace}</div>
+      <div class="match-meta">${meta}${enlace}${pista}</div>
       ${detalle}
     </article>`;
 }
@@ -536,7 +630,7 @@ function filaRanking(j, i, campo) {
   return `
     <div class="rank-fila">
       <span class="rank-pos">${i + 1}</span>
-      <span class="rank-nom">${insignia}${esc(j.nombre)}<small>${esc(j.equipo)}</small></span>
+      <span class="rank-nom">${insignia}${jugLink(j.id, j.nombre)}<small>${esc(j.equipo)}</small></span>
       <span class="rank-val">${num(j[campo])}</span>
     </div>`;
 }
@@ -587,7 +681,7 @@ function pintarResultadosInicio() {
   const todos = jugadosOrdenados('all');
   const lista = todos.slice(0, 6);
   caja.innerHTML = lista.length
-    ? lista.map((f) => filaPartido(f)).join('')
+    ? lista.map((f) => filaPartido(f, { detalle: false })).join('')
     : vacio('Todavia no hay resultados.');
 
   const nota = $('#resNota');
@@ -722,7 +816,7 @@ function tablaStats(destino, div, campo, opciones = {}) {
     <tbody>${filas.map((j, i) => `
       <tr>
         <td class="pos">${i + 1}</td>
-        <td>${esc(j.nombre)}${j.dorsal ? ` <span style="color:var(--texto-tenue)">#${esc(j.dorsal)}</span>` : ''}</td>
+        <td>${jugLink(j.id, j.nombre)}${j.dorsal ? ` <span style="color:var(--texto-tenue)">#${esc(j.dorsal)}</span>` : ''}</td>
         <td><span class="eq">${insigniaJugador(j)}<span>${esc(j.equipo)}</span></span></td>
         <td class="pos">${esc(fmt(j._val))}</td>
       </tr>`).join('')}
@@ -1037,7 +1131,7 @@ let DONACION_SEL = null;
 /* Determina como funciona un metodo: enlace, datos, ticket o proximamente. */
 function infoDonacion(d) {
   if (/^https?:/i.test(d.enlace || '')) return { modo: 'link', valor: d.enlace };
-  if (d.ticket) return { modo: 'ticket', valor: 'https://discord.gg/6K7nezXhx6' };
+  if (d.ticket) return { modo: 'ticket', valor: DISCORD_LEAGUE };
   const copiar = String(d.copiar || '').trim();
   if (copiar) return { modo: 'datos', valor: copiar, datos: Array.isArray(d.datos) ? d.datos : [] };
   return { modo: 'proximamente', valor: '' };
@@ -1069,6 +1163,7 @@ function copiarTexto(txt) {
 function pintarDonacion() {
   const caja = $('#donacionGrid');
   if (!caja) return;
+  crearModalDonacion();
   const items = cont('donacion');
   DONACION_ACTUAL = {};
   caja.innerHTML = items.map((d) => {
@@ -1093,9 +1188,55 @@ function pintarDonacion() {
   configDonacion();
 }
 
+/* Crea el modal de donacion si la pagina no lo trae en el HTML. */
+function crearModalDonacion() {
+  let modal = document.getElementById('donacionModal');
+  if (modal) return modal;
+  modal = document.createElement('div');
+  modal.id = 'donacionModal';
+  modal.className = 'donacion-modal';
+  modal.hidden = true;
+  modal.innerHTML = `
+    <div class="donacion-modal-fondo" data-cerrar-donacion></div>
+    <div class="donacion-modal-card" role="document">
+      <button type="button" class="donacion-modal-x" data-cerrar-donacion aria-label="Cerrar">&times;</button>
+      <div class="donacion-modal-top">
+        <div class="donacion-modal-logo" id="donacionModalLogo"></div>
+        <div class="donacion-modal-head">
+          <span class="donacion-tag" id="donacionModalTag">METODO</span>
+          <h3 id="donacionModalTitulo">Donar</h3>
+          <p class="donacion-modal-txt" id="donacionModalTexto"></p>
+        </div>
+      </div>
+      <div class="donacion-modal-detalle" id="donacionModalDetalle"></div>
+      <a class="donacion-modal-btn" id="donacionModalBtn" href="${DISCORD_LEAGUE}" target="_blank" rel="noopener">
+        <span id="donacionModalBtnTxt">DONAR AHORA</span>
+      </a>
+      <div class="donacion-modal-discord" id="donacionModalDiscord" hidden>
+        <span class="donacion-discord-ic">&#128172;</span>
+        <div>
+          <strong>Confirma tu aporte en el Discord</strong>
+          <p>Crea un ticket en el Discord oficial de la liga y envianos la captura para validar tu donacion.</p>
+          <a class="donacion-discord-btn" href="${DISCORD_LEAGUE}" target="_blank" rel="noopener">ABRIR DISCORD DE LA LIGA</a>
+        </div>
+      </div>
+      <div class="donacion-acordeon" id="donacionModalAcordeon">
+        <button type="button" class="donacion-acordeon-cab" aria-expanded="false">
+          <span>Como se confirma la donacion</span><i>+</i>
+        </button>
+        <div class="donacion-acordeon-cuerpo">
+          <p>Todos los aportes se confirman con el staff de la liga en el Discord oficial. Copia los datos,
+             hace la donacion y manda la captura en el ticket para que la registremos.</p>
+        </div>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+  return modal;
+}
+
 function abrirDonacion(id) {
   const d = DONACION_ACTUAL[String(id)];
-  const modal = $('#donacionModal');
+  const modal = crearModalDonacion();
   if (!d || !modal) return;
   DONACION_SEL = infoDonacion(d);
 
@@ -1126,7 +1267,7 @@ function abrirDonacion(id) {
       : [{ etiqueta: 'Dato para donar', valor: DONACION_SEL.valor }];
     if (detalle) detalle.innerHTML = bloqueDatos(datos)
       + `<button class="donacion-copiar" type="button" data-copiar="${esc(DONACION_SEL.valor)}">COPIAR TODO</button>`;
-    if (btn) { btn.href = '#'; btn.classList.remove('is-off'); }
+    if (btn) { btn.href = DISCORD_LEAGUE; btn.classList.remove('is-off'); }
     if (btnTxt) btnTxt.textContent = 'DONAR (COPIAR TODO)';
   } else if (DONACION_SEL.modo === 'ticket') {
     if (detalle) detalle.innerHTML = '<span class="donacion-det-label">Como donar</span>'
@@ -1214,9 +1355,8 @@ function configDonacion() {
         if (DONACION_SEL.modo === 'link') {
           revelarDiscordDonacion();
         } else if (DONACION_SEL.modo === 'datos') {
-          ev.preventDefault();
           copiarTexto(DONACION_SEL.valor);
-          toast('Datos copiados. Envia la captura al Discord.');
+          toast('Datos copiados. Te llevamos al Discord para confirmar.');
           revelarDiscordDonacion();
         } else if (DONACION_SEL.modo === 'ticket') {
           /* el enlace abre Discord directamente */
@@ -1289,7 +1429,7 @@ function pintarEquipoDetalle() {
   const proximos = DATOS.fechas.filter((f) => !f.jugado && involucra(f))
     .sort((a, b) => fechaHora(a) - fechaHora(b));
 
-  pintarFechas('#eqResultados', jugados, { vacio: 'Este equipo todavia no tiene resultados.' });
+  pintarFechas('#eqResultados', jugados, { detalle: false, vacio: 'Este equipo todavia no tiene resultados.' });
   pintarFechas('#eqProximos', proximos, { compacto: true, detalle: false, vacio: 'No hay partidos programados.' });
 
   const plantilla = $('#eqPlantilla');
@@ -1300,7 +1440,7 @@ function pintarEquipoDetalle() {
       ? jugadores.map((j) => `
         <div class="jugador-fila">
           <span class="jugador-num">${esc(j.dorsal ?? '-')}</span>
-          <span class="jugador-nom">${esc(j.nombre)}</span>
+          <span class="jugador-nom">${jugLink(j.id, j.nombre)}</span>
           <span class="jugador-pos">${esc(j.posicion || '')}</span>
           <span class="jugador-stats">
             <i title="Goles">${num(j.goles)}G</i>
@@ -1324,13 +1464,13 @@ let _porterosCache = null;
 function fuerzaEquipos() {
   if (_fuerzaCache) return _fuerzaCache;
   const m = new Map();
-  DATOS.equipos.forEach((e) => m.set(e.id, { pj: 0, gf: 0, gc: 0, w: 0 }));
+  DATOS.equipos.forEach((e) => m.set(e.id, { pj: 0, gf: 0, gc: 0, w: 0, l: 0, d: 0 }));
   DATOS.fechas.filter((f) => f.jugado).forEach((f) => {
     const a = m.get(f.equipo_a_id), b = m.get(f.equipo_b_id);
     if (!a || !b) return;
     const ga = num(f.goles_a), gb = num(f.goles_b);
     a.pj++; b.pj++; a.gf += ga; a.gc += gb; b.gf += gb; b.gc += ga;
-    if (ga > gb) a.w++; else if (gb > ga) b.w++;
+    if (ga > gb) { a.w++; b.l++; } else if (gb > ga) { b.w++; a.l++; } else { a.d++; b.d++; }
   });
   _fuerzaCache = m;
   return m;
@@ -1402,21 +1542,61 @@ function cartaDe(j) {
   return { ovr, sho, pas, dri, def, pac, phy, pos: posicionCarta(j), ini: inicialesJugador(j.nombre) };
 }
 
-const tierDe = (ovr) => (ovr >= 82 ? 'oro' : ovr >= 72 ? 'plata' : 'bronce');
+/* Umbrales de tier calculados con las estadisticas reales de la liga:
+   oro para el 10% mas alto, plata para el siguiente 25% y bronce el resto. */
+let _tierCache = null;
+function umbralesTier() {
+  if (_tierCache) return _tierCache;
+  const ovrs = [];
+  DATOS.equipos.forEach((e) => (e.jugadores || []).forEach((p) => {
+    ovrs.push(cartaDe({
+      id: p.id, nombre: p.nombre, goles: num(p.goles), asistencias: num(p.asistencias),
+      autogoles: num(p.autogoles), cs: num(p.cs), equipoId: e.id, equipo: e.nombre
+    }).ovr);
+  }));
+  ovrs.sort((a, b) => b - a);
+  const n = ovrs.length;
+  const corte = (p) => (n ? ovrs[Math.min(n - 1, Math.floor(n * p))] : 0);
+  const oro = Math.max(70, corte(0.10));
+  const plata = Math.max(60, Math.min(oro - 1, corte(0.35)));
+  _tierCache = { oro, plata };
+  return _tierCache;
+}
+
+const tierDe = (ovr) => {
+  const t = umbralesTier();
+  return ovr >= t.oro ? 'oro' : ovr >= t.plata ? 'plata' : 'bronce';
+};
 const TIER_TXT = { oro: 'ORO', plata: 'PLATA', bronce: 'BRONCE' };
 
 let _cartasActuales = [];
 
+/* Paleta de cada tier: oro brillante, plata fria y bronce calido. */
+const TIER_PALETA = {
+  oro: {
+    bg: 'linear-gradient(170deg,#FFFBEA 0%,#FFE7A2 52%,#FFCE5C 100%)',
+    bd: '#E0A32C', col: '#8A5A00', chip: '#F5C542', ink: '#3E2A00'
+  },
+  plata: {
+    bg: 'linear-gradient(170deg,#FFFFFF 0%,#F1F5FC 52%,#DBE4F3 100%)',
+    bd: '#A6B8D0', col: '#4A5C78', chip: '#C3D1E4', ink: '#1E2937'
+  },
+  bronce: {
+    bg: 'linear-gradient(170deg,#FFF8F0 0%,#F8DFC1 52%,#EEBB86 100%)',
+    bd: '#C98045', col: '#8A4B1E', chip: '#E2A76E', ink: '#40230F'
+  }
+};
+
 const tierCss = (ovr) => {
-  if (ovr >= 82) return { bg: 'linear-gradient(170deg,#FFFDF3 0%,#FDF3D2 55%,#FBE9B0 100%)', bd: '#E0A800', tierCol: '#B8860B' };
-  if (ovr >= 72) return { bg: 'linear-gradient(170deg,#FFFFFF 0%,#EEF1F6 55%,#DDE3EC 100%)', bd: '#9AA9BE', tierCol: '#5B6B83' };
-  return { bg: 'linear-gradient(170deg,#FFFCF8 0%,#FBEDE0 55%,#F3DCC6 100%)', bd: '#C0703A', tierCol: '#8A4B1E' };
+  const p = TIER_PALETA[tierDe(ovr)];
+  return { bg: p.bg, bd: p.bd, tierCol: p.col, chip: p.chip, ink: p.ink };
 };
 
 const TIER_DATA = { oro: 'ORO', plata: 'PLATA', bronce: 'BRONCE' };
 
-/* Markup de una carta de jugador. */
-function tarjetaCarta(j) {
+/* Markup de una carta de jugador. `opts.grande` la dibuja como bloque
+   (se usa dentro del modal) en vez de boton. */
+function tarjetaCarta(j, opts = {}) {
   const c = j._carta;
   const tier = tierDe(c.ovr);
   const color = j.color || '#5DA4B6';
@@ -1427,12 +1607,10 @@ function tarjetaCarta(j) {
   const stat = (lbl, val) =>
     `<div class="fc-stat"><b>${val}</b><span>${lbl}</span><i style="--v:${val}%"></i></div>`;
 
-  return `
-    <button type="button" class="fc-card fc-${tier} reveal" data-id="${esc(String(j.id))}"
-      style="--eq:${esc(color)};--eq-txt:${textoLegible(color)};--tier-bg:${tc.bg};--tier-bd:${tc.bd};--tier:${tc.tierCol}">
+  const cuerpo = `
       <span class="fc-head">
         <span class="fc-rating"><strong>${c.ovr}</strong><span>${c.pos}</span></span>
-        <span class="fc-tier">${TIER_DATA[tier]}</span>
+        <span class="fc-tier" style="background:${tc.chip};color:${tc.ink}">${TIER_DATA[tier]}</span>
       </span>
       <span class="fc-ball-wrap">
         <span class="fc-ball"><span class="fc-ini">${esc(c.ini)}</span></span>
@@ -1444,7 +1622,16 @@ function tarjetaCarta(j) {
         ${stat('PAC', c.pac)}${stat('SHO', c.sho)}${stat('PAS', c.pas)}
         ${stat('DRI', c.dri)}${stat('DEF', c.def)}${stat('PHY', c.phy)}
       </span>
-      <span class="fc-hint">Click para detalle</span>
+      ${opts.grande ? '' : '<span class="fc-hint">Click para detalle</span>'}`;
+
+  const estilo = `--eq:${esc(color)};--eq-txt:${textoLegible(color)};--tier-bg:${tc.bg};--tier-bd:${tc.bd};--tier:${tc.tierCol};--tier-ink:${tc.ink}`;
+
+  if (opts.grande) {
+    return `<div class="fc-card fc-${tier} fc-grande reveal" style="${estilo}">${cuerpo}</div>`;
+  }
+  return `
+    <button type="button" class="fc-card fc-${tier} reveal" data-id="${esc(String(j.id))}" style="${estilo}">
+      ${cuerpo}
     </button>`;
 }
 
@@ -1527,84 +1714,67 @@ function _configurarCartasClickeables() {
 }
 
 function abrirCartaModal(j) {
-  const modal = $('#cartaModal');
-  if (!modal) return;
-  modal.innerHTML = cartaModalHTML(j);
-  modal.removeAttribute('hidden');
-  document.body.classList.add('carta-modal-abierto');
-  modal.dataset.open = '1';
-
-  const fondo = modal.querySelector('.carta-modal-fondo');
-  const cerrar = modal.querySelector('.carta-modal-x');
-  const onClose = () => {
-    modal.setAttribute('hidden', '');
-    document.body.classList.remove('carta-modal-abierto');
-    delete modal.dataset.open;
-    if (fondo) fondo.removeEventListener('click', onClose);
-    if (cerrar) cerrar.removeEventListener('click', onClose);
-    document.removeEventListener('keydown', onKey);
-  };
-  const onKey = (e) => { if (e.key === 'Escape') onClose(); };
-  if (fondo) fondo.addEventListener('click', onClose);
-  if (cerrar) cerrar.addEventListener('click', onClose);
-  document.addEventListener('keydown', onKey);
+  const modal = abrirModal('cartaModal', cartaModalHTML(j));
+  const x = modal.querySelector('.carta-modal-x');
+  if (x) x.focus();
 }
 
 function cartaModalHTML(j) {
   const c = j._carta;
   const tier = tierDe(c.ovr);
-  const color = j.color || '#5DA4B6';
   const tc = tierCss(c.ovr);
-  const escudoHtml = j.escudo
-    ? `<div class="cm-crest-grande logo-img"><img src="/static/${esc(j.escudo)}" alt=""></div>`
-    : `<div class="cm-crest-grande">${esc(j.sigla || inicialesJugador(j.equipo))}</div>`;
-  const statF = (lbl, val) => `<div class="cm-fs"><b>${val}</b><span>${lbl}</span></div>`;
-
-  const f = fuerzaEquipos().get(j.equipoId) || { pj: 0, gf: 0, gc: 0, w: 0 };
+  const f = fuerzaEquipos().get(j.equipoId) || { pj: 0, gf: 0, gc: 0, w: 0, l: 0, d: 0 };
   const wr = f.pj ? Math.round((f.w / f.pj) * 100) : 0;
   const tierText = TIER_DATA[tier];
+  const d = datosJugador(j.id);
+
+  const statF = (lbl, val) => `<div class="cm-fs"><b>${val}</b><span>${lbl}</span></div>`;
 
   return `
   <div class="carta-modal-fondo" aria-hidden="true"></div>
-  <div class="carta-modal-card" role="document" style="--eq:${esc(color)};--eq-txt:${textoLegible(color)};--tier:${tc.tierCol};--tier-bd:${tc.bd}">
+  <div class="carta-modal-card cm-amplio" role="document">
     <button type="button" class="carta-modal-x" aria-label="Cerrar">×</button>
     <div class="cm-izq">
-      <div class="cm-ball-grande">
-        <span class="cm-ini-grande">${esc(c.ini)}</span>
-        ${escudoHtml}
-      </div>
-      <div style="display:flex;flex-direction:column;gap:4px;align-items:center">
-        <span class="cm-nombre">${esc(j.nombre)}</span>
-        <span class="cm-equipo-l">${esc(j.equipo)} · ${esc(j.division || '-')} · ${c.pos}</span>
-      </div>
-      <div class="cm-fifa">
-        <div class="cm-fifa-head">
-          <small>STATS FIFA</small>
-          <span class="cm-fifa-t">${tierText} ${c.ovr}</span>
-        </div>
-        <div class="cm-fifa-grid">
-          ${statF('PAC', c.pac)}${statF('SHO', c.sho)}${statF('PAS', c.pas)}${statF('DRI', c.dri)}${statF('DEF', c.def)}${statF('PHY', c.phy)}
-        </div>
-      </div>
+      ${tarjetaCarta(j, { grande: true })}
     </div>
     <div class="cm-der">
+      <div class="cm-cabecera">
+        <span class="cm-tier-badge" style="background:${tc.chip};color:${tc.ink};border-color:${tc.bd}">TIER ${tierText}</span>
+        <h3 class="cm-titulo">${esc(j.nombre)}</h3>
+        <p class="cm-sub">${esc(j.equipo)} · ${esc(j.division || '-')} · ${esc(c.pos)}${d && d.dorsal ? ` · #${esc(d.dorsal)}` : ''}</p>
+      </div>
       <div class="cm-datos">
         <h4>DATOS DE LA TEMPORADA</h4>
         <div class="cm-lista">
-          <div class="cm-item"><small>Partidos jugados (equipo)</small><strong>${f.pj}</strong></div>
+          <div class="cm-item"><small>Partidos jugados</small><strong>${f.pj}</strong></div>
+          <div class="cm-item"><small>Victorias</small><strong>${f.w}</strong></div>
+          <div class="cm-item"><small>Derrotas</small><strong>${f.l}</strong></div>
+          <div class="cm-item"><small>Empates</small><strong>${f.d}</strong></div>
           <div class="cm-item"><small>Goles</small><strong>${num(j.goles)}</strong></div>
           <div class="cm-item"><small>Asistencias</small><strong>${num(j.asistencias)}</strong></div>
           <div class="cm-item"><small>Autogoles</small><strong>${num(j.autogoles)}</strong></div>
           <div class="cm-item"><small>Clean Sheets</small><strong>${num(j.cs)}</strong></div>
-          <div class="cm-item"><small>Victorias (equipo)</small><strong>${f.w}</strong></div>
           <div class="cm-item"><small>Win Rate</small><strong>${wr}%</strong></div>
           <div class="cm-item"><small>GF / GC</small><strong>${f.gf} / ${f.gc}</strong></div>
-          <div class="cm-item full"><small>Equipo · División</small><strong>${esc(j.equipo)} (${esc(j.division || '-').toUpperCase()})</strong></div>
-          <div class="cm-item"><small>Posición</small><strong>${c.pos}</strong></div>
+          <div class="cm-item full"><small>Equipo · Division</small><strong>${esc(j.equipo)} (${esc(j.division || '-').toUpperCase()})</strong></div>
+          <div class="cm-item"><small>Posicion</small><strong>${c.pos}</strong></div>
           <div class="cm-item"><small>Rating / Tier</small><strong>${c.ovr} · ${tierText}</strong></div>
         </div>
       </div>
-      <span class="cm-tier-badge">TIER ${tierText}</span>
+      <div class="cm-fifa">
+        <div class="cm-fifa-head">
+          <small>STATS FIFA</small>
+          <span class="cm-fifa-t" style="background:${tc.chip};color:${tc.ink}">${tierText} ${c.ovr}</span>
+        </div>
+        <div class="cm-fifa-grid">
+          ${statF('PAC', c.pac)}${statF('SHO', c.sho)}${statF('PAS', c.pas)}
+          ${statF('DRI', c.dri)}${statF('DEF', c.def)}${statF('PHY', c.phy)}
+        </div>
+      </div>
+      <div class="cm-acciones">
+        <button type="button" class="btn-soft cm-btn" data-jugador="${esc(String(j.id))}">FICHA DEL JUGADOR</button>
+        ${j.equipoId ? `<a class="btn-soft cm-btn" href="/equipo-detalle?id=${esc(String(j.equipoId))}">VER EQUIPO</a>` : ''}
+      </div>
     </div>
   </div>
   `;
@@ -1633,6 +1803,304 @@ function eventosCartas() {
     buscar.dataset.config = '1';
     buscar.addEventListener('input', () => { CARTAS.buscar = buscar.value; pintarCartas(); });
   }
+}
+
+/* ------------------------------------------------------------- MODALES */
+/* Crea (si hace falta) un contenedor de modal y lo abre con el HTML dado. */
+function abrirModal(id, html) {
+  let modal = document.getElementById(id);
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = id;
+    modal.className = 'carta-modal';
+    modal.setAttribute('hidden', '');
+    document.body.appendChild(modal);
+  }
+  modal.innerHTML = html;
+  modal.removeAttribute('hidden');
+  document.body.classList.add('carta-modal-abierto');
+  modal.dataset.open = '1';
+
+  const fondo = modal.querySelector('.carta-modal-fondo');
+  const cerrar = modal.querySelector('.carta-modal-x');
+  const onClose = () => {
+    modal.setAttribute('hidden', '');
+    delete modal.dataset.open;
+    if (!document.querySelector('.carta-modal:not([hidden])')) {
+      document.body.classList.remove('carta-modal-abierto');
+    }
+    if (fondo) fondo.removeEventListener('click', onClose);
+    if (cerrar) cerrar.removeEventListener('click', onClose);
+    document.removeEventListener('keydown', onKey);
+  };
+  const onKey = (e) => { if (e.key === 'Escape') onClose(); };
+  if (fondo) fondo.addEventListener('click', onClose);
+  if (cerrar) cerrar.addEventListener('click', onClose);
+  document.addEventListener('keydown', onKey);
+  return modal;
+}
+
+/* ------------------------------------------------------ FICHA JUGADOR */
+/* Todos los datos de un jugador: temporada, equipo y partidos. */
+function datosJugador(id) {
+  const clave = String(id);
+  for (const e of DATOS.equipos) {
+    const j = (e.jugadores || []).find((x) => String(x.id) === clave);
+    if (!j) continue;
+    const resumen = fuerzaEquipos().get(e.id) || { pj: 0, gf: 0, gc: 0, w: 0, l: 0, d: 0 };
+    const participaciones = DATOS.fechas.filter((f) => f.jugado && (
+      (f.goleadores || []).some((g) => String(g.jugador_id) === clave) ||
+      (f.asistencias || []).some((x) => String(x.jugador_id) === clave) ||
+      (f.autogoles || []).some((x) => String(x.jugador_id) === clave) ||
+      String(f.portero_a) === clave || String(f.portero_b) === clave)).length;
+    return {
+      id: j.id, nombre: j.nombre, dorsal: j.dorsal, posicion: j.posicion,
+      goles: num(j.goles), asistencias: num(j.asistencias), autogoles: num(j.autogoles),
+      cs: num(j.cs), minutos_cs: num(j.minutos_cs),
+      equipo: e.nombre, sigla: e.sigla, color: e.color, escudo: escudoDe(e),
+      division: e.division, equipoId: e.id, resumen, participaciones
+    };
+  }
+  return null;
+}
+
+/* Objeto de carta de un jugador suelto (para reutilizar cartaDe). */
+function cartaDeJugador(d) {
+  const j = {
+    id: d.id, nombre: d.nombre, goles: d.goles, asistencias: d.asistencias,
+    autogoles: d.autogoles, cs: d.cs, equipoId: d.equipoId, equipo: d.equipo,
+    sigla: d.sigla, color: d.color, escudo: d.escudo, division: d.division
+  };
+  j._carta = cartaDe(j);
+  return j;
+}
+
+function abrirJugadorModal(id) {
+  const d = datosJugador(id);
+  if (!d) return;
+  const modal = abrirModal('jugadorModal', jugadorModalHTML(d));
+  const x = modal.querySelector('.carta-modal-x');
+  if (x) x.focus();
+}
+
+function jugadorModalHTML(d) {
+  const j = cartaDeJugador(d);
+  const c = j._carta;
+  const tier = tierDe(c.ovr);
+  const tc = tierCss(c.ovr);
+  const r = d.resumen;
+  const escudo = d.escudo
+    ? `<span class="jf-crest logo-img"><img src="/static/${esc(d.escudo)}" alt="" loading="lazy"></span>`
+    : `<span class="jf-crest">${esc(d.sigla || inicialesJugador(d.equipo))}</span>`;
+
+  const stat = (lbl, val) => `<div class="jf-stat"><b>${val}</b><span>${lbl}</span></div>`;
+
+  return `
+  <div class="carta-modal-fondo" aria-hidden="true"></div>
+  <div class="carta-modal-card jf-card" role="document">
+    <button type="button" class="carta-modal-x" aria-label="Cerrar">×</button>
+    <header class="jf-cab">
+      ${escudo}
+      <div class="jf-id">
+        <h3>${esc(d.nombre)}</h3>
+        <p>${esc(d.equipo)} · ${esc(d.division || '-')}${d.posicion ? ` · ${esc(d.posicion)}` : ''}${d.dorsal ? ` · #${esc(d.dorsal)}` : ''}</p>
+      </div>
+      <span class="jf-tier" style="background:${tc.chip};color:${tc.ink};border-color:${tc.bd}">${c.ovr} ${TIER_DATA[tier]}</span>
+    </header>
+    <div class="jf-stats">
+      ${stat('PARTIDOS', r.pj)}
+      ${stat('VICTORIAS', r.w)}
+      ${stat('DERROTAS', r.l)}
+      ${stat('EMPATES', r.d)}
+      ${stat('GOLES', d.goles)}
+      ${stat('ASISTENCIAS', d.asistencias)}
+      ${stat('PARTICIPACIONES', d.participaciones)}
+      ${stat('CLEAN SHEETS', d.cs)}
+    </div>
+    <div class="jf-pie">
+      <button type="button" class="btn-soft cm-btn" data-carta="${esc(String(d.id))}">VER CARTA COMPLETA</button>
+      <a class="btn-soft cm-btn" href="/equipo-detalle?id=${esc(String(d.equipoId))}">VER EQUIPO</a>
+    </div>
+  </div>`;
+}
+
+/* --------------------------------------------------- INFORME DE PARTIDO */
+/* Jugador con mejor participacion del partido (goles x2, asistencias x1). */
+function mejorJugador(f) {
+  const mapa = new Map();
+  const add = (id, nombre, equipo, g, a) => {
+    const k = String(id || nombre);
+    if (!mapa.has(k)) mapa.set(k, { id: id, nombre: nombre, equipo: equipo, goles: 0, asis: 0 });
+    const e = mapa.get(k);
+    e.goles += g; e.asis += a;
+  };
+  (f.goleadores || []).forEach((g) => add(g.jugador_id, g.nombre, g.equipo, num(g.goles), 0));
+  (f.asistencias || []).forEach((x) => add(x.jugador_id, x.nombre, x.equipo, 0, num(x.asistencias)));
+  let best = null;
+  mapa.forEach((v) => {
+    v.pts = v.goles * 2 + v.asis;
+    if (!best || v.pts > best.pts) best = v;
+  });
+  if (best && best.id != null) {
+    const nombreReal = nombreJugador(best.id);
+    if (nombreReal) best.nombre = nombreReal;
+  }
+  return best;
+}
+
+function abrirInforme(id) {
+  const f = DATOS.fechas.find((x) => String(x.id) === String(id));
+  if (!f) return;
+  const modal = abrirModal('informeModal', informeHTML(f));
+  const x = modal.querySelector('.carta-modal-x');
+  if (x) x.focus();
+}
+
+/* Tabla de un equipo dentro del informe: lo que hizo cada jugador. */
+function tablaEquipoInforme(f, lado, equipo) {
+  const esB = lado === 'b';
+  const de = (arr) => (arr || []).filter((x) => (x.equipo || 'a') === lado);
+  const filas = new Map();
+  const add = (id, nombre, g, a) => {
+    const k = String(id || nombre);
+    if (!filas.has(k)) filas.set(k, { id: id, nombre: nombre, goles: 0, asis: 0 });
+    const e = filas.get(k);
+    e.goles += g; e.asis += a;
+  };
+  de(f.goleadores).forEach((g) => add(g.jugador_id, g.nombre, num(g.goles), 0));
+  de(f.asistencias).forEach((x) => add(x.jugador_id, x.nombre, 0, num(x.asistencias)));
+
+  const portero = esB ? f.portero_b : f.portero_a;
+  const cs = num(esB ? f.cs_b : f.cs_a) > 0 && portero;
+  if (cs) add(portero, nombreJugador(portero) || portero, 0, 0);
+
+  const lista = Array.from(filas.values()).sort((x, y) =>
+    (y.goles - x.goles) || (y.asis - x.asis) || String(x.nombre).localeCompare(String(y.nombre)));
+
+  const cuerpo = lista.length
+    ? lista.map((p) => `<tr>
+        <td>${jugLink(p.id, p.nombre)}</td>
+        <td class="pos">${p.goles}</td>
+        <td class="pos">${p.asis}</td>
+        <td>${cs && String(p.id) === String(portero) ? '<span class="jf-cs">CS</span>' : ''}</td>
+      </tr>`).join('')
+    : `<tr><td colspan="4" class="jf-sin">Sin participaciones registradas</td></tr>`;
+
+  const tg = lista.reduce((s, p) => s + p.goles, 0);
+  const ta = lista.reduce((s, p) => s + p.asis, 0);
+
+  return `
+    <div class="inf-equipo-bloque">
+      <div class="inf-equipo-cab" style="--eq:${esc(equipo.color || '#5AA9F0')}">
+        ${esc(equipo.sigla || equipo.nombre)} · ${esc(equipo.nombre)}
+      </div>
+      <table class="tabla tabla-stats inf-tabla">
+        <thead><tr><th scope="col">JUGADOR</th><th scope="col">G</th><th scope="col">A</th><th scope="col"></th></tr></thead>
+        <tbody>${cuerpo}</tbody>
+        <tfoot><tr><td>TOTALES</td><td class="pos">${tg}</td><td class="pos">${ta}</td><td></td></tr></tfoot>
+      </table>
+    </div>`;
+}
+
+function informeHTML(f) {
+  const a = porId(f.equipo_a_id) || { nombre: f.equipo_a, sigla: f.sigla_a, color: f.color_a, division: f.division_a };
+  const b = porId(f.equipo_b_id) || { nombre: f.equipo_b, sigla: f.sigla_b, color: f.color_b, division: f.division_b };
+  const jugados = !!f.jugado;
+  const d = new Date(String(f.fecha).replace(' ', 'T') + 'T00:00:00');
+  const fechaTxt = isNaN(d)
+    ? esc(String(f.fecha || ''))
+    : d.toLocaleDateString('es', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+  const mvp = jugados ? mejorJugador(f) : null;
+
+  const escudo = (eq) => {
+    const src = escudoDe(eq);
+    return src
+      ? `<span class="inf-crest logo-img"><img src="/static/${esc(src)}" alt="" loading="lazy"></span>`
+      : `<span class="inf-crest" style="--eq:${esc(eq.color || '#5AA9F0')}">${esc(iniciales(eq.sigla || eq.nombre))}</span>`;
+  };
+
+  const bloque = (lado, equipo) => {
+    const esB = lado === 'b';
+    const de = (arr) => (arr || []).filter((x) => (x.equipo || 'a') === lado);
+    const goles = de(f.goleadores).map((g) =>
+      `<span class="inf-linea"><i class="ic-gol">⚽</i>${jugLink(g.jugador_id, g.nombre || g.jugador)}<strong>x${num(g.goles) || 1}</strong></span>`).join('');
+    const asis = de(f.asistencias).map((x) =>
+      `<span class="inf-linea"><i class="ic-asis">👟</i>${jugLink(x.jugador_id, x.nombre || x.jugador)}<strong>x${num(x.asistencias) || 1}</strong></span>`).join('');
+    const auto = de(f.autogoles).map((x) =>
+      `<span class="inf-linea"><i class="ic-autogol">🥅</i>${jugLink(x.jugador_id, x.nombre || x.jugador)} <em>(AG)</em></span>`).join('');
+    const portero = esB ? f.portero_b : f.portero_a;
+    const conCs = num(esB ? f.cs_b : f.cs_a) > 0 && portero;
+    const cs = conCs
+      ? `<span class="inf-linea"><i class="ic-cs">🧤</i>${jugLink(portero, nombreJugador(portero) || portero)}<strong>${fmtMin(esB ? f.minutos_cs_b : f.minutos_cs_a)} MIN</strong></span>`
+      : '';
+    const hay = goles || asis || auto || cs;
+    return `<div class="inf-bloque">
+        <h4>${esc(equipo.nombre)}</h4>
+        ${hay ? `<div class="inf-lineas">${goles}${asis}${auto}${cs}</div>` : '<p class="jf-sin">Sin datos registrados</p>'}
+        <div class="inf-mini">
+          <span>GF <b>${num(esB ? f.goles_b : f.goles_a)}</b></span>
+          <span>GC <b>${num(esB ? f.goles_a : f.goles_b)}</b></span>
+          <span>CS <b>${num(esB ? f.cs_b : f.cs_a)}</b></span>
+        </div>
+      </div>`;
+  };
+
+  const marcador = jugados
+    ? `<b>${num(f.goles_a)}</b><i>-</i><b>${num(f.goles_b)}</b>`
+    : `<b class="inf-vs">VS</b>`;
+
+  const sala = !jugados && f.sala
+    ? `<a class="btn-soft cm-btn" href="${esc(f.sala)}" target="_blank" rel="noopener">ABRIR SALA</a>`
+    : '';
+
+  return `
+  <div class="carta-modal-fondo" aria-hidden="true"></div>
+  <div class="carta-modal-card informe" role="document">
+    <button type="button" class="carta-modal-x" aria-label="Cerrar">×</button>
+
+    <header class="inf-cab">
+      <div class="inf-eq">
+        ${escudo(a)}
+        <strong>${esc(a.nombre)}</strong>
+        <small>${esc(a.division || '')}</small>
+      </div>
+      <div class="inf-score">${marcador}</div>
+      <div class="inf-eq b">
+        ${escudo(b)}
+        <strong>${esc(b.nombre)}</strong>
+        <small>${esc(b.division || '')}</small>
+      </div>
+    </header>
+
+    <p class="inf-sub">
+      <span>${fechaTxt}</span>
+      ${f.hora ? `<span>${esc(horaCorta(f.hora))}</span>` : ''}
+      ${f.jornada ? `<span>${esc(f.jornada)}</span>` : ''}
+      ${f.fase ? `<span>${esc(f.fase)}</span>` : ''}
+    </p>
+
+    ${mvp ? `<div class="inf-mvp">
+        <span class="inf-mvp-tag">MEJOR JUGADOR</span>
+        <div class="inf-mvp-jug">${jugLink(mvp.id, mvp.nombre)}</div>
+        <div class="inf-mvp-stats">
+          <span>⚽ <b>${mvp.goles}</b> goles</span>
+          <span>👟 <b>${mvp.asis}</b> asistencias</span>
+          <span class="inf-mvp-pts"><b>${mvp.pts}</b> pts</span>
+        </div>
+      </div>` : `<div class="inf-mvp vacio">Partido todavia no disputado</div>`}
+
+    <div class="inf-cols">
+      ${bloque('a', a)}
+      ${bloque('b', b)}
+    </div>
+
+    <div class="inf-tablas">
+      ${tablaEquipoInforme(f, 'a', a)}
+      ${tablaEquipoInforme(f, 'b', b)}
+    </div>
+
+    ${sala ? `<div class="cm-acciones">${sala}</div>` : ''}
+  </div>`;
 }
 
 /* ---------------------------------------------------------- UI GENERAL */
@@ -1708,6 +2176,50 @@ function eventosLiga() {
       if (btn) mostrarVista(btn.dataset.vista);
     });
   }
+
+  const cal = $('#ligaCalendario');
+  if (cal && !cal.dataset.config) {
+    cal.dataset.config = '1';
+    cal.addEventListener('click', (ev) => {
+      const btn = ev.target.closest('[data-cal-move]');
+      if (!btn) return;
+      CAL.mes = moverMes(CAL.mes, Number(btn.dataset.calMove) || 0);
+      pintarCalendario();
+    });
+  }
+}
+
+/* ------------------------------------------------- EVENTOS GLOBALES */
+/* Ficha de jugador, carta completa e informe de partido: un solo Delegado
+   para que funcionen en cualquier pagina. */
+function eventosGlobales() {
+  document.addEventListener('click', (ev) => {
+    if (ev.target.closest('a')) return;
+    const jug = ev.target.closest('[data-jugador]');
+    if (jug) {
+      ev.preventDefault();
+      abrirJugadorModal(jug.dataset.jugador);
+      return;
+    }
+    const carta = ev.target.closest('[data-carta]');
+    if (carta) {
+      ev.preventDefault();
+      abrirCartaDeJugador(carta.dataset.carta);
+      return;
+    }
+    const fecha = ev.target.closest('[data-fecha]');
+    if (fecha) {
+      ev.preventDefault();
+      abrirInforme(fecha.dataset.fecha);
+    }
+  });
+}
+
+/* Abre la carta completa de un jugador suelto. */
+function abrirCartaDeJugador(id) {
+  const d = datosJugador(id);
+  if (!d) return;
+  abrirCartaModal(cartaDeJugador(d));
 }
 
 /* ------------------------------------------------------- EVENTOS INICIO */
@@ -1792,6 +2304,7 @@ function renderPagina(pagina) {
 function iniciar() {
   configBotonSubir();
   configMenu();
+  eventosGlobales();
   pintarNav();
 
   const fuente = window.SITIO || {};

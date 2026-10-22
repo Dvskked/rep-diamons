@@ -29,6 +29,10 @@
   --plata:       #AFC0DA;
   --bronce:      #D08A52;
 
+  /* Tinta de las cartas (siempre sobre fondo claro, en ambos temas). */
+  --tinta-carta: #101A2C;
+  --tinta-carta-tenue: rgba(16, 26, 44, .60);
+
   --texto:       #040404;
   --texto-suave: rgba(233, 239, 249, .76);
   --texto-tenue: rgba(233, 239, 249, .52);
@@ -2182,7 +2186,8 @@ html { scrollbar-color: rgba(22, 86, 168, .5) rgba(11, 18, 32, .06); }
 /* Tarjeta FIFA (grid) */
 .fc-card {
   --eq: #5DA4B6; --eq-txt: #ffffff;
-  --tier: #E0A800; --tier-bg: linear-gradient(170deg, #FFFDF3 0%, #FDF3D2 55%, #FBE9B0 100%); --tier-bd: #E0A800;
+  --tier: #8A5A00; --tier-ink: #3E2A00;
+  --tier-bg: linear-gradient(170deg, #FFFBEA 0%, #FFE7A2 52%, #FFCE5C 100%); --tier-bd: #E0A32C;
   position: relative; overflow: hidden; text-align: left; cursor: pointer; width: 100%;
   font: inherit; color: inherit; appearance: none; border: 0;
   display: flex; flex-direction: column; align-items: center;
@@ -2194,18 +2199,18 @@ html { scrollbar-color: rgba(22, 86, 168, .5) rgba(11, 18, 32, .06); }
   box-shadow: 0 12px 26px -14px color-mix(in srgb, var(--tier-bd) 55%, transparent), var(--sombra);
   transition: transform .35s cubic-bezier(.3,1.3,.5,1), box-shadow .35s;
 }
-.fc-card.fc-oro    { --tier:#B8860B; --tier-bg: linear-gradient(170deg, #FFFDF3 0%, #FDF3D2 55%, #FBE9B0 100%); --tier-bd:#E0A800; }
-.fc-card.fc-plata  { --tier:#5B6B83; --tier-bg: linear-gradient(170deg, #FFFFFF 0%, #EEF1F6 55%, #DDE3EC 100%); --tier-bd:#9AA9BE; }
-.fc-card.fc-bronce { --tier:#8A4B1E; --tier-bg: linear-gradient(170deg, #FFFCF8 0%, #FBEDE0 55%, #F3DCC6 100%); --tier-bd:#C0703A; }
+.fc-card.fc-oro    { --tier:#8A5A00; --tier-ink:#3E2A00; --tier-bg: linear-gradient(170deg, #FFFBEA 0%, #FFE7A2 52%, #FFCE5C 100%); --tier-bd:#E0A32C; }
+.fc-card.fc-plata  { --tier:#4A5C78; --tier-ink:#1E2937; --tier-bg: linear-gradient(170deg, #FFFFFF 0%, #F1F5FC 52%, #DBE4F3 100%); --tier-bd:#A6B8D0; }
+.fc-card.fc-bronce { --tier:#8A4B1E; --tier-ink:#40230F; --tier-bg: linear-gradient(170deg, #FFF8F0 0%, #F8DFC1 52%, #EEBB86 100%); --tier-bd:#C98045; }
 .fc-card:hover { transform: translateY(-8px); box-shadow: 0 22px 44px -18px color-mix(in srgb, var(--tier-bd) 70%, transparent), var(--sombra-alta); }
 .fc-card:focus-visible { outline: 3px solid var(--cian); outline-offset: 3px; }
 .fc-card::before { content: ""; position: absolute; left: 0; top: 0; height: 4px; width: 100%; background: linear-gradient(90deg, var(--tier-bd), transparent 80%); }
 
 .fc-head { display: flex; align-items: center; justify-content: space-between; width: 100%; gap: 8px; }
 .fc-rating { display: flex; flex-direction: column; line-height: 1; }
-.fc-rating strong { font-family: var(--fuente-titulo); font-weight: 400; font-size: 1.9rem; color: var(--texto); }
+.fc-rating strong { font-family: var(--fuente-titulo); font-weight: 400; font-size: 1.9rem; color: var(--tinta-carta); }
 .fc-rating span { font-size: .6rem; font-weight: 800; letter-spacing: .2em; color: var(--tier); margin-top: 3px; }
-.fc-tier { font-size: .56rem; font-weight: 800; letter-spacing: .16em; padding: 5px 11px; border-radius: 999px; color: #ffffff; background: var(--tier); }
+.fc-tier { font-size: .56rem; font-weight: 800; letter-spacing: .16em; padding: 5px 11px; border-radius: 999px; color: var(--tier-ink, #ffffff); background: var(--tier); }
 
 .fc-ball-wrap { position: relative; display: grid; place-items: center; width: 120px; height: 120px; margin: 6px 0 8px; }
 .fc-ball {
@@ -2227,7 +2232,7 @@ html { scrollbar-color: rgba(22, 86, 168, .5) rgba(11, 18, 32, .06); }
 .fc-crest.logo-img { padding: 5px; }
 .fc-crest img { width: 100%; height: 100%; object-fit: contain; }
 
-.fc-name { font-size: 1rem; font-weight: 700; color: var(--texto); text-align: center; overflow-wrap: anywhere; line-height: 1.2; margin-top: 2px; }
+.fc-name { font-size: 1rem; font-weight: 700; color: var(--tinta-carta); text-align: center; overflow-wrap: anywhere; line-height: 1.2; margin-top: 2px; }
 .fc-team {
   display: inline-block; max-width: 100%; margin-top: 7px; padding: 4px 12px; border-radius: 999px;
   font-size: .62rem; font-weight: 700; letter-spacing: .05em; text-transform: uppercase;
@@ -2239,11 +2244,11 @@ html { scrollbar-color: rgba(22, 86, 168, .5) rgba(11, 18, 32, .06); }
 
 .fc-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px 8px; width: 100%; margin-top: 14px; padding-top: 12px; border-top: 1px solid rgba(11,18,32,.10); }
 .fc-stat { display: flex; flex-direction: column; align-items: center; gap: 4px; }
-.fc-stat b { font-size: 1rem; font-weight: 800; color: var(--texto); line-height: 1; }
-.fc-stat span { font-size: .54rem; font-weight: 700; letter-spacing: .1em; color: var(--texto-tenue); }
+.fc-stat b { font-size: 1rem; font-weight: 800; color: var(--tinta-carta); line-height: 1; }
+.fc-stat span { font-size: .54rem; font-weight: 700; letter-spacing: .1em; color: var(--tinta-carta-tenue); }
 .fc-stat i { display: block; position: relative; width: 100%; height: 3px; border-radius: 99px; background: rgba(11,18,32,.10); overflow: hidden; }
 .fc-stat i::after { content: ""; position: absolute; inset: 0 auto 0 0; width: var(--v, 50%); border-radius: 99px; background: linear-gradient(90deg, var(--eq), var(--tier)); }
-.fc-hint { margin-top: 10px; font-size: .6rem; letter-spacing: .14em; text-transform: uppercase; color: var(--texto-tenue); }
+.fc-hint { margin-top: 10px; font-size: .6rem; letter-spacing: .14em; text-transform: uppercase; color: var(--tinta-carta-tenue); }
 
 /* Modal */
 body.carta-modal-abierto { overflow: hidden; }
@@ -2327,6 +2332,13 @@ body.carta-modal-abierto { overflow: hidden; }
 
 /* ============================================ TEMA AZUL MARINO (comodo) */
 /* Revierte la seccion clara a una paleta oscura azul marino/diamante. */
+
+/* Texto legible sobre fondo oscuro (antes --texto era negro y se perdia). */
+:root {
+  --texto: #EAF1FB;
+  --texto-suave: rgba(233, 239, 249, .78);
+  --texto-tenue: rgba(233, 239, 249, .55);
+}
 
 .preloader {
   background:
@@ -2444,25 +2456,21 @@ body.carta-modal-abierto { overflow: hidden; }
 .cartas-select select { background: rgba(12,24,48,.85); color: var(--texto); }
 .cartas-select select option { background: #0C1830; color: var(--texto); }
 
+/* Las cartas mantienen su fondo claro (oro/plata/bronce) en ambos temas:
+   solo se ajusta el contorno para que encaje con el azul marino. */
 .fc-card {
-  --tier-bg: linear-gradient(170deg, rgba(32,56,96,.92) 0%, rgba(18,34,60,.96) 55%, rgba(12,24,48,1) 100%) !important;
-  background:
-    radial-gradient(130% 90% at 50% -20%, color-mix(in srgb, var(--eq) 22%, transparent) 0%, transparent 60%),
-    var(--tier-bg);
-  box-shadow: 0 12px 26px -14px rgba(0,0,0,.5), var(--sombra);
+  box-shadow: 0 12px 26px -14px rgba(0,0,0,.45), var(--sombra);
 }
-.fc-card.fc-oro    { --tier-bg: linear-gradient(170deg, rgba(70,56,18,.92) 0%, rgba(48,38,14,.96) 55%, rgba(28,24,12,1) 100%) !important; }
-.fc-card.fc-plata  { --tier-bg: linear-gradient(170deg, rgba(46,56,76,.92) 0%, rgba(30,38,56,.96) 55%, rgba(22,28,42,1) 100%) !important; }
-.fc-card.fc-bronce { --tier-bg: linear-gradient(170deg, rgba(66,42,22,.92) 0%, rgba(46,30,16,.96) 55%, rgba(30,22,14,1) 100%) !important; }
 .fc-card:hover { box-shadow: 0 22px 44px -18px color-mix(in srgb, var(--tier-bd) 70%, transparent), var(--sombra-alta); }
-.fc-name, .fc-stat b, .fc-rating strong { color: var(--texto); }
+.fc-name, .fc-stat b, .fc-rating strong { color: var(--tinta-carta); }
 .fc-team {
-  color: var(--texto);
-  background: rgba(255,255,255,.08);
-  border: 1px solid rgba(255,255,255,.18);
+  color: color-mix(in srgb, var(--eq) 70%, #0b1220);
+  background: color-mix(in srgb, var(--eq) 12%, #ffffff);
+  border: 1px solid color-mix(in srgb, var(--eq) 35%, #ffffff);
 }
-.fc-stats { border-top: 1px solid rgba(255,255,255,.10); }
-.fc-stat i { background: rgba(255,255,255,.12); }
+.fc-stats { border-top: 1px solid rgba(11,18,32,.10); }
+.fc-stat i { background: rgba(11,18,32,.10); }
+.fc-hint { color: var(--tinta-carta-tenue); }
 
 .carta-modal-card { background: var(--tarjeta-alta); box-shadow: 0 40px 90px -40px rgba(0,0,0,.75); }
 .carta-modal-x { background: rgba(255,255,255,.08); color: var(--texto); }
@@ -2497,3 +2505,171 @@ body.carta-modal-abierto { overflow: hidden; }
 .staff-card.arbitros      { --rol: #5AA9F0; }
 .staff-card.disenadores   { --rol: #FF6FB0; }
 .staff-card.programadores { --rol: #3B8FE6; }
+
+/* =====================================================================
+   MEJORAS 2026: calendario mensual, informe de partido y fichas
+   ===================================================================== */
+
+/* ---------------------------------------------------- Nombre de jugador */
+.jug-link {
+  font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer;
+  text-decoration: underline; text-decoration-color: rgba(232,178,62,.5); text-underline-offset: 3px;
+  transition: color .2s, text-decoration-color .2s;
+}
+.jug-link:hover { color: var(--cian); text-decoration-color: var(--cian); }
+.jug-link:focus-visible { outline: 2px solid var(--cian); outline-offset: 2px; border-radius: 4px; }
+
+/* --------------------------------------------------- Calendario mensual */
+.calendario {
+  border: 1px solid var(--linea); border-radius: 22px; padding: 18px;
+  background: var(--tarjeta); box-shadow: var(--sombra);
+}
+.cal-nav { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-bottom: 16px; }
+.cal-nav-btn {
+  width: 42px; height: 42px; flex-shrink: 0; border-radius: 13px; cursor: pointer;
+  border: 1px solid var(--linea-fuerte); background: transparent; color: var(--texto);
+  font-size: 1.5rem; line-height: 1; transition: background .2s, color .2s, border-color .2s;
+}
+.cal-nav-btn:hover { background: var(--cian); border-color: var(--cian); color: #ffffff; }
+.cal-nav-txt { text-align: center; min-width: 0; }
+.cal-nav-txt strong {
+  display: block; font-family: var(--fuente-titulo); font-weight: 400; font-size: 1.35rem;
+  letter-spacing: .06em; color: var(--texto); text-transform: capitalize;
+}
+.cal-nav-txt small { font-size: .66rem; letter-spacing: .12em; text-transform: uppercase; color: var(--texto-tenue); }
+.cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; }
+.cal-dow {
+  text-align: center; font-size: .58rem; font-weight: 800; letter-spacing: .14em;
+  text-transform: uppercase; color: var(--texto-tenue); padding-bottom: 2px;
+}
+.cal-dia {
+  min-height: 96px; border: 1px solid var(--linea); border-radius: 14px; padding: 8px;
+  display: flex; flex-direction: column; gap: 6px; background: rgba(255,255,255,.02);
+}
+.cal-dia.cal-vacia { border: 0; background: transparent; }
+.cal-dia.con-partidos { background: rgba(232,178,62,.06); }
+.cal-dia.hoy { border-color: var(--cian); box-shadow: inset 0 0 0 1px rgba(232,178,62,.35); }
+.cal-num { font-size: .7rem; font-weight: 800; color: var(--texto-tenue); }
+.cal-dia.hoy .cal-num { color: var(--cian); }
+.cal-parts { display: flex; flex-direction: column; gap: 5px; }
+.cal-part {
+  display: flex; flex-direction: column; gap: 1px; align-items: flex-start; text-align: left;
+  padding: 6px 8px; border-radius: 10px; cursor: pointer; font: inherit;
+  border: 1px solid var(--linea-fuerte); background: var(--tarjeta-alta); color: var(--texto);
+  transition: border-color .2s, transform .2s, box-shadow .2s;
+}
+.cal-part:hover { border-color: var(--cian); transform: translateY(-2px); box-shadow: var(--sombra); }
+.cal-part.jugado { border-color: rgba(232,178,62,.45); }
+.cp-sig { font-size: .56rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--eq, var(--cian)); }
+.cp-marcador { font-family: var(--fuente-titulo); font-weight: 400; font-size: .84rem; letter-spacing: .04em; color: var(--texto); }
+.cp-marcador.pend { font-size: .7rem; color: var(--texto-tenue); }
+.cal-pie { margin: 16px 0 0; text-align: center; font-size: .66rem; letter-spacing: .1em; text-transform: uppercase; color: var(--texto-tenue); }
+@media (max-width: 860px) {
+  .cal-grid { gap: 4px; }
+  .cal-dia { min-height: 62px; padding: 5px; }
+  .cp-sig { display: none; }
+  .cal-nav-txt strong { font-size: 1.05rem; }
+}
+
+/* ------------------------------------------- Partidos y ficha de jugador */
+.match-click { cursor: pointer; transition: border-color .25s, box-shadow .25s, transform .25s; }
+.match-click:hover { border-color: rgba(232,178,62,.45); transform: translateY(-2px); }
+.match-pista {
+  display: inline-flex; align-items: center; gap: 6px; font-size: .58rem; letter-spacing: .14em;
+  text-transform: uppercase; color: var(--texto-tenue); white-space: nowrap;
+}
+.match-pista::before { content: "\2192"; color: var(--cian); font-size: .8rem; }
+
+/* --------------------------------------------------- Modal: carta grande */
+.fc-grande { width: 100%; max-width: 320px; cursor: default; }
+.fc-grande:hover { transform: none; }
+.fc-grande .fc-ball-wrap { width: 136px; height: 136px; }
+.fc-grande .fc-ball { width: 120px; height: 120px; }
+.fc-grande .fc-ini { font-size: 2.7rem; }
+.cm-amplio { grid-template-columns: minmax(0, 320px) minmax(0, 1fr); gap: 30px; }
+.cm-cabecera { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; }
+.cm-titulo { font-family: var(--fuente-titulo); font-weight: 400; font-size: 1.6rem; line-height: 1.1; color: var(--texto); overflow-wrap: anywhere; }
+.cm-sub { font-size: .7rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--texto-tenue); }
+.cm-acciones { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 4px; }
+.cm-btn { display: inline-flex; align-items: center; justify-content: center; padding: 11px 18px; border-radius: 12px; cursor: pointer; font: inherit; font-size: .68rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; text-decoration: none; }
+.cm-fisa-t { font-size: .62rem; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: var(--tinta-carta, #101A2C); }
+
+/* ------------------------------------------------ Modal: ficha jugador */
+.jf-card { grid-template-columns: minmax(0, 1fr); gap: 18px; max-width: 560px; }
+.jf-cab { display: flex; align-items: center; gap: 14px; padding-right: 44px; }
+.jf-crest {
+  width: 52px; height: 52px; flex-shrink: 0; border-radius: 14px; display: grid; place-items: center;
+  overflow: hidden; padding: 5px; background: #ffffff; border: 1px solid var(--linea-fuerte);
+  font-size: .74rem; font-weight: 800; color: #0B1220;
+}
+.jf-crest img { width: 100%; height: 100%; object-fit: contain; }
+.jf-id { min-width: 0; }
+.jf-id h3 { font-family: var(--fuente-titulo); font-weight: 400; font-size: 1.45rem; line-height: 1.1; color: var(--texto); overflow-wrap: anywhere; }
+.jf-id p { font-size: .68rem; letter-spacing: .1em; text-transform: uppercase; color: var(--texto-tenue); margin-top: 4px; }
+.jf-tier { margin-left: auto; padding: 8px 14px; border-radius: 999px; font-size: .62rem; font-weight: 800; letter-spacing: .12em; border: 1.5px solid; white-space: nowrap; }
+.jf-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+.jf-stat {
+  border: 1px solid var(--linea); border-radius: 14px; padding: 12px 8px; text-align: center;
+  background: var(--tarjeta-alta);
+}
+.jf-stat b { display: block; font-size: 1.25rem; font-weight: 800; color: var(--texto); line-height: 1; }
+.jf-stat span { display: block; margin-top: 5px; font-size: .52rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--texto-tenue); }
+.jf-pie { display: flex; flex-wrap: wrap; gap: 10px; }
+.jf-sin { font-size: .78rem; color: var(--texto-tenue); font-style: italic; }
+.jf-cs { font-size: .56rem; font-weight: 800; letter-spacing: .1em; padding: 3px 7px; border-radius: 6px; background: rgba(232,178,62,.16); color: var(--oro); }
+
+/* --------------------------------------------------- Modal: informe partido */
+.informe { grid-template-columns: minmax(0, 1fr); gap: 20px; max-width: 860px; }
+.inf-cab { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 16px; }
+.inf-eq { display: flex; flex-direction: column; align-items: center; gap: 8px; text-align: center; min-width: 0; }
+.inf-eq strong { font-family: var(--fuente-titulo); font-weight: 400; font-size: 1.05rem; color: var(--texto); overflow-wrap: anywhere; }
+.inf-eq small { font-size: .58rem; letter-spacing: .12em; text-transform: uppercase; color: var(--texto-tenue); }
+.inf-crest {
+  width: 46px; height: 46px; border-radius: 50%; display: grid; place-items: center; overflow: hidden;
+  padding: 5px; background: var(--eq, var(--cian)); color: #ffffff; font-size: .7rem; font-weight: 800;
+  border: 2px solid color-mix(in srgb, var(--eq, var(--cian)) 55%, #ffffff);
+}
+.inf-crest img { width: 100%; height: 100%; object-fit: contain; }
+.inf-score { display: flex; align-items: center; gap: 10px; }
+.inf-score b { font-family: var(--fuente-titulo); font-weight: 400; font-size: 2.6rem; line-height: 1; color: var(--texto); }
+.inf-score i { font-style: normal; font-size: 1.3rem; color: var(--texto-tenue); }
+.inf-score b.inf-vs { font-size: 1.3rem; letter-spacing: .1em; color: var(--oro); }
+.inf-sub { display: flex; flex-wrap: wrap; justify-content: center; gap: 14px; font-size: .7rem; letter-spacing: .08em; text-transform: uppercase; color: var(--texto-tenue); }
+.inf-mvp {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 14px 18px; border-radius: 16px; border: 1px solid rgba(232,178,62,.35);
+  background: linear-gradient(120deg, rgba(232,178,62,.14), rgba(232,178,62,.04));
+}
+.inf-mvp.vacio { border-color: var(--linea); background: rgba(255,255,255,.03); justify-content: center; font-size: .76rem; color: var(--texto-tenue); }
+.inf-mvp-tag { font-size: .58rem; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; color: var(--oro); }
+.inf-mvp-jug { font-size: 1.05rem; font-weight: 700; color: var(--texto); }
+.inf-mvp-stats { display: flex; flex-wrap: wrap; gap: 14px; font-size: .76rem; color: var(--texto-suave); }
+.inf-mvp-pts b { color: var(--oro); }
+.inf-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.inf-bloque { border: 1px solid var(--linea); border-radius: 16px; padding: 14px 16px; background: var(--tarjeta-alta); }
+.inf-bloque h4 { font-family: var(--fuente-titulo); font-weight: 400; font-size: .98rem; letter-spacing: .04em; color: var(--texto); margin-bottom: 10px; }
+.inf-lineas { display: flex; flex-direction: column; gap: 7px; }
+.inf-linea { display: flex; align-items: center; gap: 8px; font-size: .8rem; color: var(--texto-suave); }
+.inf-linea i { font-style: normal; font-size: .9rem; }
+.inf-linea strong { margin-left: auto; font-size: .78rem; color: var(--oro); }
+.inf-linea em { font-style: normal; font-size: .62rem; letter-spacing: .1em; color: var(--texto-tenue); }
+.inf-mini { display: flex; gap: 14px; margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--linea); font-size: .66rem; letter-spacing: .08em; text-transform: uppercase; color: var(--texto-tenue); }
+.inf-mini b { color: var(--texto); font-size: .82rem; }
+.inf-tablas { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.inf-equipo-bloque { border: 1px solid var(--linea); border-radius: 16px; overflow: hidden; background: var(--tarjeta-alta); }
+.inf-equipo-cab {
+  padding: 10px 14px; font-size: .66rem; font-weight: 800; letter-spacing: .1em; text-transform: uppercase;
+  color: #ffffff; background: linear-gradient(120deg, var(--eq), color-mix(in srgb, var(--eq) 60%, #0b1020));
+}
+.inf-tabla { width: 100%; border-collapse: collapse; font-size: .82rem; }
+.inf-tabla th, .inf-tabla td { padding: 8px 12px; text-align: left; }
+.inf-tabla th { font-size: .54rem; letter-spacing: .12em; text-transform: uppercase; color: var(--texto-tenue); font-weight: 700; }
+.inf-tabla td { color: var(--texto-suave); border-top: 1px solid var(--linea); }
+.inf-tabla td.pos, .inf-tabla th.pos { text-align: center; width: 46px; color: var(--texto); }
+.inf-tabla tfoot td { font-size: .58rem; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: var(--texto-tenue); }
+@media (max-width: 760px) {
+  .inf-cols, .inf-tablas { grid-template-columns: 1fr; }
+  .inf-score b { font-size: 2rem; }
+  .jf-stats { grid-template-columns: repeat(2, 1fr); }
+  .cm-amplio { grid-template-columns: 1fr; }
+}
