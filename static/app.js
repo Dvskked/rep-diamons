@@ -1078,7 +1078,6 @@ const ROLES_INFO = {
   'OWNER': { grupo: 'fundadores', etiqueta: 'FUNDADORES' },
   'FUNDADOR': { grupo: 'fundadores', etiqueta: 'FUNDADORES' },
   'FUNDADORA': { grupo: 'fundadores', etiqueta: 'FUNDADORES' },
-  'MASTER': { grupo: 'maestros', etiqueta: 'MAESTRO' },
   'STAFF': { grupo: 'staff', etiqueta: 'STAFF' },
   'COACH': { grupo: 'staff', etiqueta: 'STAFF' },
   'MOD': { grupo: 'staff', etiqueta: 'STAFF' },
@@ -1088,18 +1087,14 @@ const ROLES_INFO = {
   'ARBITROS': { grupo: 'arbitros', etiqueta: 'ÁRBITROS' },
   'DISENADOR': { grupo: 'disenadores', etiqueta: 'DISEÑADORES' },
   'DISEÑADOR': { grupo: 'disenadores', etiqueta: 'DISEÑADORES' },
-  'DISEÑADORES': { grupo: 'disenadores', etiqueta: 'DISEÑADORES' },
-  'DESARROLLADOR': { grupo: 'programadores', etiqueta: 'PROGRAMADORES' },
-  'PROGRAMADOR': { grupo: 'programadores', etiqueta: 'PROGRAMADORES' },
-  'PROGRAMADORES': { grupo: 'programadores', etiqueta: 'PROGRAMADORES' }
+  'DISEÑADORES': { grupo: 'disenadores', etiqueta: 'DISEÑADORES' }
 };
+const ROLES_OCULTOS = new Set(['MASTER', 'DESARROLLADOR', 'PROGRAMADOR', 'PROGRAMADORES']);
 const GRUPOS_EQUIPO = [
   { clave: 'fundadores', titulo: 'Fundadores', color: '#FFD86B' },
-  { clave: 'maestros', titulo: 'Maestros de la Liga', color: '#7FE3FF' },
   { clave: 'staff', titulo: 'Staff', color: '#E8B23E' },
   { clave: 'arbitros', titulo: 'Árbitros', color: '#5AA9F0' },
-  { clave: 'disenadores', titulo: 'Diseñadores', color: '#FF6FB0' },
-  { clave: 'programadores', titulo: 'Programadores', color: '#3B8FE6' }
+  { clave: 'disenadores', titulo: 'Diseñadores', color: '#FF6FB0' }
 ];
 function infoRol(rol) {
   return ROLES_INFO[String(rol || 'STAFF').toUpperCase()] || { grupo: 'staff', etiqueta: 'STAFF' };
@@ -1107,14 +1102,16 @@ function infoRol(rol) {
 function pintarEquipo() {
   const caja = $('#equipoGrid');
   if (!caja) return;
-  const items = cont('equipo');
+  const items = cont('equipo').filter((p) => !ROLES_OCULTOS.has(String(p.dato_extra || '').toUpperCase()));
   if (!items.length) { caja.innerHTML = vacio('Equipo no publicado.'); return; }
-  const porGrupo = { fundadores: [], maestros: [], staff: [], arbitros: [], disenadores: [], programadores: [] };
+  const porGrupo = { fundadores: [], staff: [], arbitros: [], disenadores: [] };
   items.forEach((p) => {
     const g = infoRol(p.dato_extra).grupo;
     if (porGrupo[g]) porGrupo[g].push(p);
     else porGrupo.staff.push(p);
   });
+  const esNeptun = (p) => /neptun/i.test(`${p.titulo || ''} ${p.subtitulo || ''}`);
+  porGrupo.staff.sort((a, b) => (esNeptun(b) ? 1 : 0) - (esNeptun(a) ? 1 : 0));
   caja.innerHTML = GRUPOS_EQUIPO.filter((g) => porGrupo[g.clave].length).map((g) => {
     const tarjetas = porGrupo[g.clave].map(renderStaffHTML).join('');
     return `<section class="equipo-grupo ${g.clave}" style="--rol:${g.color}">
@@ -1133,7 +1130,10 @@ function renderStaffHTML(p) {
   const user = sub ? `<p class="staff-user">Discord · ${sub}</p>` : '';
   const texto = p.texto ? `<p class="staff-texto">${esc(p.texto)}</p>` : '';
   const titulo = p.titulo ? esc(p.titulo).replace(/^[A-Z]{3}\s*\|\s*/i, '') : '';
-  return `<article class="staff-card ${info.grupo} reveal">
+  const esNeptun = /neptun/i.test(`${p.titulo || ''} ${p.subtitulo || ''}`);
+  const aura = esNeptun ? '<span class="staff-aura" aria-hidden="true"></span>' : '';
+  return `<article class="staff-card ${info.grupo}${esNeptun ? ' neptun' : ''} reveal">
+    ${aura}
     <div class="staff-avatar">${foto}</div>
     <span class="staff-rol">${esc(info.etiqueta)}</span>
     <h4>${titulo}</h4>
@@ -1521,6 +1521,19 @@ function pintarEquipoDetalle() {
     ].map(([t, v]) => `<div class="eq-stat"><small>${esc(t)}</small><strong>${esc(v)}</strong></div>`).join('');
   }
 
+  pintarCalendarioEquipo(eq);
+
+  const calEq = $('#eqCalendario');
+  if (calEq && !calEq.dataset.config) {
+    calEq.dataset.config = '1';
+    calEq.addEventListener('click', (ev) => {
+      const btn = ev.target.closest('[data-eq-cal-move]');
+      if (!btn) return;
+      EQ_CAL.mes = moverMes(EQ_CAL.mes, Number(btn.dataset.eqCalMove) || 0);
+      pintarCalendarioEquipo(eq);
+    });
+  }
+
   const involucra = (f) => f.equipo_a_id === id || f.equipo_b_id === id;
   const jugados = DATOS.fechas.filter((f) => f.jugado && involucra(f))
     .sort((a, b) => fechaHora(b) - fechaHora(a));
@@ -1688,8 +1701,8 @@ let _cartasActuales = [];
 /* Paleta de cada rango: diamante cristal, oro brillante, plata fria y bronce calido. */
 const RANGO_PALETA = {
   diamante: {
-    bg: 'linear-gradient(170deg,#FBFEFF 0%,#DDF4FF 34%,#B4E4FF 62%,#EAF9FF 100%)',
-    bd: '#6FD0FF', col: '#0A3E63', chip: '#8FE3FF', ink: '#05304F', brillo: 1
+    bg: 'linear-gradient(165deg,#0A2542 0%,#0D3B63 34%,#0E6E9E 62%,#3FC7F0 100%)',
+    bd: '#9CEEFF', col: '#B9F4FF', chip: '#8FE3FF', ink: '#04304F', brillo: .5
   },
   oro: {
     bg: 'linear-gradient(170deg,#FFFBEA 0%,#FFE7A2 52%,#FFCE5C 100%)',
@@ -1860,10 +1873,6 @@ function cartaModalHTML(j) {
   const wr = f.pj ? Math.round((f.w / f.pj) * 100) : 0;
   const rangoText = RANGO_TXT[rango];
   const d = datosJugador(j.id);
-  const info = rangoInfo(rango);
-
-  const statF = (lbl, val) =>
-    `<div class="cm-fs"><b>${val}</b><span>${lbl}</span><i style="--v:${val}%"></i></div>`;
 
   const dato = (lbl, val, extra = '') =>
     `<div class="cm-item${extra}"><small>${lbl}</small><strong>${val}</strong></div>`;
@@ -1897,41 +1906,44 @@ function cartaModalHTML(j) {
         </span>
         <h3 class="cm-titulo">${esc(j.nombre)}</h3>
         <p class="cm-sub">${esc(j.equipo)} · ${esc(j.division || '-')} · ${esc(c.pos)}${d && d.dorsal ? ` · #${esc(d.dorsal)}` : ''}</p>
-        <div class="cm-grl">
-          <span class="cm-grl-etq">${esc(GRL_ETIQUETA)}</span>
-          <span class="cm-grl-val">${c.ovr}</span>
-          <span class="cm-grl-rng">${rangoText}</span>
+      </div>
+
+      <div class="cm-destacados">
+        <div class="cm-dest">
+          <small>GOLES</small>
+          <b>${num(j.goles)}</b>
+          <span>en la temporada</span>
+        </div>
+        <div class="cm-dest">
+          <small>ASISTENCIAS</small>
+          <b>${num(j.asistencias)}</b>
+          <span>repartidas</span>
+        </div>
+        <div class="cm-dest">
+          <small>PARTIDOS</small>
+          <b>${f.pj}</b>
+          <span>con ${esc(j.equipo)}</span>
+        </div>
+        <div class="cm-dest">
+          <small>WIN RATE</small>
+          <b>${wr}<i>%</i></b>
+          <span>${f.w} victorias</span>
         </div>
       </div>
 
-      <div class="cm-bloques">
-        <div class="cm-datos">
-          <h4>DATOS DE LA TEMPORADA</h4>
-          <div class="cm-lista">
-            ${dato('Partidos jugados', f.pj)}
-            ${dato('Victorias', f.w)}
-            ${dato('Derrotas', f.l)}
-            ${dato('Empates', f.d)}
-            ${dato('Goles', num(j.goles))}
-            ${dato('Asistencias', num(j.asistencias))}
-            ${dato('Autogoles', num(j.autogoles))}
-            ${dato('Clean Sheets', num(j.cs))}
-            ${dato('Win Rate', wr + '%')}
-            ${dato('GF / GC', `${f.gf} / ${f.gc}`)}
-            ${dato('Equipo · Division', `${esc(j.equipo)} (${esc(j.division || '-').toUpperCase()})`, ' full')}
-            ${dato('Posicion · Rango', `${c.pos} · ${rangoText}`)}
-          </div>
-        </div>
-
-        <div class="cm-fifa">
-          <div class="cm-fifa-head">
-            <small>STATS FIFA · ${esc(info.corto)}</small>
-            <span class="cm-fifa-t" style="background:${tc.chip};color:${tc.ink}">${rangoText} ${c.ovr}</span>
-          </div>
-          <div class="cm-fifa-grid">
-            ${statF('PAC', c.pac)}${statF('SHO', c.sho)}${statF('PAS', c.pas)}
-            ${statF('DRI', c.dri)}${statF('DEF', c.def)}${statF('PHY', c.phy)}
-          </div>
+      <div class="cm-datos">
+        <h4>ESTADISTICAS PERSONALES E INFORMACION</h4>
+        <div class="cm-lista">
+          ${dato('Partidos jugados', f.pj)}
+          ${dato('Victorias', f.w)}
+          ${dato('Derrotas', f.l)}
+          ${dato('Empates', f.d)}
+          ${dato('Autogoles', num(j.autogoles))}
+          ${dato('Clean Sheets', num(j.cs))}
+          ${dato('Goles a favor', f.gf)}
+          ${dato('Goles en contra', f.gc)}
+          ${dato('Equipo · Division', `${esc(j.equipo)} (${esc(j.division || '-').toUpperCase()})`, ' full')}
+          ${dato('Posicion · Rango', `${c.pos} · ${rangoText}`)}
         </div>
       </div>
 

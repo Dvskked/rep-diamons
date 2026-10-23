@@ -3099,3 +3099,188 @@ body.carta-modal-abierto { overflow: hidden; }
   .inf-hero { grid-template-columns: 1fr; text-align: center; }
   .inf-marc { order: -1; }
 }
+
+/* =====================================================================
+   AJUSTES 2026: calendario por equipo, cartas, informes y staff
+   ===================================================================== */
+
+/* --------------------------- Calendario de la liga (solo lista) */
+.cal-solo-lista .cal-lista { margin-top: 0; border-top: 0; padding-top: 0; }
+.cal-titulo-bloque { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.cal-titulo-bloque .etiqueta {
+  font-size: .58rem; letter-spacing: .2em; color: var(--cian);
+}
+.cal-titulo-bloque strong {
+  font-family: var(--fuente-titulo); font-weight: 400; font-size: clamp(1.25rem, 2.3vw, 1.7rem);
+  letter-spacing: .06em; text-transform: uppercase; color: var(--texto); line-height: 1.1;
+}
+.cal-titulo-bloque small {
+  font-size: .68rem; letter-spacing: .03em; color: var(--texto-tenue);
+}
+
+/* --------------------------- Calendario dentro de cada equipo */
+.equipo-calendario-sec { margin-top: clamp(30px, 4.5vw, 52px); margin-bottom: clamp(30px, 4.5vw, 52px); }
+.equipo-calendario-sec .sec-head { margin-bottom: 16px; }
+.cal-equipo { overflow: hidden; }
+.cal-equipo .cal-grid { gap: 8px; }
+.cal-equipo .cal-dia { min-height: 116px; }
+.cal-equipo .cal-dia.con-partidos {
+  background:
+    radial-gradient(120% 80% at 50% 0%, rgba(90,169,240,.16), transparent 70%),
+    linear-gradient(180deg, rgba(232,178,62,.10), rgba(232,178,62,.02));
+  border-color: rgba(232,178,62,.38);
+}
+.cal-equipo .cal-part.es-mio { border-left-width: 4px; box-shadow: 0 0 0 1px rgba(90,169,240,.12) inset; }
+.cal-equipo .cal-part:hover { border-color: var(--cian); }
+
+/* --------------------------- Cartas: capas y rango diamante */
+.fc-deco { z-index: 0; }
+.fc-card > *:not(.fc-deco) { position: relative; z-index: 1; }
+.fc-card.fc-diamante {
+  --tinta-carta: #EAF9FF;
+  --tinta-carta-tenue: rgba(234, 249, 255, .74);
+  border-color: #9CEEFF;
+  box-shadow: 0 22px 48px -18px rgba(0, 180, 255, .72), inset 0 0 0 1px rgba(255,255,255,.22);
+}
+.fc-card.fc-diamante::before {
+  height: 5px;
+  background: linear-gradient(90deg, transparent, #9CEEFF 25%, #FFFFFF 50%, #9CEEFF 75%, transparent);
+  box-shadow: 0 0 18px rgba(140, 231, 255, .9);
+}
+.fc-card.fc-diamante .fc-stats { border-top-color: rgba(255,255,255,.24); }
+.fc-card.fc-diamante .fc-stat i { background: rgba(255,255,255,.18); }
+.fc-card.fc-diamante .fc-team {
+  color: #EAF9FF; background: rgba(255,255,255,.13);
+  border-color: rgba(255,255,255,.38);
+}
+.fc-card.fc-diamante .fc-hint { color: rgba(234,249,255,.72); }
+.fc-card.fc-diamante .fc-halo {
+  background: radial-gradient(circle, rgba(156,238,255,.65) 0%, transparent 64%);
+  opacity: .7;
+}
+.fc-card.fc-diamante .fc-tier { font-weight: 900; }
+.cm-diamante {
+  border-color: #9CEEFF;
+  box-shadow: 0 40px 100px -42px rgba(0, 180, 255, .75), inset 0 0 0 1px rgba(156,238,255,.24);
+}
+.cm-diamante .cm-rango-badge { box-shadow: 0 0 22px -6px rgba(143,227,255,.85); }
+
+/* --------------------------- Modal de carta: layout vertical limpio */
+.cm-amplio { grid-template-columns: minmax(0, 340px) minmax(0, 1fr); align-items: start; }
+.cm-izq { position: sticky; top: 0; align-self: start; }
+.cm-der { gap: 18px; }
+.cm-destacados {
+  display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px;
+}
+.cm-dest {
+  position: relative; overflow: hidden; padding: 14px 12px 13px; border-radius: 16px;
+  background: linear-gradient(160deg, rgba(255,255,255,.08), rgba(255,255,255,.02));
+  border: 1px solid var(--linea);
+}
+.cm-dest::after {
+  content: ""; position: absolute; top: -34px; right: -34px; width: 78px; height: 78px; border-radius: 50%;
+  background: radial-gradient(circle, color-mix(in srgb, var(--tier-bd) 45%, transparent), transparent 68%);
+  pointer-events: none;
+}
+.cm-dest small { display: block; font-size: .5rem; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: var(--texto-tenue); }
+.cm-dest b { display: block; font-family: var(--fuente-titulo); font-weight: 400; font-size: 1.55rem; line-height: 1; color: var(--texto); margin: 5px 0 3px; }
+.cm-dest b i { font-style: normal; font-size: .85rem; color: var(--tier); }
+.cm-dest span { font-size: .58rem; color: var(--texto-suave); }
+.cm-datos h4 { margin-bottom: 13px; }
+.cm-lista { gap: 9px; }
+.cm-item { padding: 11px 13px; }
+.cm-item strong { font-size: .92rem; }
+
+/* --------------------------- Informe de partido: scroll correcto */
+.inf-v2 {
+  overflow-y: auto !important;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  padding-bottom: 28px;
+}
+.inf-v2 .inf-acciones { padding-bottom: 4px; }
+
+/* --------------------------- Staff: tarjetas verticales y Neptun */
+.equipo-grupo { position: relative; }
+.equipo-staff-grid {
+  grid-template-columns: repeat(auto-fill, minmax(min(230px, 100%), 1fr));
+  align-items: stretch;
+}
+.staff-card {
+  display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
+  min-height: 286px; padding: 34px 24px 30px;
+}
+.staff-card h4 { font-size: 1.24rem; line-height: 1.15; }
+.staff-card .staff-texto { max-width: 28ch; margin: 6px auto 0; line-height: 1.55; }
+.staff-avatar { width: 110px; height: 110px; margin-bottom: 18px; }
+.staff-rol { margin-top: 2px; }
+.staff-card > *:not(.staff-aura) { position: relative; z-index: 1; }
+.staff-aura {
+  position: absolute; inset: -35%; z-index: 0; pointer-events: none;
+  background: conic-gradient(from 0deg,
+    transparent 0 18%, rgba(255,111,176,.52) 28%, transparent 42%,
+    rgba(255,196,224,.36) 58%, transparent 72%, rgba(255,111,176,.45) 88%, transparent 100%);
+  filter: blur(28px); opacity: .75;
+  animation: staffAura 12s linear infinite;
+}
+@keyframes staffAura { to { transform: rotate(360deg); } }
+.staff-card.neptun {
+  border-color: rgba(255,111,176,.62);
+  background:
+    radial-gradient(120% 120% at 50% 0%, rgba(255,111,176,.24), transparent 56%),
+    linear-gradient(165deg, rgba(56,20,46,.92), rgba(16,26,46,.97));
+  box-shadow:
+    inset 0 0 0 1px rgba(255,196,224,.16),
+    0 26px 64px -34px rgba(255,111,176,.85),
+    0 0 46px -20px rgba(255,111,176,.55);
+}
+.staff-card.neptun::before {
+  height: 5px;
+  background: linear-gradient(90deg, transparent, #FF6FB0 22%, #FFD1E6 50%, #FF6FB0 78%, transparent);
+  box-shadow: 0 0 20px rgba(255,111,176,.9);
+}
+.staff-card.neptun::after {
+  content: "\2726";
+  position: absolute; top: 14px; right: 18px; z-index: 1;
+  color: #FFB7D9; font-size: 1rem; text-shadow: 0 0 14px #FF6FB0;
+  animation: staffSparkle 2.6s ease-in-out infinite;
+}
+@keyframes staffSparkle {
+  0%, 100% { opacity: .45; transform: scale(.85) rotate(0deg); }
+  50% { opacity: 1; transform: scale(1.12) rotate(18deg); }
+}
+.staff-card.neptun .staff-avatar {
+  border-color: #FF8FC2;
+  box-shadow:
+    0 0 0 7px rgba(255,111,176,.12),
+    0 0 38px rgba(255,111,176,.7),
+    inset 0 0 22px rgba(255,196,224,.18);
+  animation: staffNeptunPulso 3.8s ease-in-out infinite;
+}
+@keyframes staffNeptunPulso {
+  0%, 100% { box-shadow: 0 0 0 6px rgba(255,111,176,.10), 0 0 30px rgba(255,111,176,.55), inset 0 0 18px rgba(255,196,224,.14); }
+  50% { box-shadow: 0 0 0 12px rgba(255,111,176,.06), 0 0 52px rgba(255,111,176,.9), inset 0 0 26px rgba(255,196,224,.24); }
+}
+.staff-card.neptun .staff-rol {
+  color: #FFD1E6; border-color: rgba(255,111,176,.7); background: rgba(255,111,176,.15);
+}
+.staff-card.neptun h4 { color: #FFF2F8; text-shadow: 0 0 22px rgba(255,111,176,.45); }
+.staff-card.neptun .staff-user { color: #FFB7D9; }
+.staff-card.neptun .staff-texto { color: rgba(255,238,247,.82); }
+
+@media (max-width: 900px) {
+  .cm-amplio { grid-template-columns: minmax(0, 1fr); }
+  .cm-izq { position: static; }
+  .cm-destacados { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 720px) {
+  .cal-solo-lista .cal-cab { align-items: flex-start; }
+  .cal-titulo-bloque small { max-width: 46ch; }
+  .equipo-calendario-sec .cal-dia { min-height: 76px; }
+}
+@media (max-width: 560px) {
+  .cm-destacados { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .cm-dest b { font-size: 1.3rem; }
+  .staff-card { min-height: 250px; }
+}
