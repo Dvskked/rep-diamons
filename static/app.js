@@ -1091,10 +1091,11 @@ const ROLES_INFO = {
 };
 const ROLES_OCULTOS = new Set(['MASTER', 'DESARROLLADOR', 'PROGRAMADOR', 'PROGRAMADORES']);
 const GRUPOS_EQUIPO = [
-  { clave: 'fundadores', titulo: 'Fundadores', color: '#FFD86B' },
-  { clave: 'staff', titulo: 'Staff', color: '#E8B23E' },
-  { clave: 'arbitros', titulo: 'Árbitros', color: '#5AA9F0' },
-  { clave: 'disenadores', titulo: 'Diseñadores', color: '#FF6FB0' }
+  { clave: 'fundadores', titulo: 'Fundadores', color: '#ff6bf0' },
+  { clave: 'staff', titulo: 'Staff', color: '#207be4' },
+  { clave: 'arbitros', titulo: 'Árbitros', color: '#ebf05a' },
+  { clave: 'disenadores', titulo: 'Diseñadores', color: '#1cddff' },
+  { clave: 'programador', titulo: 'Desarrolladores', color: '#771cff' }
 ];
 function infoRol(rol) {
   return ROLES_INFO[String(rol || 'STAFF').toUpperCase()] || { grupo: 'staff', etiqueta: 'STAFF' };
@@ -1104,7 +1105,7 @@ function pintarEquipo() {
   if (!caja) return;
   const items = cont('equipo').filter((p) => !ROLES_OCULTOS.has(String(p.dato_extra || '').toUpperCase()));
   if (!items.length) { caja.innerHTML = vacio('Equipo no publicado.'); return; }
-  const porGrupo = { fundadores: [], staff: [], arbitros: [], disenadores: [] };
+  const porGrupo = { fundadores: [], staff: [], arbitros: [], disenadores: [], programador: [] };
   items.forEach((p) => {
     const g = infoRol(p.dato_extra).grupo;
     if (porGrupo[g]) porGrupo[g].push(p);
