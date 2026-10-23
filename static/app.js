@@ -1737,7 +1737,7 @@ function tarjetaCarta(j, opts = {}) {
     `<div class="fc-stat"><b>${val}</b><span>${lbl}</span><i style="--v:${val}%"></i></div>`;
 
   const insignia = rango === 'diamante'
-    ? `<span class="fc-diamante" title="Rango Diamante"><i></i><b>${esc(GRL_ETIQUETA)}</b></span>`
+    ? `<span class="fc-diamante-badge" title="Rango Diamante"><i></i><b>${esc(GRL_ETIQUETA)}</b></span>`
     : '';
 
   const cuerpo = `

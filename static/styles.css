@@ -2746,7 +2746,7 @@ body.carta-modal-abierto { overflow: hidden; }
 }
 
 /* Insignia de diamante (solo rango diamante). */
-.fc-diamante {
+.fc-diamante-badge {
   position: relative; width: 32px; height: 32px; flex-shrink: 0;
   display: grid; place-items: center; transform: rotate(45deg);
   border-radius: 9px;
@@ -2754,8 +2754,8 @@ body.carta-modal-abierto { overflow: hidden; }
   border: 1px solid #7FD8FF;
   box-shadow: 0 8px 18px -6px rgba(0,170,255,.65), inset 0 0 12px rgba(255,255,255,.85);
 }
-.fc-diamante i { position: absolute; inset: 5px; border-radius: 5px; border: 1px solid rgba(255,255,255,.9); }
-.fc-diamante b {
+.fc-diamante-badge i { position: absolute; inset: 5px; border-radius: 5px; border: 1px solid rgba(255,255,255,.9); }
+.fc-diamante-badge b {
   position: relative; transform: rotate(-45deg);
   font-size: .48rem; font-weight: 900; letter-spacing: .04em; color: #04304F;
 }
@@ -3137,6 +3137,8 @@ body.carta-modal-abierto { overflow: hidden; }
 .fc-deco { z-index: 0; }
 .fc-card > *:not(.fc-deco) { position: relative; z-index: 1; }
 .fc-card.fc-diamante {
+  --eq: #7FE3FF !important;
+  --eq-txt: #04304F !important;
   --tinta-carta: #EAF9FF;
   --tinta-carta-tenue: rgba(234, 249, 255, .74);
   border-color: #9CEEFF;
