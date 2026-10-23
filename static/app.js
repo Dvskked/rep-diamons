@@ -1135,9 +1135,11 @@ function renderStaffHTML(p) {
   return `<article class="staff-card ${info.grupo}${esNeptun ? ' neptun' : ''} reveal">
     ${aura}
     <div class="staff-avatar">${foto}</div>
-    <span class="staff-rol">${esc(info.etiqueta)}</span>
-    <h4>${titulo}</h4>
-    ${user}${texto}
+    <div class="staff-info">
+      <span class="staff-rol">${esc(info.etiqueta)}</span>
+      <h4>${titulo}</h4>
+      ${user}${texto}
+    </div>
   </article>`;
 }
 

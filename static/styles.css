@@ -3286,3 +3286,32 @@ body.carta-modal-abierto { overflow: hidden; }
   .cm-dest b { font-size: 1.3rem; }
   .staff-card { min-height: 250px; }
 }
+
+/* --------------------------- Staff: tarjetas horizontales */
+.equipo-staff-grid {
+  display: flex; flex-wrap: wrap; gap: 16px;
+}
+.staff-card {
+  flex: 1 1 320px; min-height: 0;
+  display: flex; flex-direction: row; align-items: center; justify-content: flex-start;
+  gap: 16px; padding: 20px 22px; text-align: left;
+}
+.staff-avatar {
+  width: 76px; height: 76px; flex: 0 0 76px; margin: 0;
+  font-size: 1.35rem;
+}
+.staff-info {
+  flex: 1 1 auto; min-width: 0;
+  display: flex; flex-direction: column; align-items: flex-start;
+}
+.staff-info .staff-rol { margin: 0 0 7px; align-self: flex-start; }
+.staff-info h4 { font-size: 1.12rem; line-height: 1.2; }
+.staff-info .staff-user { margin-bottom: 5px; }
+.staff-info .staff-texto { max-width: none; margin: 0; font-size: .8rem; line-height: 1.45; }
+.staff-card.neptun::after { top: 12px; right: 14px; }
+
+@media (max-width: 620px) {
+  .staff-card { flex-basis: 100%; padding: 16px; }
+  .staff-avatar { width: 64px; height: 64px; flex-basis: 64px; }
+  .staff-info h4 { font-size: 1.05rem; }
+}
