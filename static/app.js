@@ -26,6 +26,8 @@ const CARTAS = { division: 'all', equipo: 'all', buscar: '' };
 
 /* Estado del CALENDARIO (mes visible en la vista de calendario) */
 const CAL = { mes: '' };
+/* Mes visible del calendario dentro de la ficha de cada equipo. */
+const EQ_CAL = { mes: '' };
 
 /* Discord oficial de la liga (comunidad, donacion y tickets). */
 const DISCORD_LEAGUE = 'https://discord.gg/kVAjgkeRsC';
@@ -307,13 +309,6 @@ function pintarCalendario() {
   }
 
   const partidos = actual === 'TODAS' ? todas : (grupos.get(actual) || []);
-
-  /* Mes visible: el primero con partidos de la seleccion. */
-  const meses = Array.from(new Set(partidos.map((f) => mesDe(f.fecha)).filter(Boolean))).sort();
-  if (!meses.includes(CAL.mes)) CAL.mes = meses[0] || '';
-
-  const delMes = partidos.filter((f) => mesDe(f.fecha) === CAL.mes);
-  const fuera = partidos.filter((f) => mesDe(f.fecha) !== CAL.mes);
   const jugados = partidos.filter((f) => f.jugado).length;
   const pendientes = partidos.length - jugados;
 
@@ -322,32 +317,23 @@ function pintarCalendario() {
     nota.textContent = `${partidos.length} partidos · ${actual === 'TODAS' ? 'temporada completa' : actual} · Division ${LIGA.division}`;
   }
 
-  caja.innerHTML = `<section class="calendario reveal">
+  caja.innerHTML = `<section class="calendario cal-solo-lista reveal">
       <header class="cal-cab">
-        <div class="cal-nav">
-          <button type="button" class="cal-nav-btn" data-cal-move="-1" aria-label="Mes anterior">&lsaquo;</button>
-          <div class="cal-nav-txt">
-            <strong>${esc(etiquetaMes(CAL.mes))}</strong>
-            <small>${esc(actual === 'TODAS' ? 'Todas las jornadas' : actual)} · ${esc(etiquetaDivision())}</small>
-          </div>
-          <button type="button" class="cal-nav-btn" data-cal-move="1" aria-label="Mes siguiente">&rsaquo;</button>
+        <div class="cal-titulo-bloque">
+          <span class="etiqueta">CALENDARIO</span>
+          <strong>${esc(actual === 'TODAS' ? 'Todos los partidos' : actual)}</strong>
+          <small>${esc(etiquetaDivision())} · Toca un partido para abrir su informe completo.</small>
         </div>
         <div class="cal-resumen">
           <div class="cal-res"><b>${partidos.length}</b><span>Partidos</span></div>
           <div class="cal-res ok"><b>${jugados}</b><span>Jugados</span></div>
           <div class="cal-res pend"><b>${pendientes}</b><span>Pendientes</span></div>
-          <div class="cal-res"><b>${delMes.length}</b><span>Este mes</span></div>
         </div>
       </header>
-      <div class="cal-grid">
-        ${DIAS_SEMANA.map((d) => `<div class="cal-dow">${d}</div>`).join('')}
-        ${celdasCalendario(partidos, CAL.mes)}
-      </div>
-      <p class="cal-pie">Toca un partido para abrir su informe completo.</p>
       <section class="cal-lista">
         <header class="cal-lista-cab">
-          <h3>${esc(actual === 'TODAS' ? 'Todos los partidos' : actual)}</h3>
-          <span>${partidos.length} partido${partidos.length === 1 ? '' : 's'}${fuera.length && CAL.mes ? ` · ${fuera.length} fuera de ${esc(etiquetaMes(CAL.mes))}` : ''}</span>
+          <h3>${esc(actual === 'TODAS' ? 'Partidos de la temporada' : actual)}</h3>
+          <span>${partidos.length} partido${partidos.length === 1 ? '' : 's'}</span>
         </header>
         <div class="cal-lista-grid">
           ${partidos.map((f) => filaCalendario(f)).join('')}
@@ -390,7 +376,7 @@ function etiquetaDivision() {
 }
 
 /* Celdas del mes: una por dia, con los partidos de ese dia. */
-function celdasCalendario(partidos, ym) {
+function celdasCalendario(partidos, ym, opts = {}) {
   const [y, m] = String(ym || '').split('-').map(Number);
   if (!y || !m) return '';
   const primero = new Date(y, m - 1, 1);
@@ -409,10 +395,11 @@ function celdasCalendario(partidos, ym) {
     const items = delDia.map((f) => {
       const a = porId(f.equipo_a_id) || { sigla: f.sigla_a, nombre: f.equipo_a, color: f.color_a };
       const b = porId(f.equipo_b_id) || { sigla: f.sigla_b, nombre: f.equipo_b, color: f.color_b };
+      const esMio = opts.equipoId != null && (String(f.equipo_a_id) === String(opts.equipoId) || String(f.equipo_b_id) === String(opts.equipoId));
       const res = f.jugado
         ? `<b class="cp-marcador">${num(f.goles_a)} - ${num(f.goles_b)}</b>`
         : `<b class="cp-marcador pend">${esc(horaCorta(f.hora) || '--:--')}</b>`;
-      return `<button type="button" class="cal-part${f.jugado ? ' jugado' : ''}" data-fecha="${esc(String(f.id))}"
+      return `<button type="button" class="cal-part${f.jugado ? ' jugado' : ''}${esMio ? ' es-mio' : ''}" data-fecha="${esc(String(f.id))}"
           title="${esc(f.equipo_a)} vs ${esc(f.equipo_b)}">
           <span class="cp-sig" style="--eq:${esc(a.color || '#5AA9F0')}">${esc(a.sigla || a.nombre)}</span>
           ${res}
@@ -1421,6 +1408,67 @@ function configDonacion() {
 }
 
 /* ------------------------------------------------ EQUIPO (DETALLE) */
+/* Calendario mensual con solo los partidos del equipo que se esta viendo. */
+function pintarCalendarioEquipo(eq) {
+  const caja = $('#eqCalendario');
+  if (!caja) return;
+  const nota = $('#eqCalNota');
+  const partidos = DATOS.fechas
+    .filter((f) => String(f.equipo_a_id) === String(eq.id) || String(f.equipo_b_id) === String(eq.id))
+    .sort((a, b) => fechaHora(a) - fechaHora(b));
+
+  if (!partidos.length) {
+    caja.innerHTML = vacio('Este equipo todavia no tiene partidos en el calendario.');
+    if (nota) nota.textContent = '';
+    return;
+  }
+
+  const meses = Array.from(new Set(partidos.map((f) => mesDe(f.fecha)).filter(Boolean))).sort();
+  if (!meses.includes(EQ_CAL.mes)) {
+    const hoy = new Date();
+    const mesHoy = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}`;
+    EQ_CAL.mes = meses.includes(mesHoy) ? mesHoy : meses[0];
+  }
+
+  const delMes = partidos.filter((f) => mesDe(f.fecha) === EQ_CAL.mes);
+  const jugados = partidos.filter((f) => f.jugado).length;
+  const pendientes = partidos.length - jugados;
+  const ganados = partidos.filter((f) => {
+    if (!f.jugado) return false;
+    const esA = String(f.equipo_a_id) === String(eq.id);
+    return esA ? num(f.goles_a) > num(f.goles_b) : num(f.goles_b) > num(f.goles_a);
+  }).length;
+
+  if (nota) {
+    nota.textContent = `${partidos.length} partido${partidos.length === 1 ? '' : 's'} · ${jugados} jugados`;
+  }
+
+  caja.innerHTML = `<section class="calendario cal-equipo reveal">
+      <header class="cal-cab">
+        <div class="cal-nav">
+          <button type="button" class="cal-nav-btn" data-eq-cal-move="-1" aria-label="Mes anterior">&lsaquo;</button>
+          <div class="cal-nav-txt">
+            <strong>${esc(etiquetaMes(EQ_CAL.mes))}</strong>
+            <small>${esc(eq.nombre)} · ${esc(etiquetaMes(EQ_CAL.mes))}</small>
+          </div>
+          <button type="button" class="cal-nav-btn" data-eq-cal-move="1" aria-label="Mes siguiente">&rsaquo;</button>
+        </div>
+        <div class="cal-resumen">
+          <div class="cal-res"><b>${partidos.length}</b><span>Partidos</span></div>
+          <div class="cal-res ok"><b>${jugados}</b><span>Jugados</span></div>
+          <div class="cal-res pend"><b>${delMes.length}</b><span>Este mes</span></div>
+          <div class="cal-res"><b>${ganados}</b><span>Ganados</span></div>
+        </div>
+      </header>
+      <div class="cal-grid">
+        ${DIAS_SEMANA.map((d) => `<div class="cal-dow">${d}</div>`).join('')}
+        ${celdasCalendario(partidos, EQ_CAL.mes, { equipoId: eq.id })}
+      </div>
+      <p class="cal-pie">Partidos de ${esc(eq.nombre)} · Toca un partido para abrir su informe.</p>
+    </section>`;
+  revelar();
+}
+
 function pintarEquipoDetalle() {
   const id = num(new URLSearchParams(location.search).get('id') || document.body.dataset.equipo);
   const eq = porId(id);
