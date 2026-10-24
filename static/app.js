@@ -1128,13 +1128,7 @@ function pintarEquipo() {
   caja.innerHTML = `<div class="equipo-filas">${ordenado.map((x) => renderStaffHTML(x.p, x.g)).join('')}</div>`;
   revelar();
 }
-const ROL_AURA = {
-  fundadores: 'rgba(255,107,240,.45)',
-  staff: 'rgba(32,123,228,.45)',
-  arbitros: 'rgba(235,240,90,.42)',
-  disenadores: 'rgba(28,221,255,.42)',
-  programador: 'rgba(119,28,255,.42)'
-};
+;
 function renderStaffHTML(p, grupoInfo) {
   const info = infoRol(p.dato_extra);
   const g = grupoInfo || GRUPOS_EQUIPO.find(function(x){ return x.clave === info.grupo; }) || { color: '#207be4', titulo: info.etiqueta };
