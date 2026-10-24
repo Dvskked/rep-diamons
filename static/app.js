@@ -34,16 +34,41 @@ const DISCORD_LEAGUE = 'https://discord.gg/kVAjgkeRsC';
 
 /* ------------------------------------------------------------ UTILIDADES */
 function ocultarPreloader() {
+  try {
+    document.body.classList.remove('carga-activa');
+  } catch(e){}
   const p = document.getElementById('preloader');
-  document.body.classList.remove('carga-activa');
   if (!p) return;
+  if (p.classList.contains('fuera')) return;
   p.classList.add('fuera');
-  setTimeout(() => { if (p.parentNode) p.parentNode.removeChild(p); }, 500);
+  setTimeout(() => { try { if (p.parentNode) p.parentNode.removeChild(p); } catch(e){} }, 400);
 }
 /* Red de seguridad: nunca dejamos la pantalla de carga pegada */
-setTimeout(ocultarPreloader, 8000);
-window.addEventListener('error', function(){ try{ocultarPreloader();}catch(e){} });
-window.addEventListener('unhandledrejection', function(){ try{ocultarPreloader();}catch(e){} });
+function forzarOcultarPreloader(){
+  try { document.body.classList.remove('carga-activa'); } catch(e){}
+  const p = document.getElementById('preloader');
+  if (!p) return;
+  try {
+    p.classList.add('fuera');
+    p.setAttribute('aria-hidden','true');
+    p.style.cssText = 'display:none !important; opacity:0 !important; visibility:hidden !important; pointer-events:none !important; z-index:-9999 !important;';
+  } catch(e){}
+  try { if (p.parentNode) p.parentNode.removeChild(p); } catch(e){}
+  try { p.remove(); } catch(e){}
+}
+
+setTimeout(forzarOcultarPreloader, 1500);
+setTimeout(forzarOcultarPreloader, 3000);
+setTimeout(forzarOcultarPreloader, 6000);
+window.addEventListener('error', forzarOcultarPreloader, true);
+window.addEventListener('unhandledrejection', forzarOcultarPreloader);
+window.addEventListener('load', function(){ setTimeout(forzarOcultarPreloader, 50); }, { passive: true });
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', function(){ setTimeout(forzarOcultarPreloader, 50); }, { passive: true });
+} else {
+  setTimeout(forzarOcultarPreloader, 50);
+}
+forzarOcultarPreloader();
 
 const esc = (txt) => String(txt ?? '').replace(/[&<>"']/g,
   (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -818,7 +843,9 @@ function pintarLiga() {
 /* ------------------------------------------------------- PAGINA ESTADISTICAS */
 const fmtMin = (v) => {
   const n = num(v);
-  return Number.isInteger(n) ? String(n) : (Math.round(n * 100) / 100).toString();
+  if (!Number.isFinite(n)) return '0';
+  if (n === 0) return '0';
+  return Number.isInteger(n) ? String(n) : String(Math.round(n * 100) / 100);
 };
 
 function insigniaJugador(j) {
@@ -873,8 +900,26 @@ function pintarStats() {
     + tablaStats('#tablaAsisD2', 'D2', 'asistencias', { columna: 'ASIST', titulo: 'Asistidores Division 2' });
 
   const csValor = (j) => (num(j.minutos_cs) > 0 ? num(j.minutos_cs) : num(j.cs));
-  const nCs = tablaStats('#tablaCsD1', 'D1', null, { valor: csValor, columna: 'CS (MIN)', formato: fmtMin, titulo: 'Clean sheets Division 1' })
+  let nCs = tablaStats('#tablaCsD1', 'D1', null, { valor: csValor, columna: 'CS (MIN)', formato: fmtMin, titulo: 'Clean sheets Division 1' })
     + tablaStats('#tablaCsD2', 'D2', null, { valor: csValor, columna: 'CS (MIN)', formato: fmtMin, titulo: 'Clean sheets Division 2' });
+
+  if (nCs === 0) {
+    try {
+      const buscar = STATS.buscar.trim().toLowerCase();
+      const all = jugadoresTodos('all').map((j) => ({ ...j, _val: csValor(j) })).filter((j) => j._val > 0).filter((j) => !buscar || j.nombre.toLowerCase().includes(buscar) || j.equipo.toLowerCase().includes(buscar)).sort((a,b)=>(b._val-a._val)||a.nombre.localeCompare(b.nombre)).slice(0,30);
+      if (all.length) {
+        const box1 = document.querySelector('#tablaCsD1');
+        const box2 = document.querySelector('#tablaCsD2');
+        if (box1) {
+          box1.innerHTML = `<div class="tabla-wrap"><table class="tabla tabla-stats"><thead><tr><th>#</th><th>JUGADOR</th><th>EQUIPO</th><th>CS (MIN)</th></tr></thead><tbody>`+all.filter(j=>j.division==='D1').slice(0,15).map((j,i)=>`<tr><td class="pos">${i+1}</td><td>${jugLink(j.id,j.nombre)}${j.dorsal?` <span style="color:var(--texto-tenue)">#${esc(j.dorsal)}</span>`:''}</td><td><span class="eq">${insigniaJugador(j)}<span>${esc(j.equipo)}</span></span></td><td class="pos">${esc(fmtMin(j._val))}</td></tr>`).join('')+`</tbody></table></div>`;
+        }
+        if (box2) {
+          box2.innerHTML = `<div class="tabla-wrap"><table class="tabla tabla-stats"><thead><tr><th>#</th><th>JUGADOR</th><th>EQUIPO</th><th>CS (MIN)</th></tr></thead><tbody>`+all.filter(j=>j.division==='D2').slice(0,15).map((j,i)=>`<tr><td class="pos">${i+1}</td><td>${jugLink(j.id,j.nombre)}${j.dorsal?` <span style="color:var(--texto-tenue)">#${esc(j.dorsal)}</span>`:''}</td><td><span class="eq">${insigniaJugador(j)}<span>${esc(j.equipo)}</span></span></td><td class="pos">${esc(fmtMin(j._val))}</td></tr>`).join('')+`</tbody></table></div>`;
+        }
+        nCs = all.length;
+      }
+    } catch(e){}
+  }
 
   const notaG = $('#notaGoles'); if (notaG) notaG.textContent = `${nGoles} jugadores con gol`;
   const notaA = $('#notaAsis'); if (notaA) notaA.textContent = `${nAsis} jugadores con asistencia`;
@@ -2573,6 +2618,7 @@ function renderPagina(pagina) {
 /* --------------------------------------------------------------- INICIO */
 function iniciar() {
   try {
+    forzarOcultarPreloader();
     configBotonSubir();
     configMenu();
     eventosGlobales();
@@ -2592,8 +2638,9 @@ function iniciar() {
   } catch (e) {
     console.error('INIT_ERR', e);
   }
-  try { requestAnimationFrame(ocultarPreloader); } catch(e) {}
-  setTimeout(ocultarPreloader, 2000);
+  try { requestAnimationFrame(forzarOcultarPreloader); } catch(e) {}
+  setTimeout(forzarOcultarPreloader, 500);
+  setTimeout(forzarOcultarPreloader, 1500);
 }
 
 document.addEventListener('DOMContentLoaded', iniciar);
