@@ -1,0 +1,5 @@
+const fs=require('fs');
+let d=fs.readFileSync('F:\\proyec-diamons\\static\\app.js','utf8');
+d = d.replace(/<button type=\"button\" class=\"fc-card ([^\"]+)\" data-id=/g, '<div role=\"button\" tabindex=\"0\" class=\"fc-card \" data-id=');
+d = d.replace(/<\\/button>/g, '</div>');
+fs.writeFileSync('F:\\proyec-diamons\\static\\app.js',d);
