@@ -900,25 +900,48 @@ function pintarStats() {
     + tablaStats('#tablaAsisD2', 'D2', 'asistencias', { columna: 'ASIST', titulo: 'Asistidores Division 2' });
 
   const csValor = (j) => (num(j.minutos_cs) > 0 ? num(j.minutos_cs) : num(j.cs));
-  let nCs = tablaStats('#tablaCsD1', 'D1', null, { valor: csValor, columna: 'CS (MIN)', formato: fmtMin, titulo: 'Clean sheets Division 1' })
-    + tablaStats('#tablaCsD2', 'D2', null, { valor: csValor, columna: 'CS (MIN)', formato: fmtMin, titulo: 'Clean sheets Division 2' });
-
-  if (nCs === 0) {
-    try {
-      const buscar = STATS.buscar.trim().toLowerCase();
-      const all = jugadoresTodos('all').map((j) => ({ ...j, _val: csValor(j) })).filter((j) => j._val > 0).filter((j) => !buscar || j.nombre.toLowerCase().includes(buscar) || j.equipo.toLowerCase().includes(buscar)).sort((a,b)=>(b._val-a._val)||a.nombre.localeCompare(b.nombre)).slice(0,30);
-      if (all.length) {
-        const box1 = document.querySelector('#tablaCsD1');
-        const box2 = document.querySelector('#tablaCsD2');
-        if (box1) {
-          box1.innerHTML = `<div class="tabla-wrap"><table class="tabla tabla-stats"><thead><tr><th>#</th><th>JUGADOR</th><th>EQUIPO</th><th>CS (MIN)</th></tr></thead><tbody>`+all.filter(j=>j.division==='D1').slice(0,15).map((j,i)=>`<tr><td class="pos">${i+1}</td><td>${jugLink(j.id,j.nombre)}${j.dorsal?` <span style="color:var(--texto-tenue)">#${esc(j.dorsal)}</span>`:''}</td><td><span class="eq">${insigniaJugador(j)}<span>${esc(j.equipo)}</span></span></td><td class="pos">${esc(fmtMin(j._val))}</td></tr>`).join('')+`</tbody></table></div>`;
-        }
-        if (box2) {
-          box2.innerHTML = `<div class="tabla-wrap"><table class="tabla tabla-stats"><thead><tr><th>#</th><th>JUGADOR</th><th>EQUIPO</th><th>CS (MIN)</th></tr></thead><tbody>`+all.filter(j=>j.division==='D2').slice(0,15).map((j,i)=>`<tr><td class="pos">${i+1}</td><td>${jugLink(j.id,j.nombre)}${j.dorsal?` <span style="color:var(--texto-tenue)">#${esc(j.dorsal)}</span>`:''}</td><td><span class="eq">${insigniaJugador(j)}<span>${esc(j.equipo)}</span></span></td><td class="pos">${esc(fmtMin(j._val))}</td></tr>`).join('')+`</tbody></table></div>`;
-        }
-        nCs = all.length;
+  let nCs = 0;
+  const listaCs = (DATOS.cs && (DATOS.cs.d1 || DATOS.cs.d2)) ? { d1: DATOS.cs.d1 || [], d2: DATOS.cs.d2 || [] } : null;
+  if (listaCs) {
+    const pintarCsLista = (destino, items) => {
+      const box = $(destino);
+      if (!box) return items.length;
+      if (!items.length) {
+        box.innerHTML = `<p class="stats-vacio">Sin datos por ahora.</p>`;
+        return 0;
       }
-    } catch(e){}
+      const eqMap = new Map((DATOS.equipos||[]).map(e => [e.id, e]));
+      const filas = items.slice().map((it, idx) => {
+        const eq = eqMap.get(it.equipo_id) || {};
+        return { idx: idx + 1, jugador: it.jugador || it.nombre || '', equipo: it.equipo || eq.nombre || '', escudo: eq.escudo, color: eq.color, jugador_id: it.jugador_id, tiempo: it.tiempo || it.minutos || it.gk_minutos || '' };
+      });
+      box.innerHTML = `<div class="tabla-wrap"><table class="tabla tabla-stats"><thead><tr><th>#</th><th>JUGADOR</th><th>EQUIPO</th><th>CS (TIEMPO)</th></tr></thead><tbody>` +
+        filas.map((j) => `<tr><td class="pos">${j.idx}</td><td>${j.jugador_id ? jugLink(j.jugador_id, j.jugador) : esc(j.jugador)}</td><td><span class="eq">${j.escudo ? `<span class="escudo-mini cond-logo logo-img"><img src="/static/${esc(j.escudo)}" alt="" loading="lazy"></span>` : `<i class="equipo-punto" style="background:${esc(j.color || 'var(--cian)')}"></i>`}<span>${esc(j.equipo)}</span></span></td><td class="pos">${esc(j.tiempo)}</td></tr>`).join('') +
+        `</tbody></table></div>`;
+      return filas.length;
+    };
+    nCs = pintarCsLista('#tablaCsD1', listaCs.d1) + pintarCsLista('#tablaCsD2', listaCs.d2);
+  } else {
+    nCs = tablaStats('#tablaCsD1', 'D1', null, { valor: csValor, columna: 'CS (MIN)', formato: fmtMin, titulo: 'Clean sheets Division 1' })
+      + tablaStats('#tablaCsD2', 'D2', null, { valor: csValor, columna: 'CS (MIN)', formato: fmtMin, titulo: 'Clean sheets Division 2' });
+
+    if (nCs === 0) {
+      try {
+        const buscar = STATS.buscar.trim().toLowerCase();
+        const all = jugadoresTodos('all').map((j) => ({ ...j, _val: csValor(j) })).filter((j) => j._val > 0).filter((j) => !buscar || j.nombre.toLowerCase().includes(buscar) || j.equipo.toLowerCase().includes(buscar)).sort((a,b)=>(b._val-a._val)||a.nombre.localeCompare(b.nombre)).slice(0,30);
+        if (all.length) {
+          const box1 = document.querySelector('#tablaCsD1');
+          const box2 = document.querySelector('#tablaCsD2');
+          if (box1) {
+            box1.innerHTML = `<div class="tabla-wrap"><table class="tabla tabla-stats"><thead><tr><th>#</th><th>JUGADOR</th><th>EQUIPO</th><th>CS (MIN)</th></tr></thead><tbody>`+all.filter(j=>j.division==='D1').slice(0,15).map((j,i)=>`<tr><td class="pos">${i+1}</td><td>${jugLink(j.id,j.nombre)}${j.dorsal?` <span style="color:var(--texto-tenue)">#${esc(j.dorsal)}</span>`:''}</td><td><span class="eq">${insigniaJugador(j)}<span>${esc(j.equipo)}</span></span></td><td class="pos">${esc(fmtMin(j._val))}</td></tr>`).join('')+`</tbody></table></div>`;
+          }
+          if (box2) {
+            box2.innerHTML = `<div class="tabla-wrap"><table class="tabla tabla-stats"><thead><tr><th>#</th><th>JUGADOR</th><th>EQUIPO</th><th>CS (MIN)</th></tr></thead><tbody>`+all.filter(j=>j.division==='D2').slice(0,15).map((j,i)=>`<tr><td class="pos">${i+1}</td><td>${jugLink(j.id,j.nombre)}${j.dorsal?` <span style="color:var(--texto-tenue)">#${esc(j.dorsal)}</span>`:''}</td><td><span class="eq">${insigniaJugador(j)}<span>${esc(j.equipo)}</span></span></td><td class="pos">${esc(fmtMin(j._val))}</td></tr>`).join('')+`</tbody></table></div>`;
+          }
+          nCs = all.length;
+        }
+      } catch(e){}
+    }
   }
 
   const notaG = $('#notaGoles'); if (notaG) notaG.textContent = `${nGoles} jugadores con gol`;
