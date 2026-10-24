@@ -178,8 +178,8 @@ const nombreJugador = (id) => {
 function jugLink(id, nombre, clase = '') {
   const txt = esc(nombre || '');
   if (id == null || id === '') return `<span class="${clase}">${txt}</span>`;
-  return `<button type="button" class="jug-link ${clase}" data-jugador="${esc(String(id))}"
-    title="Ver ficha de ${txt}">${txt}</button>`;
+  return `<div role="button" tabindex="0" class="jug-link ${clase}" data-jugador="${esc(String(id))}"
+    title="Ver ficha de ${txt}">${txt}</div>`;
 }
 
 function vacio(txt) {
@@ -1087,9 +1087,10 @@ const ROLES_INFO = {
   'ARBITROS': { grupo: 'arbitros', etiqueta: 'ÁRBITROS' },
   'DISENADOR': { grupo: 'disenadores', etiqueta: 'DISEÑADORES' },
   'DISEÑADOR': { grupo: 'disenadores', etiqueta: 'DISEÑADORES' },
-  'DISEÑADORES': { grupo: 'disenadores', etiqueta: 'DISEÑADORES' }
+  'DISEÑADORES': { grupo: 'disenadores', etiqueta: 'DISEÑADORES' },
+  'ARBITRO': { grupo: 'arbitros', etiqueta: 'ÁRBITROS' }
 };
-const ROLES_OCULTOS = new Set(['MASTER', 'DESARROLLADOR', 'PROGRAMADOR', 'PROGRAMADORES']);
+const ROLES_OCULTOS = new Set(['MASTER', 'DESARROLLADOR', 'PROGRAMADORES']);
 const GRUPOS_EQUIPO = [
   { clave: 'fundadores', titulo: 'Fundadores', color: '#ff6bf0' },
   { clave: 'staff', titulo: 'Staff', color: '#207be4' },
@@ -1097,6 +1098,13 @@ const GRUPOS_EQUIPO = [
   { clave: 'disenadores', titulo: 'Diseñadores', color: '#1cddff' },
   { clave: 'programador', titulo: 'Desarrolladores', color: '#771cff' }
 ];
+const ROL_AURA = {
+  fundadores: 'rgba(255,107,240,.45)',
+  staff: 'rgba(32,123,228,.45)',
+  arbitros: 'rgba(235,240,90,.42)',
+  disenadores: 'rgba(28,221,255,.42)',
+  programador: 'rgba(119,28,255,.42)'
+};
 function infoRol(rol) {
   return ROLES_INFO[String(rol || 'STAFF').toUpperCase()] || { grupo: 'staff', etiqueta: 'STAFF' };
 }
@@ -1111,38 +1119,43 @@ function pintarEquipo() {
     if (porGrupo[g]) porGrupo[g].push(p);
     else porGrupo.staff.push(p);
   });
-  const esNeptun = (p) => /neptun/i.test(`${p.titulo || ''} ${p.subtitulo || ''}`);
-  porGrupo.staff.sort((a, b) => (esNeptun(b) ? 1 : 0) - (esNeptun(a) ? 1 : 0));
-  caja.innerHTML = GRUPOS_EQUIPO.filter((g) => porGrupo[g.clave].length).map((g) => {
-    const tarjetas = porGrupo[g.clave].map(renderStaffHTML).join('');
-    return `<section class="equipo-grupo ${g.clave}" style="--rol:${g.color}">
-      <h3 class="equipo-seccion-titulo">${esc(g.titulo)}</h3>
-      <div class="equipo-staff-grid">${tarjetas}</div>
-    </section>`;
-  }).join('');
+  const esNqptun = (p) => /nqptun/i.test(`${p.titulo || ''} ${p.subtitulo || ''}`);
+  porGrupo.staff.sort((a, b) => (esNqptun(b) ? 1 : 0) - (esNqptun(a) ? 1 : 0));
+  const ordenado = [];
+  GRUPOS_EQUIPO.filter((g) => porGrupo[g.clave].length).forEach((g) => {
+    porGrupo[g.clave].forEach((p) => ordenado.push({ p, g }));
+  });
+  caja.innerHTML = `<div class="equipo-filas">${ordenado.map((x) => renderStaffHTML(x.p, x.g)).join('')}</div>`;
   revelar();
 }
-function renderStaffHTML(p) {
+const ROL_AURA = {
+  fundadores: 'rgba(255,107,240,.45)',
+  staff: 'rgba(32,123,228,.45)',
+  arbitros: 'rgba(235,240,90,.42)',
+  disenadores: 'rgba(28,221,255,.42)',
+  programador: 'rgba(119,28,255,.42)'
+};
+function renderStaffHTML(p, grupoInfo) {
   const info = infoRol(p.dato_extra);
+  const g = grupoInfo || GRUPOS_EQUIPO.find(function(x){ return x.clave === info.grupo; }) || { color: '#207be4', titulo: info.etiqueta };
   const foto = p.imagen
-    ? `<img src="/static/${esc(p.imagen)}" alt="Foto de ${esc(p.titulo)}" loading="lazy" decoding="async">`
+    ? '<img src="/static/' + esc(p.imagen) + '" alt="Foto de ' + esc(p.titulo) + '" loading="lazy" decoding="async">'
     : iniciales(p.titulo);
   const sub = p.subtitulo ? esc(p.subtitulo).replace(/^[A-Z]{3}\s*\|\s*/i, '') : '';
-  const user = sub ? `<p class="staff-user">Discord · ${sub}</p>` : '';
-  const texto = p.texto ? `<p class="staff-texto">${esc(p.texto)}</p>` : '';
+  const user = sub ? '<p class="staff-user">Discord � ' + sub + '</p>' : '';
+  const texto = p.texto ? '<p class="staff-texto">' + esc(p.texto) + '</p>' : '';
   const titulo = p.titulo ? esc(p.titulo).replace(/^[A-Z]{3}\s*\|\s*/i, '') : '';
-  const esNeptun = /neptun/i.test(`${p.titulo || ''} ${p.subtitulo || ''}`);
-  const aura = esNeptun ? '<span class="staff-aura" aria-hidden="true"></span>' : '';
-  return `<article class="staff-card ${info.grupo}${esNeptun ? ' neptun' : ''} reveal">
-    ${aura}
-    <div class="staff-avatar">${foto}</div>
-    <div class="staff-info">
-      <span class="staff-rol">${esc(info.etiqueta)}</span>
-      <h4>${titulo}</h4>
-      ${user}${texto}
-    </div>
-  </article>`;
+  const esSami = /sami/i.test((p.titulo || '') + ' ' + (p.subtitulo || ''));
+  const esNqptun = /nqptun/i.test((p.titulo || '') + ' ' + (p.subtitulo || ''));
+  const auraColor = esNqptun ? 'rgba(168,85,247,.55)' : ((ROL_AURA[info.grupo]) || g.color + '55');
+  const aura = '<span class="staff-aura" style="--aura:' + auraColor + '" aria-hidden="true"></span>';
+  let fondo = '';
+  if (esSami && p.imagen) {
+    fondo = ' style="--staff-bg:url(\'/static/' + esc(p.imagen) + '\')"';
+  }
+  return '<article class="staff-card ' + info.grupo + (esNqptun ? ' neptun' : '') + (esSami ? ' sami' : '') + ' reveal" style="--rol:' + g.color + '"' + fondo + '>' + aura + '<div class="staff-avatar">' + foto + '</div><div class="staff-info"><span class="staff-rol">' + esc(info.etiqueta) + '</span><h4>' + titulo + '</h4>' + user + texto + '</div></article>';
 }
+
 
 function pintarRedes() {
   const caja = $('#redesGrid');
@@ -1779,9 +1792,9 @@ function tarjetaCarta(j, opts = {}) {
     return `<div class="fc-card fc-${rango} fc-grande reveal" style="${estilo}">${cuerpo}</div>`;
   }
   return `
-    <button type="button" class="fc-card fc-${rango} reveal" data-id="${esc(String(j.id))}" style="${estilo}">
+    <div role="button" tabindex="0" class="fc-card fc-${rango} reveal" data-id="${esc(String(j.id))}" style="${estilo}">
       ${cuerpo}
-    </button>`;
+    </div>`;
 }
 
 /* Lista de jugadores (con metadata de equipo) segun los filtros activos. */
@@ -1853,11 +1866,17 @@ function _configurarCartasClickeables() {
   document.querySelectorAll('.fc-card[data-id]').forEach((btn) => {
     if (btn.dataset.cartabind === '1') return;
     btn.dataset.cartabind = '1';
-    btn.addEventListener('click', (ev) => {
+    const handler = (ev) => {
       ev.preventDefault();
       const id = btn.getAttribute('data-id');
       const j = _cartasActuales.find((x) => String(x.id) === String(id));
       if (j) abrirCartaModal(j);
+    };
+    btn.addEventListener('click', handler);
+    btn.addEventListener('keydown', (ev) => {
+      if (ev.key === 'Enter' || ev.key === ' ') {
+        handler(ev);
+      }
     });
   });
 }

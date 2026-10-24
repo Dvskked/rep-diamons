@@ -1132,19 +1132,46 @@ body.modal-abierto { overflow: hidden; }
   display: grid; grid-template-columns: repeat(auto-fill, minmax(min(240px, 100%), 1fr)); gap: 22px;
 }
 .staff-card {
-  padding: 30px 26px; border-radius: var(--radio); text-align: center;
-  background: linear-gradient(165deg, var(--tarjeta-alta), rgba(255,255,255,.03));
-  border: 1px solid var(--linea); box-shadow: var(--sombra);
-  transition: transform .4s cubic-bezier(.3,1.4,.5,1), box-shadow .4s, border-color .3s;
   position: relative; overflow: hidden;
+  display: grid; grid-template-columns: 88px 1fr; gap: 16px; align-items: center;
+  padding: 14px clamp(18px, 4vw, 28px);
+  border-radius: calc(var(--radio) + 2px);
+  text-align: left;
+  background: radial-gradient(520px 180px at 8% 0%, rgba(90,169,240,.14), transparent 60%),
+              linear-gradient(155deg, rgba(26,46,82,.72) 0%, rgba(12,26,50,.88) 100%);
+  border: 1px solid var(--linea); box-shadow: var(--sombra);
+  transition: transform .35s cubic-bezier(.3,1.4,.5,1), box-shadow .35s, border-color .3s;
+  isolation: isolate;
 }
 .staff-card::before {
-  content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 4px;
-  background: linear-gradient(90deg, var(--rol, var(--cian)), transparent);
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background: radial-gradient(360px 140px at 90% -10%, color-mix(in srgb, var(--rol,#5AA9F0) 12%, transparent), transparent 70%);
 }
-.staff-card:hover { transform: translateY(-8px); border-color: var(--rol, var(--cian)); box-shadow: var(--sombra-alta); }
+.staff-card > * { position: relative; z-index: 1; }
+.staff-card:hover { transform: translateY(-6px); border-color: color-mix(in srgb, var(--rol,#5AA9F0) 60%, transparent); box-shadow: var(--sombra-alta); }
+.staff-card.sami {
+  background:
+    linear-gradient(155deg, rgba(10,18,36,.88) 0%, rgba(10,18,36,.94) 100%),
+    var(--staff-bg, none);
+  background-size: cover;
+  background-position: center right;
+}
+.staff-card.sami::before {
+  content:""; position: absolute; inset: 0; z-index: 0;
+  background: linear-gradient(90deg, rgba(8,14,28,.98) 0%, rgba(8,14,28,.86) 42%, rgba(8,14,28,.62) 100%);
+}
+.equipo-filas {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(12px, 2.6vw, 16px);
+}
+.staff-aura {
+  position: absolute; inset: -26% -16% auto auto; width: 200px; height: 200px; border-radius: 50%;
+  background: radial-gradient(circle, var(--aura, rgba(90,169,240,.22)), transparent 72%);
+  filter: blur(36px); pointer-events: none; z-index: 0;
+}
 .staff-avatar {
-  width: 92px; height: 92px; margin: 0 auto 16px; border-radius: 50%;
+  width: 88px; height: 88px; margin: 0 auto 0; border-radius: 50%;
   display: flex; align-items: center; justify-content: center; overflow: hidden;
   background: radial-gradient(circle at 50% 30%, rgba(255,255,255,.12), rgba(255,255,255,.02));
   border: 2.5px solid var(--rol, var(--cian));
@@ -1160,8 +1187,8 @@ body.modal-abierto { overflow: hidden; }
   color: var(--rol, var(--cian)); font-size: .62rem; font-weight: 800; letter-spacing: .16em;
 }
 .staff-card h4 { font-size: 1.16rem; letter-spacing: .04em; color: var(--blanco); overflow-wrap: anywhere; }
-.staff-user { font-size: .78rem; color: var(--cian); margin-bottom: 9px; }
-.staff-card .staff-texto { font-size: .86rem; color: var(--texto-suave); }
+.staff-user { font-size: .84rem; color: var(--texto-suave); margin-bottom: 4px; }
+.staff-card .staff-texto { font-size: .88rem; color: var(--texto-tenue); }-suave); }
 .staff-card.owners { --rol: #FFD86B; }
 .staff-card.staff { --rol: #E8B23E; }
 .staff-card.dev { --rol: #FF4D9D; }
@@ -3304,8 +3331,8 @@ body.carta-modal-abierto { overflow: hidden; }
   flex: 1 1 auto; min-width: 0;
   display: flex; flex-direction: column; align-items: flex-start;
 }
-.staff-info .staff-rol { margin: 0 0 7px; align-self: flex-start; }
-.staff-info h4 { font-size: 1.12rem; line-height: 1.2; }
+.staff-info .staff-rol { margin: 0 0 6px; align-self: flex-start; }
+.staff-info h4 { font-size: clamp(1rem, 2.6vw, 1.36rem; line-height: 1.2; }
 .staff-info .staff-user { margin-bottom: 5px; }
 .staff-info .staff-texto { max-width: none; margin: 0; font-size: .8rem; line-height: 1.45; }
 .staff-card.neptun::after { top: 12px; right: 14px; }
