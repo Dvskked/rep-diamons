@@ -841,12 +841,23 @@ function pintarLiga() {
 }
 
 /* ------------------------------------------------------- PAGINA ESTADISTICAS */
-const fmtMin = (v) => {
-  const n = num(v);
-  if (!Number.isFinite(n)) return '0';
-  if (n === 0) return '0';
-  return Number.isInteger(n) ? String(n) : String(Math.round(n * 100) / 100);
-};
+  const fmtMin = (v) => {
+    let n = num(v);
+    if (!Number.isFinite(n)) return '0';
+    if (n === 0) return '0';
+    if (n > 60) {
+      const mins = Math.floor(n / 60);
+      const secs = Math.round(n % 60);
+      return mins + ':' + String(secs).padStart(2, '0');
+    }
+    if (n >= 1) {
+      const mins = Math.floor(n);
+      const secs = Math.round((n - mins) * 60);
+      if (secs === 0) return mins + ':00';
+      return mins + ':' + String(secs).padStart(2, '0');
+    }
+    return String(Math.round(n * 100) / 100);
+  };
 
 function insigniaJugador(j) {
   return j.escudo
@@ -899,9 +910,19 @@ function pintarStats() {
   const nAsis = tablaStats('#tablaAsisD1', 'D1', 'asistencias', { columna: 'ASIST', titulo: 'Asistidores Division 1' })
     + tablaStats('#tablaAsisD2', 'D2', 'asistencias', { columna: 'ASIST', titulo: 'Asistidores Division 2' });
 
-  const csValor = (j) => (num(j.minutos_cs) > 0 ? num(j.minutos_cs) : num(j.cs));
-  let nCs = tablaStats('#tablaCsD1', 'D1', null, { valor: csValor, columna: 'CS (MIN)', formato: fmtMin, titulo: 'Clean sheets Division 1' })
-    + tablaStats('#tablaCsD2', 'D2', null, { valor: csValor, columna: 'CS (MIN)', formato: fmtMin, titulo: 'Clean sheets Division 2' });
+  const csValor = (j) => {
+    if (j.gk_minutos) {
+      const m = String(j.gk_minutos).match(/(\d+)\s*:\s*(\d+)/);
+      if (m) return Number(m[1]) * 60 + Number(m[2]);
+    }
+    const mc = num(j.minutos_cs);
+    if (mc > 0) return mc * 60;
+    const c = num(j.cs);
+    if (c > 0) return c;
+    return 0;
+  };
+  let nCs = tablaStats('#tablaCsD1', 'D1', null, { valor: csValor, columna: 'CS', formato: fmtMin, titulo: 'Clean sheets Division 1' })
+    + tablaStats('#tablaCsD2', 'D2', null, { valor: csValor, columna: 'CS', formato: fmtMin, titulo: 'Clean sheets Division 2' });
 
   if (nCs === 0) {
     try {
