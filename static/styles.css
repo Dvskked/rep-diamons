@@ -3342,3 +3342,30 @@ body.carta-modal-abierto { overflow: hidden; }
   .staff-avatar { width: 64px; height: 64px; flex-basis: 64px; }
   .staff-info h4 { font-size: 1.05rem; }
 }
+
+
+/* Neptun tonos morados */
+.staff-card.neptun.purple-neptun{
+  border-color: rgba(168,85,247,.72);
+  background:
+    radial-gradient(120% 120% at 50% 0%, rgba(168,85,247,.28), transparent 56%),
+    linear-gradient(165deg, rgba(40,20,70,.94), rgba(14,16,36,.98));
+  box-shadow:
+    inset 0 0 0 1px rgba(196,181,253,.22),
+    0 26px 64px -34px rgba(139,92,246,.9),
+    0 0 46px -20px rgba(139,92,246,.6);
+}
+.staff-card.neptun.purple-neptun::before{
+  background: linear-gradient(90deg, transparent, #8b5cf6 22%, #c4b5fd 50%, #8b5cf6 78%, transparent);
+  box-shadow: 0 0 20px rgba(139,92,246,.9);
+}
+.staff-card.neptun.purple-neptun::after{
+  color: #ddd6fe; text-shadow: 0 0 14px #8b5cf6;
+}
+.staff-card.neptun.purple-neptun .staff-avatar{
+  border-color: #a78bfa;
+  box-shadow:
+    0 0 0 7px rgba(139,92,246,.14),
+    0 0 38px rgba(139,92,246,.8),
+    inset 0 0 22px rgba(196,181,253,.22);
+}
