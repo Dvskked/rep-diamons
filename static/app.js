@@ -42,6 +42,8 @@ function ocultarPreloader() {
 }
 /* Red de seguridad: nunca dejamos la pantalla de carga pegada */
 setTimeout(ocultarPreloader, 8000);
+window.addEventListener('error', function(){ try{ocultarPreloader();}catch(e){} });
+window.addEventListener('unhandledrejection', function(){ try{ocultarPreloader();}catch(e){} });
 
 const esc = (txt) => String(txt ?? '').replace(/[&<>"']/g,
   (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -2570,23 +2572,28 @@ function renderPagina(pagina) {
 
 /* --------------------------------------------------------------- INICIO */
 function iniciar() {
-  configBotonSubir();
-  configMenu();
-  eventosGlobales();
-  pintarNav();
+  try {
+    configBotonSubir();
+    configMenu();
+    eventosGlobales();
+    pintarNav();
 
-  const fuente = window.SITIO || {};
-  Object.assign(DATOS, {
-    modulos: fuente.modulos || [], contenidos: fuente.contenidos || {},
-    equipos: fuente.equipos || [], fechas: fuente.fechas || [],
-    ideales: fuente.ideales || []
-  });
+    const fuente = window.SITIO || {};
+    Object.assign(DATOS, {
+      modulos: fuente.modulos || [], contenidos: fuente.contenidos || {},
+      equipos: fuente.equipos || [], fechas: fuente.fechas || [],
+      ideales: fuente.ideales || []
+    });
 
-  pintarModulos();
-  renderPagina(document.body.dataset.pagina || 'inicio');
+    pintarModulos();
+    renderPagina(document.body.dataset.pagina || 'inicio');
 
-  revelar();
-  requestAnimationFrame(ocultarPreloader);
+    revelar();
+  } catch (e) {
+    console.error('INIT_ERR', e);
+  }
+  try { requestAnimationFrame(ocultarPreloader); } catch(e) {}
+  setTimeout(ocultarPreloader, 2000);
 }
 
 document.addEventListener('DOMContentLoaded', iniciar);
