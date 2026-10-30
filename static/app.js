@@ -1189,34 +1189,36 @@ function pintarEquipo() {
   });
   const esNqptun = (p) => /nqptun/i.test(`${p.titulo || ''} ${p.subtitulo || ''}`);
   porGrupo.staff.sort((a, b) => (esNqptun(b) ? 1 : 0) - (esNqptun(a) ? 1 : 0));
-  const ordenado = [];
-  GRUPOS_EQUIPO.filter((g) => porGrupo[g.clave].length).forEach((g) => {
-    porGrupo[g.clave].forEach((p) => ordenado.push({ p, g }));
+  let html = '';
+  GRUPOS_EQUIPO.forEach((g) => {
+    const list = porGrupo[g.clave];
+    if (!list || list.length === 0) return;
+    html += `<section class="equipo-grupo"><header class="equipo-seccion-titulo" style="--rol:${esc(g.color)}"><span>${esc(g.titulo.toUpperCase())}</span></header><div class="equipo-staff-grid">${list.map((p) => renderStaffHTML(p, g)).join('')}</div></section>`;
   });
-  caja.innerHTML = `<div class="equipo-filas">${ordenado.map((x) => renderStaffHTML(x.p, x.g)).join('')}</div>`;
+  caja.innerHTML = html || `<div class="equipo-filas">${Object.keys(porGrupo).reduce((acc, k) => acc + porGrupo[k].map((p) => renderStaffHTML(p, GRUPOS_EQUIPO.find(gr => gr.clave === k) || {color:'#207be4'})).join(''), '')}</div>`;
   revelar();
 }
 ;
 function renderStaffHTML(p, grupoInfo) {
   const info = infoRol(p.dato_extra);
   const g = grupoInfo || GRUPOS_EQUIPO.find(function(x){ return x.clave === info.grupo; }) || { color: '#207be4', titulo: info.etiqueta };
-  const foto = p.imagen
-    ? '<img src="/static/' + esc(p.imagen) + '" alt="Foto de ' + esc(p.titulo) + '" loading="lazy" decoding="async">'
-    : iniciales(p.titulo);
-  const sub = p.subtitulo ? esc(p.subtitulo).replace(/^[A-Z]{3}\s*\|\s*/i, '') : '';
-  const user = sub ? '<p class="staff-user">Discord � ' + sub + '</p>' : '';
-  const texto = p.texto ? '<p class="staff-texto">' + esc(p.texto) + '</p>' : '';
-  const titulo = p.titulo ? esc(p.titulo).replace(/^[A-Z]{3}\s*\|\s*/i, '') : '';
   const esSami = /sami/i.test((p.titulo || '') + ' ' + (p.subtitulo || ''));
   const esNqptun = /nqptun/i.test((p.titulo || '') + ' ' + (p.subtitulo || ''));
+  let imgSrc = p.imagen;
+  if (esSami && p.imagen) {
+    imgSrc = p.imagen;
+  }
+  const foto = imgSrc
+    ? '<img src="/static/' + esc(imgSrc) + '" alt="Foto de ' + esc(p.titulo) + '" loading="lazy" decoding="async">'
+    : iniciales(p.titulo);
+  const sub = p.subtitulo ? esc(p.subtitulo).replace(/^[A-Z]{3}\s*\|\s*/i, '') : '';
+  const user = sub ? '<p class="staff-user">Discord · ' + sub + '</p>' : '';
+  const texto = p.texto ? '<p class="staff-texto">' + esc(p.texto) + '</p>' : '';
+  const titulo = p.titulo ? esc(p.titulo).replace(/^[A-Z]{3}\s*\|\s*/i, '') : '';
   const auraColor = esNqptun ? 'rgba(168,85,247,.62)' : ((ROL_AURA[info.grupo]) || g.color + '55');
   const aura = '<span class="staff-aura" style="--aura:' + auraColor + '" aria-hidden="true"></span>';
-  let fondo = '';
-  if (esSami && p.imagen) {
-    fondo = ' style="--staff-bg:url(\'/static/' + esc(p.imagen) + '\')"';
-  }
-  const rolColor = p.color || g.color;
-  return '<article class="staff-card ' + info.grupo + (esNqptun ? ' neptun purple-neptun' : '') + (esSami ? ' sami' : '') + ' reveal" style="--rol:' + esc(rolColor) + '"' + fondo + '>' + aura + '<div class="staff-avatar">' + foto + '</div><div class="staff-info"><span class="staff-rol">' + esc(info.etiqueta) + '</span><h4>' + titulo + '</h4>' + user + texto + '</div></article>';
+  const rolColor = esNqptun ? '#a855f7' : (p.color || g.color);
+  return '<article class="staff-card ' + info.grupo + (esNqptun ? ' neptun purple-neptun' : '') + (esSami ? ' sami' : '') + ' reveal" style="--rol:' + esc(rolColor) + '">' + aura + '<div class="staff-avatar">' + foto + '</div><div class="staff-info"><span class="staff-rol">' + esc(info.etiqueta) + '</span><h4>' + titulo + '</h4>' + user + texto + '</div></article>';
 }
 
 
